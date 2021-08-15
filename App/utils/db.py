@@ -1,8 +1,9 @@
 from App.models.db import DbModelBase
-from App.settings import DB
+from App.settings import DB_CONNECTION_STRING
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
+import asyncio
 
 __all__ = (
     'db_engine',
@@ -13,7 +14,7 @@ __all__ = (
 )
 
 
-db_engine = create_async_engine(DB.CONNECTION_STRING, echo=True)
+db_engine = create_async_engine(DB_CONNECTION_STRING, echo=True)
 db_async_session = sessionmaker(
     db_engine,
     class_=AsyncSession,
@@ -27,8 +28,8 @@ async def db_session_getter() -> AsyncSession:
 
 
 async def _ensure_models_created():
-    async with db_async_session() as session:
-        await session.run_sync(DbModelBase.metadata.create_all)
+    async with db_engine.begin() as conn:
+        await conn.run_sync(DbModelBase.metadata.create_all)
 
 
-_ensure_models_created()
+asyncio.run(_ensure_models_created())

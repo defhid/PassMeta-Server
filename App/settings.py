@@ -1,2 +1,1 @@
-class DB:
-    CONNECTION_STRING = "postgresql+asyncpg://postgres:123456@localhost/passmeta"
+DB_CONNECTION_STRING = "postgresql+asyncpg://postgres:postgres@localhost:5432/passmeta"
