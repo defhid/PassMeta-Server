@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Iterator
+from typing import Generic, TypeVar, Iterator, Dict
 
 __all__ = (
     'Enum',
@@ -12,7 +12,7 @@ class Enum(Generic[VT]):
         После объявления наследника необходимо вызвать метод init().
     """
 
-    __items: dict[VT, str] = dict()
+    __items: Dict[VT, str] = dict()
 
     @classmethod
     def init(cls):

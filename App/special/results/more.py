@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Union, Dict
 
 __all__ = (
     'ResMore',
@@ -12,7 +12,7 @@ class ResMore(dict):
         self['text'] = value
         return self
 
-    def info(self, *values: dict[str, Any]) -> 'ResMore':
+    def info(self, *values: Dict[str, Any]) -> 'ResMore':
         if 'info' in self:
             self['info'].extend(values)
         else:
@@ -63,7 +63,7 @@ class MORE:
         return ResMore(text=val)
 
     @staticmethod
-    def info(*values: dict[str, Any]):
+    def info(*values: Dict[str, Any]):
         return ResMore(info=list(values))
 
     @staticmethod

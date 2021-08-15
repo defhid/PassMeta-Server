@@ -1,6 +1,6 @@
 from App.special.results.messages import ResMessage, OK
 from App.special.results.more import *
-from typing import Optional, Any, Union
+from typing import Optional, Any, Union, List, Dict
 
 __all__ = (
     'Result',
@@ -13,7 +13,7 @@ class Result(Exception):
     __slots__ = ()
 
     def __init__(self, what: Union[str, Any], message: ResMessage,
-                 more: 'ResMore' = None, sub: Union['Result', dict, list['Result'], list[dict]] = None):
+                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
         super().__init__(dict())
         self(
             what=what,
@@ -67,11 +67,11 @@ class Result(Exception):
             self.args[0]['more'] = value
 
     @property
-    def sub(self) -> Optional[list[dict]]:
+    def sub(self) -> Optional[List[dict]]:
         return self.args[0].get('sub')
 
     @sub.setter
-    def sub(self, value: Optional[list[Union['Result', dict]]]):
+    def sub(self, value: Optional[List[Union['Result', dict]]]):
         if value is None:
             self.args[0].pop('sub', None)
         else:
@@ -80,7 +80,7 @@ class Result(Exception):
                     value[i] = value[i].dict()
             self.args[0]['sub'] = value
 
-    def dict(self) -> dict[str, object]:
+    def dict(self) -> Dict[str, object]:
         return self.args[0]
 
 
@@ -88,7 +88,7 @@ class Bad(Result):
     __slots__ = ()
 
     def __init__(self, what: Any, message: ResMessage,
-                 more: 'ResMore' = None, sub: Union['Result', dict, list['Result'], list[dict]] = None):
+                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
         super().__init__(what, message, more, sub)
 
 
@@ -96,5 +96,5 @@ class Ok(Result):
     __slots__ = ()
 
     def __init__(self, what: Any = None, message: ResMessage = OK,
-                 more: 'ResMore' = None, sub: Union['Result', dict, list['Result'], list[dict]] = None):
+                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
         super().__init__(what, message, more, sub)

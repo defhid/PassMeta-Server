@@ -1,7 +1,7 @@
 from threading import Thread
 from time import sleep
 from datetime import datetime, timedelta
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, Dict
 
 __all__ = (
     'Scheduler',
@@ -107,7 +107,7 @@ class SchedulerTask:
 class Scheduler:
     __slots__ = ('tasks', 'thread', 'period_s')
 
-    tasks: dict[str, SchedulerTask]  # name : SchedulerTask
+    tasks: Dict[str, SchedulerTask]  # name : SchedulerTask
     thread: Optional[SchedulerThread]
 
     def __init__(self, period_minutes: int):
