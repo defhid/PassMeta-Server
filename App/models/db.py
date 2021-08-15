@@ -1,22 +1,21 @@
 from App.special import *
 from App.models.extra import *
+from App.utils.db import *
 from datetime import datetime
 from sqlalchemy import Column, Integer, SmallInteger, DateTime, String, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from uuid import uuid4
+from typing import Any, Dict
 
 __all__ = (
     'User',
     'Log',
     'LogMore',
     'Session',
-    'DbModelBase',
+    'db_model_base',
 )
 
-DbModelBase = declarative_base()
 
-
-class User(DbModelBase):
+class User(db_model_base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -25,8 +24,16 @@ class User(DbModelBase):
     first_name = Column(String(150), nullable=False)
     last_name = Column(String(150), nullable=False)
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'id': self.id,
+            'login': self.login,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+        }
 
-class Log(DbModelBase):
+
+class Log(db_model_base):
     __tablename__ = "logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -47,7 +54,7 @@ class Log(DbModelBase):
     Kind.init()
 
 
-class LogMore(DbModelBase):
+class LogMore(db_model_base):
     __tablename__ = "logs_more"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -55,9 +62,9 @@ class LogMore(DbModelBase):
     info = Column(String(256))
 
 
-class Session(DbModelBase):
+class Session(db_model_base):
     __tablename__ = "sessions"
 
-    id = Column(String(36), primary_key=True, default=uuid4())
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)

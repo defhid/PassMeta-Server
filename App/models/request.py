@@ -11,8 +11,8 @@ __all__ = (
 
 
 class SignInPostData(BaseModel):
-    login: constr(min_length=5, max_length=User.login.property.columns[0].type.length)
-    password: constr(min_length=5, max_length=512)
+    login: str
+    password: str
 
     class Config:
         extra = "forbid"

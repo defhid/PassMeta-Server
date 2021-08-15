@@ -96,5 +96,11 @@ class Ok(Result):
     __slots__ = ()
 
     def __init__(self, what: Any = None, message: ResMessage = OK,
-                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
+                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None,
+                 data: Union[Dict[str, Any], List[Any], Any] = None):
         super().__init__(what, message, more, sub)
+
+        if type(data) is dict or type(data) is list:
+            self.args[0]['data'] = data
+
+        self.args[0]['data'] = data.to_dict()

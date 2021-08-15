@@ -76,6 +76,7 @@ def kill() -> bool:
         remove_pid_file(2)
 
     print(f"The process {pid} was successfully killed!")
+    print()
     return True
 
 
