@@ -3,7 +3,7 @@ from App.utils.db import AsyncDbSession
 from App.models.db import User, Log
 from App.special import *
 from App.services.logs import LogService
-from sqlalchemy import select, exists
+from sqlalchemy import select
 import hashlib
 
 __all__ = (
@@ -29,7 +29,7 @@ class UserService:
 
         # TODO: many many checks
 
-        if await self.db.query_scalar(bool, exists().where(User.login == login)):
+        if await self.db.query_first(User, select(User).where(User.login == login)):
             await LogService(self.db).write_log(
                 Log.Kind.USER_REGISTER_FAILURE,
                 more=f"login:{login}"

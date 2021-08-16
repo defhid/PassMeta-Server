@@ -30,9 +30,6 @@ class AsyncDbSession(AsyncSession):
     async def query(self, _: Type[MT], query: Select) -> Iterable[MT]:
         return map(lambda row: row[0], await self.execute(query))
 
-    async def query_scalar(self, _: Type[ST], query: Executable) -> ST:
-        return (await self.execute(query)).scalar()
-
 
 db_async_engine = create_async_engine(DB_CONNECTION_STRING, echo=DEBUG)
 db_model_base = declarative_base()
