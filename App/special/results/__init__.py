@@ -1,3 +1,3 @@
-from .results import *
-from .messages import *
-from .more import *
+from ._results import *
+from ._messages import *
+from ._more import *

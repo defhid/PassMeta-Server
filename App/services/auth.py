@@ -3,11 +3,15 @@ from starlette.responses import JSONResponse
 from sqlalchemy import select
 from typing import Optional
 import hashlib
+import datetime
 
-from App.utils.db import *
-from App.models.db import Session, User
 from App.special import *
+from App.utils.db import *
+from App.models.db import Session, User, Log
 from App.models.request import SignInPostData
+from App.settings import SESSION_AGE
+from App.services.logs import LogService
+
 
 __all__ = (
     'AuthService',
@@ -15,72 +19,95 @@ __all__ = (
 
 
 class AuthService:
-    @classmethod
-    async def try_get_user_async(cls, request: Request, db_session: AsyncSession) -> Optional[User]:
+    __slots__ = ('db',)
+
+    def __init__(self, db_session: AsyncDbSession):
+        self.db = db_session
+
+    async def get_session(self, request: Request) -> Optional[Session]:
+        """ Auto-commit.
+        """
         session_id = request.cookies.get('session')
         if session_id:
-            # TODO: check session date!
-            return (await db_session.execute(select(User)
-                                             .join(Session, User.id == Session.user_id)
-                                             .where(Session.id == session_id))).first()
+            session = await self.db.query_first(Session, select(Session).where(Session.id == session_id))
+            if (datetime.datetime.now() - session.created_on).days > SESSION_AGE:
+                await self.db.delete(session)
+                await self.db.commit()
+            else:
+                return session
         return None
 
-    @classmethod
-    async def get_user_async(cls, request: Request, db_session: AsyncSession) -> User:
-        """ Raises: AUTH_ERR. """
-        session_id = request.cookies.get('session')
-        if session_id:
-            # TODO: check session date!
-            user = (await db_session.execute(select(User)
-                                             .join(Session, User.id == Session.user_id)
-                                             .where(Session.id == session_id))).first()
-            if user is not None:
-                return user
+    async def get_user(self, request: Request) -> User:
+        """ Auto-commit: handle session.
+            Raises: AUTH_ERR.
+        """
+        session = await self.get_session(request)
+        if session:
+            user = await self.db.query_first(User, select(User).where(User.id == session.user_id))
+            if user:
+                if user.is_active:
+                    return user
+                else:
+                    raise Bad(None, NOT_AVAILABLE, MORE.text("Учётная запись неактивна!"))
+            else:
+                await self.db.delete(user)
+                await self.db.commit()
 
         raise Bad(None, AUTH_ERR)
 
-    @classmethod
-    async def authorize(cls, user: User, request: Request, db_session: AsyncSession) -> JSONResponse:
-        """ Warning: auto-commit. """
+    async def authorize(self, user: User, request: Request) -> JSONResponse:
+        """ Auto-commit.
+        """
         session_id = request.cookies.get('session')
 
         if session_id:
-            session = (await db_session.execute(
-                select(Session).where(Session.id == session_id)
-            )).first()
+            session = await self.db.query_first(Session, select(Session).where(Session.id == session_id))
             if session is not None:
-                await db_session.delete(session)
+                await self.db.delete(session)
 
         session = Session(user_id=user.id)
 
-        db_session.add(session)
-        await db_session.commit()
+        self.db.add(session)
+        await self.db.commit()
 
-        response = JSONResponse(Ok(data=user).dict())
+        response = Ok().as_response(data=user.to_dict())
         response.set_cookie('session', session.id, httponly=True)
+
         return response
 
-    @classmethod
-    async def authenticate(cls, data: SignInPostData, db_session: AsyncSession) -> User:
+    async def authenticate(self, data: SignInPostData, request: Request) -> User:
+        """ Auto-commit: logs.
+            Raises: NOT_EXIST_ERR.
+        """
         password_hash = hashlib.sha512(data.password.encode('utf-8')).hexdigest()
 
-        user = (await db_session.execute(
-            select(User).where(User.login == data.login.strip() and User.pwd == password_hash)
-        )).scalars().first()
-
-        if user is None:
+        user = await self.db.query_first(
+            User, select(User).where(User.login == data.login.strip() and User.pwd == password_hash)
+        )
+        if user:
+            if user.is_active:
+                await LogService(self.db).write_log(
+                    Log.Kind.USER_SIGN_IN_SUCCESS,
+                    entity_id=user.id,
+                    more=f"{request.client.host}:{request.client.port}"
+                )
+                return user
+            else:
+                await LogService(self.db).write_log(
+                    Log.Kind.USER_SIGN_IN_FAILURE,
+                    more=f"{request.client.host}:{request.client.port},inactive,login:{data.login}"
+                )
+                raise Bad('user', NOT_AVAILABLE, MORE.text("Учётная запись неактивна!"))
+        else:
+            await LogService(self.db).write_log(
+                Log.Kind.USER_SIGN_IN_FAILURE,
+                more=f"{request.client.host}:{request.client.port},login:{data.login}"
+            )
             raise Bad('user', NOT_EXIST_ERR)
 
-        return user
-
-    @classmethod
-    async def sign_out(cls, request: Request, db_session: AsyncSession):
-        """ Warning: auto-commit """
-        session_id = request.cookies.get('session')
-        if session_id:
-            session = (await db_session.execute(
-                select(Session).where(Session.id == session_id)
-            )).first()
-            if session is not None:
-                await db_session.delete(session)
-                await db_session.commit()
+    async def sign_out(self, request: Request):
+        """ Auto-commit. """
+        session = self.get_session(request)
+        if session:
+            await self.db.delete(session)
+            await self.db.commit()

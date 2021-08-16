@@ -1,2 +1,2 @@
-from .classes import *
+from ._classes import *
 from .results import *

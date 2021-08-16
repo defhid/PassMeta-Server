@@ -1,8 +1,9 @@
 from App.models.request import SignUpPostData, UserSelfPatchData
-from App.utils.db import AsyncSession
-from App.models.db import User
+from App.utils.db import AsyncDbSession
+from App.models.db import User, Log
 from App.special import *
-from sqlalchemy.future import select
+from App.services.logs import LogService
+from sqlalchemy import select, exists
 import hashlib
 
 __all__ = (
@@ -11,16 +12,28 @@ __all__ = (
 
 
 class UserService:
-    @classmethod
-    async def post(cls, data: SignUpPostData, db_session: AsyncSession) -> User:
-        """ Warning: auto-commit. """
+    __slots__ = ('db',)
+
+    def __init__(self, db_session: AsyncDbSession):
+        self.db = db_session
+
+    async def post(self, data: SignUpPostData) -> User:
+        """ Auto-commit.
+            Raises:
+                ALREADY_USED_ERR: 'login',
+                ...
+        """
         login = data.login.strip()
         first_name = data.first_name.strip()
         last_name = data.last_name.strip()
 
         # TODO: many many checks
 
-        if (await db_session.execute(select(User).where(User.login == login))).first():
+        if await self.db.query_scalar(bool, exists().where(User.login == login)):
+            await LogService(self.db).write_log(
+                Log.Kind.USER_REGISTER_FAILURE,
+                more=f"login:{login}"
+            )
             raise Bad('login', ALREADY_USED_ERR)
 
         user = User(
@@ -28,14 +41,20 @@ class UserService:
             pwd=hashlib.sha512(data.password.encode('utf-8')).hexdigest(),
             first_name=first_name,
             last_name=last_name,
+            is_active=True,
         )
 
-        db_session.add(user)
-        await db_session.commit()
+        self.db.add(user)
+
+        await LogService(self.db).write_log(
+            Log.Kind.USER_REGISTER_SUCCESS,
+            user.id
+        )  # + commit
 
         return user
 
-    @classmethod
-    async def patch(cls, user: User, data: UserSelfPatchData, db_session: AsyncSession) -> User:
-        """ Warning: auto-commit. """
+    async def patch(self, user: User, data: UserSelfPatchData) -> User:
+        """ Auto-commit.
+            Raises: ...
+        """
         return user

@@ -1,5 +1,6 @@
-from App.special.results.messages import ResMessage, OK
-from App.special.results.more import *
+from App.special.results._messages import ResMessage, OK
+from App.special.results._more import *
+from starlette.responses import JSONResponse
 from typing import Optional, Any, Union, List, Dict
 
 __all__ = (
@@ -77,11 +78,16 @@ class Result(Exception):
         else:
             for i in range(len(value)):
                 if isinstance(value[i], Result):
-                    value[i] = value[i].dict()
+                    value[i] = value[i].as_dict()
             self.args[0]['sub'] = value
 
-    def dict(self) -> Dict[str, object]:
+    def as_dict(self) -> Dict[str, object]:
         return self.args[0]
+
+    def as_response(self, data: Any = None) -> JSONResponse:
+        if data is not None:
+            self.args[0]['data'] = data
+        return JSONResponse(self.args[0], status_code=self.message.response_status_code)
 
 
 class Bad(Result):
@@ -96,11 +102,5 @@ class Ok(Result):
     __slots__ = ()
 
     def __init__(self, what: Any = None, message: ResMessage = OK,
-                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None,
-                 data: Union[Dict[str, Any], List[Any], Any] = None):
+                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
         super().__init__(what, message, more, sub)
-
-        if type(data) is dict or type(data) is list:
-            self.args[0]['data'] = data
-
-        self.args[0]['data'] = data.to_dict()
