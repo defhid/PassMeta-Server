@@ -1,14 +1,11 @@
-from typing import Type, Optional
-
 __all__ = (
-    'LogKind',
+    'HistoryKind',
 )
 
 
-class LogKind:
-    __slots__ = ('id', 'name', 'entity_model')
+class HistoryKind:
+    __slots__ = ('id', 'name')
 
-    def __init__(self, kind_id: int, kind_name: str, entity_model: Optional[Type]):
+    def __init__(self, kind_id: int, kind_name: str):
         self.id = kind_id
         self.name = kind_name
-        self.entity_model = entity_model

@@ -70,6 +70,11 @@ NOT_EXIST_ERR = ResMessage(
     "Не существует!"
 )
 
+NOT_IMPLEMENTED = ResMessage(
+    "NOT IMPLEMENTED",
+    "Функционал в разработке!"
+)
+
 OK = ResMessage(
     "OK",
     "Ок"

@@ -1,15 +1,16 @@
-from fastapi import FastAPI, Request, Depends
-from fastapi.exceptions import RequestValidationError
-
 from App.models.request import *
 from App.utils.db import *
+from App.utils.passfile import PassFileUtils
 from App.special import *
 from App.settings import DEBUG
-
 from App.services import (
     AuthService,
     UserService,
+    PassFileService,
 )
+
+from fastapi import FastAPI, Request, Depends
+from fastapi.exceptions import RequestValidationError
 
 app = FastAPI(debug=DEBUG)
 
@@ -39,17 +40,20 @@ async def validation_exception_handler(_: Request, ex: Exception):
 
 @app.on_event("startup")
 async def on_startup():
-    async with db_async_engine.begin() as conn:
-        await conn.run_sync(db_model_base.metadata.create_all)
+    await DbUtils.ensure_models_created()
+    PassFileUtils.ensure_folders_created()
 
 
 # endregion
 
 
+DB_SESSION_GETTER = Depends(DbUtils.session_getter)
+
+
 @app.post("/auth/sign-in")
 async def sign_in(body: SignInPostData,
                   request: Request,
-                  db_session: AsyncDbSession = Depends(db_session_getter)):
+                  db_session: AsyncDbSession = DB_SESSION_GETTER):
 
     service = AuthService(db_session)
     user = await service.authenticate(body, request)
@@ -58,44 +62,64 @@ async def sign_in(body: SignInPostData,
 
 @app.post("/auth/sign-out")
 async def sign_out(request: Request,
-                   db_session: AsyncDbSession = Depends(db_session_getter)):
+                   db_session: AsyncDbSession = DB_SESSION_GETTER):
 
     await AuthService(db_session).sign_out(request)
     return Ok().as_response()
 
 
-@app.post("/auth/sign-up")
-async def sign_up(body: SignUpPostData,
-                  request: Request,
-                  db_session: AsyncDbSession = Depends(db_session_getter)):
+@app.get("/passfile/{passfile_id}")
+async def passfile_get(passfile_id: int,
+                       request: Request,
+                       db_session: AsyncDbSession = DB_SESSION_GETTER):
 
-    user = await UserService(db_session).post(body)
-    return await AuthService(db_session).authorize(user, request)
-
-
-@app.get("/passfile")
-async def passfile_get(request: Request,
-                       db_session: AsyncDbSession = Depends(db_session_getter)):
-    return {"message": "passfile get"}
+    user = await AuthService(db_session).get_user(request)
+    passfile = await PassFileService(db_session).get_file(passfile_id, user, request)
+    return Ok().as_response(data=passfile.to_dict())
 
 
 @app.post("/passfile")
 async def passfile_post(body: PassfilePostData,
                         request: Request,
-                        db_session: AsyncDbSession = Depends(db_session_getter)):
-    return {"message": "passfile post"}
+                        db_session: AsyncDbSession = DB_SESSION_GETTER):
+
+    user = await AuthService(db_session).get_user(request)
+    passfile = await PassFileService(db_session).save_file(body, user, request)
+    return Ok().as_response(data=passfile.to_dict())
+
+
+@app.post("/passfile/{passfile_id}")
+async def passfile_delete(passfile_id: int,
+                          request: Request,
+                          db_session: AsyncDbSession = DB_SESSION_GETTER):
+
+    user = await AuthService(db_session).get_user(request)
+    await PassFileService(db_session).delete_file(passfile_id, user, request)
+    return Ok().as_response()
+
+
+@app.post("/users/new")
+async def user_new_post(body: SignUpPostData,
+                        request: Request,
+                        db_session: AsyncDbSession = DB_SESSION_GETTER):
+
+    user = await UserService(db_session).create_user(body, request)
+    return await AuthService(db_session).authorize(user, request)
 
 
 @app.get("/users/me")
-async def me_get(request: Request,
-                 db_session: AsyncDbSession = Depends(db_session_getter)):
+async def user_me_get(request: Request,
+                      db_session: AsyncDbSession = DB_SESSION_GETTER):
 
     user = await AuthService(db_session).get_user(request)
     return Ok().as_response(data=user.to_dict())
 
 
 @app.patch("/users/me")
-async def me_patch(body: UserSelfPatchData,
-                   request: Request,
-                   db_session: AsyncDbSession = Depends(db_session_getter)):
-    return {"message": "passfile post"}
+async def user_me_patch(body: UserPatchData,
+                        request: Request,
+                        db_session: AsyncDbSession = DB_SESSION_GETTER):
+
+    user = await AuthService(db_session).get_user(request)
+    user = await UserService(db_session).edit_user(user.id, body, user, request)
+    return Ok().as_response(data=user.to_dict())

@@ -1,11 +1,11 @@
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, conint
 from typing import Optional
 from App.models.db import *
 
 __all__ = (
     'SignInPostData',
     'SignUpPostData',
-    'UserSelfPatchData',
+    'UserPatchData',
     'PassfilePostData',
 )
 
@@ -28,7 +28,7 @@ class SignUpPostData(BaseModel):
         extra = "forbid"
 
 
-class UserSelfPatchData(BaseModel):
+class UserPatchData(BaseModel):
     login: Optional[constr(min_length=5, max_length=User.login.property.columns[0].type.length)]
     password: Optional[constr(min_length=5, max_length=512)]
     new_password: Optional[constr(min_length=5, max_length=512)]
@@ -37,6 +37,7 @@ class UserSelfPatchData(BaseModel):
 
 
 class PassfilePostData(BaseModel):
+    passfile_id: Optional[conint(gt=0)]
     smth: constr(max_length=2_097_152)
 
     class Config:

@@ -8,6 +8,9 @@ __all__ = (
 )
 
 
+# TODO: допилить для проверки сессий и архивов
+
+
 class SchedulerThread(Thread):
     def __init__(self, scheduler: 'Scheduler'):
         super().__init__()

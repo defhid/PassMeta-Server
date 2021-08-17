@@ -1,5 +1,16 @@
+import os
+
+# noinspection PyUnresolvedReferences
+from .private import (
+    DB_CONNECTION_STRING,
+    KEY_PHRASE_BYTES,
+)
+
 DEBUG = True
 
-DB_CONNECTION_STRING = "postgresql+asyncpg://postgres:postgres@localhost:5432/passmeta"
+SESSION_LIFETIME_DAYS = 1
 
-SESSION_AGE = 1  # max session lifetime in days (TODO: 120)
+ROOT_DIR = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__file__)))[:-1])
+
+PASS_FILES_FOLDER = os.path.join(ROOT_DIR, "PassFiles")
+PASS_FILES_ARCHIVE_FOLDER = os.path.join(ROOT_DIR, "PassFilesArchive")

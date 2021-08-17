@@ -1,9 +1,10 @@
-from App.models.request import SignUpPostData, UserSelfPatchData
-from App.utils.db import AsyncDbSession
-from App.models.db import User, Log
+from App.models.request import SignUpPostData, UserPatchData
+from App.services.base import DbServiceBase
+from App.models.db import User, History
 from App.special import *
-from App.services.logs import LogService
+
 from sqlalchemy import select
+from starlette.requests import Request
 import hashlib
 
 __all__ = (
@@ -11,13 +12,10 @@ __all__ = (
 )
 
 
-class UserService:
-    __slots__ = ('db',)
+class UserService(DbServiceBase):
+    __slots__ = ()
 
-    def __init__(self, db_session: AsyncDbSession):
-        self.db = db_session
-
-    async def post(self, data: SignUpPostData) -> User:
+    async def create_user(self, data: SignUpPostData, request: Request) -> User:
         """ Auto-commit.
             Raises:
                 ALREADY_USED_ERR: 'login',
@@ -30,9 +28,11 @@ class UserService:
         # TODO: many many checks
 
         if await self.db.query_first(User, select(User).where(User.login == login)):
-            await LogService(self.db).write_log(
-                Log.Kind.USER_REGISTER_FAILURE,
-                more=f"login:{login}"
+            await self.history_writer.write(
+                History.Kind.USER_REGISTER_FAILURE,
+                None,
+                more=f"login:{login}",
+                request=request
             )
             raise Bad('login', ALREADY_USED_ERR)
 
@@ -46,15 +46,15 @@ class UserService:
 
         self.db.add(user)
 
-        await LogService(self.db).write_log(
-            Log.Kind.USER_REGISTER_SUCCESS,
-            user.id
-        )  # + commit
-
+        await self.history_writer.write(  # autocommit
+            History.Kind.USER_REGISTER_SUCCESS,
+            user,
+            request=request
+        )
         return user
 
-    async def patch(self, user: User, data: UserSelfPatchData) -> User:
+    async def edit_user(self, user_id: int, data: UserPatchData, requester: User, request: Request) -> User:
         """ Auto-commit.
             Raises: ...
         """
-        return user
+        raise Bad(None, NOT_IMPLEMENTED)  # TODO: сделать

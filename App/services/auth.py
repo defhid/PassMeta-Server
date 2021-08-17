@@ -5,24 +5,19 @@ from typing import Optional
 import hashlib
 import datetime
 
+from App.services.base import DbServiceBase
 from App.special import *
-from App.utils.db import *
-from App.models.db import Session, User, Log
+from App.models.db import Session, User, History
 from App.models.request import SignInPostData
-from App.settings import SESSION_AGE
-from App.services.logs import LogService
-
+from App.settings import SESSION_LIFETIME_DAYS
 
 __all__ = (
     'AuthService',
 )
 
 
-class AuthService:
-    __slots__ = ('db',)
-
-    def __init__(self, db_session: AsyncDbSession):
-        self.db = db_session
+class AuthService(DbServiceBase):
+    __slots__ = ()
 
     async def get_session(self, request: Request) -> Optional[Session]:
         """ Auto-commit.
@@ -30,7 +25,7 @@ class AuthService:
         session_id = request.cookies.get('session')
         if session_id:
             session = await self.db.query_first(Session, select(Session).where(Session.id == session_id))
-            if (datetime.datetime.now() - session.created_on).days > SESSION_AGE:
+            if (datetime.datetime.now() - session.created_on).days > SESSION_LIFETIME_DAYS:
                 await self.db.delete(session)
                 await self.db.commit()
             else:
@@ -84,24 +79,30 @@ class AuthService:
         user = await self.db.query_first(
             User, select(User).where(User.login == data.login.strip() and User.pwd == password_hash)
         )
+
         if user:
             if user.is_active:
-                await LogService(self.db).write_log(
-                    Log.Kind.USER_SIGN_IN_SUCCESS,
-                    entity_id=user.id,
-                    more=f"{request.client.host}:{request.client.port}"
+                await self.history_writer.write(
+                    History.Kind.USER_SIGN_IN_SUCCESS,
+                    user,
+                    more=f"user:{user.id}",
+                    request=request
                 )
                 return user
             else:
-                await LogService(self.db).write_log(
-                    Log.Kind.USER_SIGN_IN_FAILURE,
-                    more=f"{request.client.host}:{request.client.port},inactive,login:{data.login}"
+                await self.history_writer.write(
+                    History.Kind.USER_SIGN_IN_FAILURE,
+                    user,
+                    more=f"INACTIVE,login:{data.login}",
+                    request=request
                 )
                 raise Bad('user', NOT_AVAILABLE, MORE.text("Учётная запись неактивна!"))
         else:
-            await LogService(self.db).write_log(
-                Log.Kind.USER_SIGN_IN_FAILURE,
-                more=f"{request.client.host}:{request.client.port},login:{data.login}"
+            await self.history_writer.write(
+                History.Kind.USER_SIGN_IN_FAILURE,
+                None,
+                more=f"login:{data.login}",
+                request=request
             )
             raise Bad('user', NOT_EXIST_ERR)
 

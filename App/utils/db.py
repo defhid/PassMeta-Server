@@ -2,15 +2,12 @@ from App.settings import DB_CONNECTION_STRING, DEBUG
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.sql.expression import Select, Executable
+from sqlalchemy.sql.expression import Select
 from typing import Optional, Iterable, TypeVar, Type
 
 __all__ = (
-    'db_async_engine',
-    'db_async_session',
-    'db_session_getter',
     'db_model_base',
-
+    'DbUtils',
     'AsyncDbSession',
 )
 
@@ -40,6 +37,13 @@ db_async_session = sessionmaker(
 )
 
 
-async def db_session_getter() -> AsyncDbSession:
-    async with db_async_session() as session:
-        yield session
+class DbUtils:
+    @staticmethod
+    async def session_getter() -> AsyncDbSession:
+        async with db_async_session() as session:
+            yield session
+
+    @staticmethod
+    async def ensure_models_created():
+        async with db_async_engine.begin() as conn:
+            await conn.run_sync(db_model_base.metadata.create_all)
