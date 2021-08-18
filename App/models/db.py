@@ -1,7 +1,6 @@
 from App.special import *
 from App.models.extra import *
-from App.utils.db import db_model_base as DbModelBase
-from App.utils.passfile import PassFileUtils
+from App.utils.db import DbModelBase
 from datetime import datetime
 from sqlalchemy import Column, Integer, SmallInteger, DateTime, String, ForeignKey, Boolean
 from uuid import uuid4
@@ -52,27 +51,21 @@ class PassFile(DbModelBase):
     user_id = Column(Integer, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     changed_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    version = Column(Integer, default=1, nullable=False)
     is_archived = Column(Boolean, default=False, nullable=False)
-
-    data: bytes
 
     @property
     def path(self) -> str:
-        if self.is_archived:
-            return PassFileUtils.make_filepath_archived(self.id)
-        return PassFileUtils.make_filepath_normal(self.id, self.user_id)
+        return PassFileUtils.get_filepath(self)
 
-    @property
-    def archive_path(self) -> str:
-        return PassFileUtils.make_filepath_archived(self.id)
-
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, data: bytes = None) -> Dict[str, Any]:
         d = {
             'id': self.id,
-            'created_on': self.created_on,
-            'changed_on': self.changed_on,
+            'created_on': str(self.created_on),
+            'changed_on': str(self.changed_on),
+            'version': self.version,
             'is_archived': self.is_archived,
-            'data': self.data if hasattr(self, 'data') else None,
+            'data': data.decode('utf-8'),
         }
         return d
 
@@ -113,3 +106,7 @@ class HistoryMore(DbModelBase):
     id = Column(Integer, primary_key=True, autoincrement=True)
     history_id = Column(Integer, ForeignKey("history.id"), nullable=True)
     info = Column(String(256))
+
+
+if True:
+    from App.utils.passfile import PassFileUtils

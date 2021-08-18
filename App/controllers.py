@@ -1,7 +1,7 @@
-from App.models.request import *
-from App.utils.db import *
-from App.utils.passfile import PassFileUtils
 from App.special import *
+from App.models.request import *
+from App.utils.db import DbUtils, AsyncDbSession
+from App.utils.passfile import PassFileUtils
 from App.settings import DEBUG
 from App.services import (
     AuthService,
@@ -12,9 +12,28 @@ from App.services import (
 from fastapi import FastAPI, Request, Depends
 from fastapi.exceptions import RequestValidationError
 
+
 app = FastAPI(debug=DEBUG)
 
-# region exception handlers
+
+# region Middlewares
+
+
+@app.middleware('http')
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Result as e:
+        return e.as_response()
+    except Exception as e:
+        # TODO: log
+        return Bad(None, SERVER_ERR, MORE.text(str(e)) if e.args else None).as_response()
+
+
+# endregion
+
+
+# region FastApi exception handlers
 
 
 @app.exception_handler(RequestValidationError)
@@ -22,20 +41,10 @@ async def validation_exception_handler(_: Request, ex: RequestValidationError):
     return Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})).as_response()
 
 
-@app.exception_handler(Result)
-async def validation_exception_handler(_: Request, ex: Result):
-    return ex.as_response()
-
-
-@app.exception_handler(Exception)
-async def validation_exception_handler(_: Request, ex: Exception):
-    return Bad(None, SERVER_ERR, MORE.text(str(ex))).as_response()
-
-
 # endregion
 
 
-# region event handlers
+# region Event handlers
 
 
 @app.on_event("startup")
@@ -47,79 +56,103 @@ async def on_startup():
 # endregion
 
 
-DB_SESSION_GETTER = Depends(DbUtils.session_getter)
+DB = Depends(DbUtils.session_maker)
 
+
+# region Auth
 
 @app.post("/auth/sign-in")
-async def sign_in(body: SignInPostData,
-                  request: Request,
-                  db_session: AsyncDbSession = DB_SESSION_GETTER):
-
+async def controller(
+        body: SignInPostData,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     service = AuthService(db_session)
     user = await service.authenticate(body, request)
     return await service.authorize(user, request)
 
 
 @app.post("/auth/sign-out")
-async def sign_out(request: Request,
-                   db_session: AsyncDbSession = DB_SESSION_GETTER):
-
+async def controller(
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     await AuthService(db_session).sign_out(request)
     return Ok().as_response()
 
 
-@app.get("/passfile/{passfile_id}")
-async def passfile_get(passfile_id: int,
-                       request: Request,
-                       db_session: AsyncDbSession = DB_SESSION_GETTER):
+# endregion
 
+
+# region Passfile
+
+
+@app.get("/passfile/{passfile_id}")
+async def controller(
+        passfile_id: int,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     user = await AuthService(db_session).get_user(request)
-    passfile = await PassFileService(db_session).get_file(passfile_id, user, request)
-    return Ok().as_response(data=passfile.to_dict())
+    passfile, data = await PassFileService(db_session).get_file(passfile_id, user, request)
+    return Ok().as_response(data=passfile.to_dict(data))
 
 
 @app.post("/passfile")
-async def passfile_post(body: PassfilePostData,
-                        request: Request,
-                        db_session: AsyncDbSession = DB_SESSION_GETTER):
-
+async def controller(
+        body: PassfilePostData,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     user = await AuthService(db_session).get_user(request)
     passfile = await PassFileService(db_session).save_file(body, user, request)
     return Ok().as_response(data=passfile.to_dict())
 
 
 @app.post("/passfile/{passfile_id}")
-async def passfile_delete(passfile_id: int,
-                          request: Request,
-                          db_session: AsyncDbSession = DB_SESSION_GETTER):
-
+async def controller(
+        passfile_id: int,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     user = await AuthService(db_session).get_user(request)
     await PassFileService(db_session).delete_file(passfile_id, user, request)
     return Ok().as_response()
 
 
-@app.post("/users/new")
-async def user_new_post(body: SignUpPostData,
-                        request: Request,
-                        db_session: AsyncDbSession = DB_SESSION_GETTER):
+# endregion
 
+
+# region Users
+
+@app.post("/users/new")
+async def controller(
+        body: SignUpPostData,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     user = await UserService(db_session).create_user(body, request)
     return await AuthService(db_session).authorize(user, request)
 
 
 @app.get("/users/me")
-async def user_me_get(request: Request,
-                      db_session: AsyncDbSession = DB_SESSION_GETTER):
-
+async def controller(
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     user = await AuthService(db_session).get_user(request)
     return Ok().as_response(data=user.to_dict())
 
 
 @app.patch("/users/me")
-async def user_me_patch(body: UserPatchData,
-                        request: Request,
-                        db_session: AsyncDbSession = DB_SESSION_GETTER):
-
+async def controller(
+        body: UserPatchData,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
     user = await AuthService(db_session).get_user(request)
     user = await UserService(db_session).edit_user(user.id, body, user, request)
     return Ok().as_response(data=user.to_dict())
+
+
+# endregion

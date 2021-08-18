@@ -74,12 +74,12 @@ class AuthService(DbServiceBase):
         """ Auto-commit: logs.
             Raises: NOT_EXIST_ERR.
         """
+        login = data.login.strip()
         password_hash = hashlib.sha512(data.password.encode('utf-8')).hexdigest()
 
-        user = await self.db.query_first(
-            User, select(User).where(User.login == data.login.strip() and User.pwd == password_hash)
-        )
-
+        user = await self.db.query_first(User, select(User)
+                                         .where(User.login == login)
+                                         .where(User.pwd == password_hash))
         if user:
             if user.is_active:
                 await self.history_writer.write(

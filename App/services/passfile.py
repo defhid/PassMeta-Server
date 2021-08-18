@@ -6,8 +6,6 @@ from App.special import *
 
 from sqlalchemy import select
 from starlette.requests import Request
-
-import os
 import datetime
 
 __all__ = (
@@ -18,7 +16,7 @@ __all__ = (
 class PassFileService(DbServiceBase):
     __slots__ = ()
 
-    async def get_file(self, passfile_id: int, user: User, request: Request) -> PassFile:
+    async def get_file(self, passfile_id: int, user: User, request: Request) -> (PassFile, bytes):
         """ Raises: NOT_EXIST_ERR, ACCESS_ERR.
         """
         passfile = await self.db.query_first(PassFile, select(PassFile).where(PassFile.id == passfile_id))
@@ -41,8 +39,7 @@ class PassFileService(DbServiceBase):
             request=request
         )
 
-        passfile.data = await PassFileUtils.read_file(passfile.path)
-        return passfile
+        return passfile, await PassFileUtils.read_file(passfile)
 
     async def save_file(self, data: PassfilePostData, user: User, request: Request) -> PassFile:
         """ Auto-commit.
@@ -66,11 +63,10 @@ class PassFileService(DbServiceBase):
                 raise Bad(None, ACCESS_ERR)
 
             passfile.changed_on = datetime.datetime.utcnow()
+            passfile.version += 1
         else:
             passfile = PassFile(user_id=user.id)
             self.db.add(passfile)
-
-        await PassFileUtils.write_file(data.smth, passfile.path)
 
         await self.history_writer.write(  # autocommit
             History.Kind.SET_PASSFILE_SUCCESS,
@@ -78,6 +74,17 @@ class PassFileService(DbServiceBase):
             more=f"pf:{passfile.id}",
             request=request
         )
+
+        await self.db.refresh(passfile)
+
+        if not await PassFileUtils.write_file(passfile, data.smth):
+            if passfile.version == 1:
+                await self.db.delete(passfile)
+            else:
+                passfile.version -= 1
+            await self.db.commit()
+            raise Bad(None, UNKNOWN_ERR)
+
         return passfile
 
     async def delete_file(self, passfile_id: int, user: User, request: Request):
@@ -97,7 +104,11 @@ class PassFileService(DbServiceBase):
             )
             raise Bad(None, ACCESS_ERR)
 
-        await self.db.delete(passfile)
+        if passfile.is_archived:
+            return Bad('passfile', NOT_AVAILABLE)
+
+        passfile.is_archived = True
+
         await self.history_writer.write(  # autocommit
             History.Kind.DELETE_PASSFILE_SUCCESS,
             user,
@@ -105,13 +116,6 @@ class PassFileService(DbServiceBase):
             request=request
         )
 
-        filepath = passfile.path
-        filepath_archive = passfile.archive_path
-
-        if filepath != filepath_archive:
-            try:
-                if os.path.exists(filepath):
-                    os.replace(filepath, filepath_archive)
-            except Exception as e:
-                pass
-                # TODO: log critical
+        if not PassFileUtils.archive_file(passfile):
+            passfile.is_archived = False
+            await self.db.commit()

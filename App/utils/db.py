@@ -1,14 +1,15 @@
-from App.settings import DB_CONNECTION_STRING, DEBUG
+from App.settings import DB_CONNECTION_STRING, DB_CONNECTION_POOL_SIZE, DEBUG
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.sql.expression import Select
-from typing import Optional, Iterable, TypeVar, Type
+from sqlalchemy.pool import QueuePool
+from typing import Optional, Iterable, TypeVar, Type, Generator
 
 __all__ = (
-    'db_model_base',
-    'DbUtils',
     'AsyncDbSession',
+    'DbModelBase',
+    'DbUtils',
 )
 
 
@@ -28,22 +29,34 @@ class AsyncDbSession(AsyncSession):
         return map(lambda row: row[0], await self.execute(query))
 
 
-db_async_engine = create_async_engine(DB_CONNECTION_STRING, echo=DEBUG)
-db_model_base = declarative_base()
+db_async_engine = create_async_engine(
+    DB_CONNECTION_STRING,
+    pool_size=DB_CONNECTION_POOL_SIZE,
+    max_overflow=0,
+    poolclass=QueuePool,
+    echo=DEBUG
+)
+
+DbModelBase = declarative_base()
+
 db_async_session = sessionmaker(
     db_async_engine,
     class_=AsyncDbSession,
-    expire_on_commit=False
+    expire_on_commit=False,
 )
 
 
 class DbUtils:
     @staticmethod
-    async def session_getter() -> AsyncDbSession:
+    async def session_maker() -> Generator[AsyncDbSession, None, None]:
+        """ Yields session in 'with' scope.
+        """
         async with db_async_session() as session:
             yield session
 
     @staticmethod
     async def ensure_models_created():
+        """ Create non-existent DB tables (models).
+        """
         async with db_async_engine.begin() as conn:
-            await conn.run_sync(db_model_base.metadata.create_all)
+            await conn.run_sync(DbModelBase.metadata.create_all)
