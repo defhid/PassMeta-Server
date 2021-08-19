@@ -2,13 +2,15 @@ from threading import Thread
 from time import sleep
 from datetime import datetime, timedelta
 from typing import Any, Optional, Callable, Dict
+import traceback
+import logging
 
 __all__ = (
     'Scheduler',
+    'SchedulerTask',
 )
 
-
-# TODO: допилить для проверки сессий и архивов
+logger = logging.getLogger(__name__)
 
 
 class SchedulerThread(Thread):
@@ -26,7 +28,7 @@ class SchedulerThread(Thread):
             for task_name in tuple(self.scheduler.tasks.keys()):
                 task = self.scheduler.tasks.get(task_name)
 
-                if task is None or not task.active or now < task.next_time:
+                if task is None or not task.is_active or now < task.next_time:
                     continue
 
                 task.run()
@@ -39,40 +41,30 @@ class SchedulerThread(Thread):
 class SchedulerTask:
     __slots__ = (
         'name',
-        'active',
+        'is_active',
         'is_single',
-        'interval',
-        'next_time',
+        'interval_s',
         'func',
+        'next_time',
     )
 
-    name: str
-    active: bool
-    is_single: bool
-    interval: int
-    next_time: Optional[datetime]
-    func: Callable[[], Any]
+    def __init__(self, name: str, active: bool, single: bool, interval_minutes: int,
+                 start_now: bool, func: Callable[[], Any]):
+        self.name: str = name
+        self.is_active: bool = active
+        self.is_single: bool = single
+        self.interval_s: int = interval_minutes * 60
+        self.func: Callable[[], Any] = func
+        self.next_time: Optional[datetime] = None
 
-    def __init__(self, name: str, active: bool, is_single: bool, interval: int,
-                 func: Callable[[], Any]):
-        """ Args:
-              name: str,
-              active: bool,
-              is_single: bool,
-              interval: seconds [int],
-              func: () -> Any.
-        """
-        self.name = name
-        self.active = active
-        self.is_single = is_single
-        self.interval = interval
-        self.func = func
+        if self.is_active:
+            self.set_next_time(start_now)
 
-        if self.active:
-            self.set_next_time()
-
-    def set_next_time(self):
-        self.next_time = datetime.now() + timedelta(seconds=self.interval)
+    def set_next_time(self, now: bool = False):
+        if now:
+            self.next_time = datetime.now()
+        else:
+            self.next_time = datetime.now() + timedelta(seconds=self.interval_s)
 
     def run(self):
         try:
@@ -83,64 +75,52 @@ class SchedulerTask:
             self._log_info(f"{self.name} successfully completed ({result})")
 
         if self.is_single:
-            self.active = False
+            self.is_active = False
         else:
-            self.set_next_time()
+            self.set_next_time(False)
 
     def activate(self, now: bool):
-        self.active = True
-        if now:
-            self.next_time = datetime.now()
-        else:
-            self.set_next_time()
+        self.is_active = True
+        self.set_next_time(now)
 
     def inactivate(self):
-        self.active = False
+        self.is_active = False
         self.next_time = None
 
     @staticmethod
     def _log_info(text: str):
-        print("SCHEDULER TASK", text)  # TODO: logger
+        logger.info("SCHEDULER TASK: " + text)
 
     @staticmethod
     def _log_critical(text: str, ex: Exception):
-        print("SCHEDULER TASK", text, ex)  # TODO: logger
+        logger.critical("SCHEDULER TASK: " + text, ex)
 
 
 class Scheduler:
     __slots__ = ('tasks', 'thread', 'period_s')
 
-    tasks: Dict[str, SchedulerTask]  # name : SchedulerTask
-    thread: Optional[SchedulerThread]
-
     def __init__(self, period_minutes: int):
-        self.tasks = dict()
-        self.thread = None
+        self.tasks: Dict[str, SchedulerTask] = dict()
+        self.thread: Optional[SchedulerThread] = None
         self.period_s = period_minutes * 60
 
-    def add(self, name: str, func: Callable[[], Any], interval_minutes: int, start_now: bool, single: bool):
-        self.tasks[name] = SchedulerTask(
-            name,
-            start_now,
-            single,
-            interval_minutes * 60,
-            func
-        )
+    def add(self, task: SchedulerTask):
+        self.tasks[task.name] = task
 
-    def remove(self, name):
+    def remove(self, name: str):
         self.tasks.pop(name, None)
 
     def run(self):
         self.thread = SchedulerThread(self)
         self.thread.start()
 
-    def pause_task(self, name):
+    def pause_task(self, name: str):
         """ Raises: KeyError """
         self.tasks[name].inactivate()
 
-    def resume_task(self, name):
+    def resume_task(self, name: str, start_now: bool):
         """ Raises: KeyError """
-        self.tasks[name].activate(True)
+        self.tasks[name].activate(start_now)
 
     def stop(self):
         self.thread.running = False

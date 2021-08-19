@@ -1,11 +1,10 @@
 class ResMessage(str):
-    __slots__ = ('rus', 'response_status_code')
+    __slots__ = ('response_status_code', )
     rus: str
     response_status_code: int
 
-    def __init__(self, _, rus: str, response_status_code=200):
+    def __init__(self, _, response_status_code=200):
         s = super()
-        s.__setattr__('rus', rus)
         s.__setattr__('response_status_code', response_status_code)
 
     def __new__(cls, message: str, *args, **kwargs):
@@ -29,109 +28,92 @@ class ResMessage(str):
 
 ACCESS_ERR = ResMessage(
     "ACCESS ERROR",
-    "Ошибка доступа!",
     403
 )
 
 ALREADY_USED_ERR = ResMessage(
-    "ALREADY USED",
-    "Уже используется!"
+    "ALREADY USED"
 )
 
 AUTH_ERR = ResMessage(
     "AUTH ERROR",
-    "Не авторизован!",
     401
 )
 
 BAD_REQUEST_ERR = ResMessage(
     "BAD REQUEST",
-    "Некорректный запрос!",
     400
 )
 
 DATA_ERR = ResMessage(
-    "INVALID DATA",
-    "Неверные данные!"
+    "INVALID DATA"
 )
 
 FORMAT_ERR = ResMessage(
-    "INCORRECT FORMAT",
-    "Неверный формат!"
+    "INCORRECT FORMAT"
 )
 
 NOT_AVAILABLE = ResMessage(
-    "NOT AVAILABLE",
-    "Ресурс недоступен!"
+    "NOT AVAILABLE"
 )
 
 NOT_EXIST_ERR = ResMessage(
-    "NOT EXIST",
-    "Не существует!"
+    "NOT EXIST"
 )
 
-NOT_IMPLEMENTED = ResMessage(
-    "NOT IMPLEMENTED",
-    "Функционал в разработке!"
+NOT_IMPLEMENTED_ERR = ResMessage(
+    "NOT IMPLEMENTED"
 )
 
 OK = ResMessage(
-    "OK",
-    "Ок"
+    "OK"
 )
 
 PROHIBITED_ERR = ResMessage(
-    "PROHIBITED",
-    "Запрещено!"
+    "PROHIBITED"
 )
 
 SERVER_ERR = ResMessage(
     "SERVER ERROR",
-    "Ошибка сервера!",
     500
 )
 
 SIZE_ERR = ResMessage(
-    "SIZE ERROR",
-    "Ошибка размера!"
+    "SIZE ERROR"
 )
 
 TOO_FEW_ERR = ResMessage(
-    "TOO FEW",
-    "Слишком мало!"
+    "TOO FEW"
 )
 
 TOO_LONG_ERR = ResMessage(
-    "TOO LONG",
-    "Слишком длинный!"
+    "TOO LONG"
 )
 
 TOO_MUCH_ERR = ResMessage(
-    "TOO MUCH",
-    "Слишком много!"
+    "TOO MUCH"
 )
 
 TOO_SHORT_ERR = ResMessage(
-    "TOO SHORT",
-    "Слишком короткий!"
+    "TOO SHORT"
 )
 
 TOO_SIMPLE_ERR = ResMessage(
-    "TOO SIMPLE",
-    "Слишком простой!"
+    "TOO SIMPLE"
 )
 
 UNKNOWN_ERR = ResMessage(
-    "UNKNOWN ERROR",
-    "Неизвестная ошибка!"
+    "UNKNOWN ERROR"
 )
 
 VAL_ERR = ResMessage(
-    "INCORRECT VALUE",
-    "Некорректное значение!"
+    "INCORRECT VALUE"
 )
 
 VAL_MISSED_ERR = ResMessage(
-    "VALUE MISSED",
-    "Пропущено значение!"
+    "VALUE MISSED"
+)
+
+WRONG_VAL_ERR = ResMessage(
+    "WRONG VALUE"
 )

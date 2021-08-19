@@ -1,9 +1,10 @@
 from App.settings import DB_CONNECTION_STRING, DB_CONNECTION_POOL_SIZE, DEBUG
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.sql.expression import Select
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import QueuePool
+
 from typing import Optional, Iterable, TypeVar, Type, Generator
 
 __all__ = (
@@ -13,8 +14,7 @@ __all__ = (
 )
 
 
-MT = TypeVar('MT', bound='db_model_base')  # model type
-ST = TypeVar('ST')  # scalar type
+MT = TypeVar('MT', bound='DbModelBase')  # model type
 
 
 class AsyncDbSession(AsyncSession):
@@ -60,3 +60,7 @@ class DbUtils:
         """
         async with db_async_engine.begin() as conn:
             await conn.run_sync(DbModelBase.metadata.create_all)
+
+    @staticmethod
+    def make_session() -> AsyncDbSession:
+        return db_async_session()

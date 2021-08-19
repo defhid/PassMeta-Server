@@ -54,10 +54,6 @@ class PassFile(DbModelBase):
     version = Column(Integer, default=1, nullable=False)
     is_archived = Column(Boolean, default=False, nullable=False)
 
-    @property
-    def path(self) -> str:
-        return PassFileUtils.get_filepath(self)
-
     def to_dict(self, data: bytes = None) -> Dict[str, Any]:
         d = {
             'id': self.id,
@@ -106,7 +102,3 @@ class HistoryMore(DbModelBase):
     id = Column(Integer, primary_key=True, autoincrement=True)
     history_id = Column(Integer, ForeignKey("history.id"), nullable=True)
     info = Column(String(256))
-
-
-if True:
-    from App.utils.passfile import PassFileUtils

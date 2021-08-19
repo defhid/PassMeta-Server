@@ -2,6 +2,8 @@ from App.special import *
 from App.models.request import *
 from App.utils.db import DbUtils, AsyncDbSession
 from App.utils.passfile import PassFileUtils
+from App.utils.scheduler import Scheduler, SchedulerTask
+from App.utils.session import SessionUtils
 from App.settings import DEBUG
 from App.services import (
     AuthService,
@@ -12,6 +14,12 @@ from App.services import (
 from fastapi import FastAPI, Request, Depends
 from fastapi.exceptions import RequestValidationError
 
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+scheduler = Scheduler(period_minutes=10)
 
 app = FastAPI(debug=DEBUG)
 
@@ -26,7 +34,7 @@ async def catch_exceptions_middleware(request: Request, call_next):
     except Result as e:
         return e.as_response()
     except Exception as e:
-        # TODO: log
+        logger.error(e)
         return Bad(None, SERVER_ERR, MORE.text(str(e)) if e.args else None).as_response()
 
 
@@ -51,6 +59,26 @@ async def validation_exception_handler(_: Request, ex: RequestValidationError):
 async def on_startup():
     await DbUtils.ensure_models_created()
     PassFileUtils.ensure_folders_created()
+
+    scheduler.add(SchedulerTask(
+        'SESSIONS CHECKER',
+        active=True,
+        single=False,
+        interval_minutes=(60 * 3),   # 3 hours
+        start_now=True,
+        func=SessionUtils.check_old_sessions
+    ))
+
+    scheduler.add(SchedulerTask(
+        'ARCHIVE PASSFILES CHECKER',
+        active=True,
+        single=False,
+        interval_minutes=(60 * 24 * 3),  # 3 days
+        start_now=(not DEBUG),
+        func=PassFileUtils.check_archive_files
+    ))
+
+    scheduler.run()
 
 
 # endregion
@@ -87,7 +115,7 @@ async def controller(
 # region Passfile
 
 
-@app.get("/passfile/{passfile_id}")
+@app.get("/passfiles/{passfile_id}")
 async def controller(
         passfile_id: int,
         request: Request,
@@ -98,7 +126,7 @@ async def controller(
     return Ok().as_response(data=passfile.to_dict(data))
 
 
-@app.post("/passfile")
+@app.post("/passfiles/new")
 async def controller(
         body: PassfilePostData,
         request: Request,
@@ -109,7 +137,7 @@ async def controller(
     return Ok().as_response(data=passfile.to_dict())
 
 
-@app.post("/passfile/{passfile_id}")
+@app.post("/passfiles/{passfile_id}")
 async def controller(
         passfile_id: int,
         request: Request,
