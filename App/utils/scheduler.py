@@ -1,16 +1,17 @@
+from App.utils.db import DbUtils
+from App.utils.logging import Logger
 from threading import Thread
 from time import sleep
 from datetime import datetime, timedelta
-from typing import Any, Optional, Callable, Dict
-import traceback
-import logging
+from typing import Any, Optional, Callable, Dict, Coroutine
+import asyncio
 
 __all__ = (
     'Scheduler',
     'SchedulerTask',
 )
 
-logger = logging.getLogger(__name__)
+logger = Logger(__file__)
 
 
 class SchedulerThread(Thread):
@@ -21,6 +22,9 @@ class SchedulerThread(Thread):
         self.daemon = True
 
     def run(self):
+        loop = asyncio.new_event_loop()
+        task_context = SchedulerTask.Context(DbUtils())
+
         self.running = True
         while self.running:
             now = datetime.now()
@@ -31,7 +35,9 @@ class SchedulerThread(Thread):
                 if task is None or not task.is_active or now < task.next_time:
                     continue
 
-                task.run()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(task.run(task_context))
+
                 if task.is_single:
                     self.scheduler.tasks.pop(task_name, None)
 
@@ -49,12 +55,12 @@ class SchedulerTask:
     )
 
     def __init__(self, name: str, active: bool, single: bool, interval_minutes: int,
-                 start_now: bool, func: Callable[[], Any]):
+                 start_now: bool, func: Callable[['SchedulerTask.Context'], Any]):
         self.name: str = name
         self.is_active: bool = active
         self.is_single: bool = single
         self.interval_s: int = interval_minutes * 60
-        self.func: Callable[[], Any] = func
+        self.func: Callable[['SchedulerTask.Context'], Coroutine] = func
         self.next_time: Optional[datetime] = None
 
         if self.is_active:
@@ -66,13 +72,16 @@ class SchedulerTask:
         else:
             self.next_time = datetime.now() + timedelta(seconds=self.interval_s)
 
-    def run(self):
+    async def run(self, db: 'SchedulerTask.Context'):
         try:
-            result = self.func()
+            result = await self.func(db)
         except Exception as e:
-            self._log_critical(f"{self.name} FAILED", e)
+            self._log_critical(f"{self.name} failed", e)
         else:
-            self._log_info(f"{self.name} successfully completed ({result})")
+            if result is None:
+                self._log_info(f"{self.name} successfully completed")
+            else:
+                self._log_info(f"{self.name} successfully completed ({result})")
 
         if self.is_single:
             self.is_active = False
@@ -89,11 +98,17 @@ class SchedulerTask:
 
     @staticmethod
     def _log_info(text: str):
-        logger.info("SCHEDULER TASK: " + text)
+        logger.info("[SCHEDULER TASK] " + text)
 
     @staticmethod
     def _log_critical(text: str, ex: Exception):
-        logger.critical("SCHEDULER TASK: " + text, ex)
+        logger.critical("[SCHEDULER TASK] " + text, ex)
+
+    class Context:
+        __slots__ = ('db_utils', )
+
+        def __init__(self, db_utils: DbUtils):
+            self.db_utils = db_utils
 
 
 class Scheduler:

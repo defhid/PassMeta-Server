@@ -1,6 +1,7 @@
 from App.settings import PASSFILES_FOLDER, PASSFILES_ARCHIVE_FOLDER, KEY_PHRASE_BYTES, ARCHIVED_PASSFILE_LIFETIME_DAYS
 from App.models.db import PassFile
-from App.utils.db import DbUtils
+from App.utils.scheduler import SchedulerTask
+from App.utils.logging import Logger
 
 from sqlalchemy import select
 from cryptography.fernet import Fernet
@@ -8,27 +9,16 @@ from typing import Optional
 from datetime import datetime, timedelta
 
 import aiofiles
-import logging
 import os
 
 __all__ = (
     'PassFileUtils',
 )
 
-logger = logging.getLogger(__name__)
+logger = Logger(__name__)
 
 
 class PassFileUtils:
-    @classmethod
-    def ensure_folders_created(cls):
-        """ Ensure system directories exist (create if not).
-        """
-        if not os.path.exists(PASSFILES_FOLDER):
-            os.mkdir(PASSFILES_FOLDER)
-
-        if not os.path.exists(PASSFILES_ARCHIVE_FOLDER):
-            os.mkdir(PASSFILES_ARCHIVE_FOLDER)
-
     @classmethod
     def _make_filepath_normal(cls, user_id: int, passfile_id: int) -> str:
         """ Generates passfile path in format '<PASS_FILES_FOLDER>/<user_id>/<passfile_id>.tmp'.
@@ -109,13 +99,27 @@ class PassFileUtils:
             return None
 
     @classmethod
-    async def check_archive_files(cls):
+    async def check_archive_files(cls, context: 'SchedulerTask.Context'):
+        """ Delete old archived files (SchedulerTask).
+        """
         expired = datetime.now() - timedelta(days=ARCHIVED_PASSFILE_LIFETIME_DAYS)
-        async with DbUtils.make_session() as db:
-            for passfile in await db.query(PassFile, select(PassFile).where(PassFile.created_on < expired)):
-                await db.delete(passfile)
-                path = cls.get_filepath(passfile)
+        async with context.db_utils.make_session() as db:
+            old_passfiles = await db.query(PassFile, select(PassFile)
+                                           .where(PassFile.is_archived)
+                                           .where(PassFile.changed_on < expired))
+            for pf in old_passfiles:
+                await db.delete(pf)
+                path = cls.get_filepath(pf)
                 if os.path.exists(path):
                     os.remove(path)
                 await db.commit()
 
+    @classmethod
+    def ensure_folders_created(cls):
+        """ Ensure system directories exist (create if not).
+        """
+        if not os.path.exists(PASSFILES_FOLDER):
+            os.makedirs(PASSFILES_FOLDER)
+
+        if not os.path.exists(PASSFILES_ARCHIVE_FOLDER):
+            os.makedirs(PASSFILES_ARCHIVE_FOLDER)

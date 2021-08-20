@@ -1,7 +1,6 @@
 from fastapi import Request
 from starlette.responses import JSONResponse
 from sqlalchemy import select
-from typing import Optional
 import hashlib
 import datetime
 
@@ -25,11 +24,12 @@ class AuthService(DbServiceBase):
         session_id = request.cookies.get('session')
         if session_id:
             session = await self.db.query_first(Session, select(Session).where(Session.id == session_id))
-            if (datetime.datetime.now() - session.created_on).days > SESSION_LIFETIME_DAYS:
-                await self.db.delete(session)
-                await self.db.commit()
-            else:
-                return session
+            if session:
+                if (datetime.datetime.now() - session.created_on).days > SESSION_LIFETIME_DAYS:
+                    await self.db.delete(session)
+                    await self.db.commit()
+                else:
+                    return session
         return None
 
     async def get_user(self, request: Request) -> User:

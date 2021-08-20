@@ -1,5 +1,5 @@
-from App.special.results._messages import ResMessage, OK
-from App.special.results._more import *
+from App.special.ok_bad.messages import ResMessage, OK
+from App.special.ok_bad.more import *
 from starlette.responses import JSONResponse
 from typing import Optional, Any, Union, List, Dict
 

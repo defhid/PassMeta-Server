@@ -24,7 +24,10 @@ worker_class = 'uvicorn.workers.UvicornWorker'
 workers = 1
 daemon = {daemon}
 pidfile = 'Gun/service/process.pid'
+accesslog = 'Gun/access_logs.txt'
+access_log_format = '%(h)s %(t)s "%(r)s" %(s)s'
 errorlog = 'Gun/logs.txt'
+loglevel = 'info'
 """
 
 SERVER_DIRECTORY = input("Input server directory: ").strip().rstrip('/\\')

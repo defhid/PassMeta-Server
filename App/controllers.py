@@ -4,7 +4,8 @@ from App.utils.db import DbUtils, AsyncDbSession
 from App.utils.passfile import PassFileUtils
 from App.utils.scheduler import Scheduler, SchedulerTask
 from App.utils.session import SessionUtils
-from App.settings import DEBUG
+from App.utils.logging import Logger
+from App.settings import *
 from App.services import (
     AuthService,
     UserService,
@@ -14,10 +15,10 @@ from App.services import (
 from fastapi import FastAPI, Request, Depends
 from fastapi.exceptions import RequestValidationError
 
-import logging
 
+logger = Logger(__file__)
 
-logger = logging.getLogger(__name__)
+db_utils = DbUtils()
 
 scheduler = Scheduler(period_minutes=10)
 
@@ -34,7 +35,7 @@ async def catch_exceptions_middleware(request: Request, call_next):
     except Result as e:
         return e.as_response()
     except Exception as e:
-        logger.error(e)
+        logger.error("Request error", e, _need_trace=False)
         return Bad(None, SERVER_ERR, MORE.text(str(e)) if e.args else None).as_response()
 
 
@@ -57,24 +58,27 @@ async def validation_exception_handler(_: Request, ex: RequestValidationError):
 
 @app.on_event("startup")
 async def on_startup():
-    await DbUtils.ensure_models_created()
+    Logger.init('uvicorn.error' if __name__ == '__main__' else 'gunicorn.error')
+
+    await db_utils.ensure_models_created()
+
     PassFileUtils.ensure_folders_created()
 
     scheduler.add(SchedulerTask(
-        'SESSIONS CHECKER',
+        'SESCHECK',
         active=True,
         single=False,
-        interval_minutes=(60 * 3),   # 3 hours
-        start_now=True,
+        interval_minutes=OLD_SESSIONS_CHECKING_INTERVAL_MINUTES,
+        start_now=OLD_SESSIONS_CHECKING_ON_STARTUP,
         func=SessionUtils.check_old_sessions
     ))
 
     scheduler.add(SchedulerTask(
-        'ARCHIVE PASSFILES CHECKER',
+        'APASCHECK',
         active=True,
         single=False,
-        interval_minutes=(60 * 24 * 3),  # 3 days
-        start_now=(not DEBUG),
+        interval_minutes=OLD_PASSFILES_CHECKING_INTERVAL_MINUTES,
+        start_now=OLD_PASSFILES_CHECKING_ON_STARTUP,
         func=PassFileUtils.check_archive_files
     ))
 
@@ -84,7 +88,7 @@ async def on_startup():
 # endregion
 
 
-DB = Depends(DbUtils.session_maker)
+DB = Depends(db_utils.session_maker)
 
 
 # region Auth

@@ -61,7 +61,7 @@ class PassFile(DbModelBase):
             'changed_on': str(self.changed_on),
             'version': self.version,
             'is_archived': self.is_archived,
-            'data': data.decode('utf-8'),
+            'data': None if data is None else data.decode('utf-8'),
         }
         return d
 

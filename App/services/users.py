@@ -54,9 +54,29 @@ class UserService(DbServiceBase):
         if user.id != editor.id:
             raise Bad(None, NOT_IMPLEMENTED_ERR)
 
+        if data.password_confirm is None:
+            await self.history_writer.write(  # autocommit
+                History.Kind.USER_EDIT_FAILURE,
+                user,
+                f"passconf_miss,editor:{editor.id}",
+                request=request
+            )
+            raise Bad('password_confirm', VAL_MISSED_ERR)
+
         check_pwd = hashlib.sha512(data.password_confirm.encode('utf-8')).hexdigest()
         if check_pwd != user.pwd:
+            await self.history_writer.write(  # autocommit
+                History.Kind.USER_EDIT_FAILURE,
+                user,
+                f"passconf_wrong,editor:{editor.id}",
+                request=request
+            )
             raise Bad('password_confirm', WRONG_VAL_ERR)
+
+        fields = ('login', 'first_name', 'last_name')
+        for f in fields:
+            if getattr(data, f) is not None:
+                setattr(user, f, getattr(data, f))
 
         self._validate_and_prepare_user_to_save(user, data.password)
 
@@ -87,7 +107,7 @@ class UserService(DbServiceBase):
         if len(user.first_name) > r.FIRST_NAME_LEN[1]:
             raise Bad('first_name', TOO_LONG_ERR, MORE.max_allowed(r.FIRST_NAME_LEN[1]))
 
-        user.last_name = user.first_name.strip()
+        user.last_name = user.last_name.strip()
 
         if len(user.last_name) < r.LAST_NAME_LEN[0]:
             raise Bad('last_name', TOO_SHORT_ERR, MORE.min_allowed(r.LAST_NAME_LEN[0]))

@@ -1,5 +1,5 @@
 .idea
 venv
 __pycache__
-/App/private.py
-/PassFiles
+/App/settings_private.py
+/data
