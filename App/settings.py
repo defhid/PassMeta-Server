@@ -20,8 +20,8 @@ DB_CONNECTION_POOL_SIZE = 20
 
 ROOT_DIR = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__file__)))[:-1])
 
-PASSFILES_FOLDER = os.path.join(ROOT_DIR, 'data', 'PassFiles')
-PASSFILES_ARCHIVE_FOLDER = os.path.join(ROOT_DIR, 'data', 'PassFilesArchive')
+PASSFILES_FOLDER = os.path.join(ROOT_DIR, 'Data', 'PassFiles')
+PASSFILES_ARCHIVE_FOLDER = os.path.join(ROOT_DIR, 'Data', 'PassFilesArchive')
 
 # endregion
 
