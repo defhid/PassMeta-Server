@@ -1,12 +1,17 @@
 import os
 
-# noinspection PyUnresolvedReferences
-from .settings_private import (
-    DB_CONNECTION_STRING,  # PostgreSQL database connection string
-    KEY_PHRASE_BYTES,  # Generated key from Fernet.generate_key()
-)
 
-DEBUG = False
+def load_private_settings(private_settings):
+    global DEBUG, DB_CONNECTION_STRING, KEY_PHRASE_BYTES
+
+    DEBUG = private_settings.DEBUG
+    DB_CONNECTION_STRING = private_settings.DB_CONNECTION_STRING
+    KEY_PHRASE_BYTES = private_settings.KEY_PHRASE_BYTES
+
+
+DEBUG: bool
+DB_CONNECTION_STRING: str  # PostgreSQL database connection string
+KEY_PHRASE_BYTES: bytes  # Generated key from Fernet.generate_key()
 
 
 # region SqlAlchemy

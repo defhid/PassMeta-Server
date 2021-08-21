@@ -65,14 +65,29 @@ DNS.1       = %%{host}%%
 """.strip()
 
 
-SERVER_DIRECTORY = input("Input server directory: ").strip().rstrip('/\\')
-if not SERVER_DIRECTORY:
+CERT_MAKER = """
+mkdir -p {dir}/root
+
+openssl genrsa -out {dir}/root/CA.key 2048
+
+openssl req -x509 -new -nodes -key {dir}/root/CA.key -sha256 -days 3650 -out {dir}/root/CA.pem -config {dir}/config/domain.conf
+
+mkdir -p {dir}/domain
+
+openssl req -newkey rsa:2048 -sha256 -nodes -keyout {dir}/domain/domain.key -out {dir}/domain/domain.csr -config {dir}/config/domain.conf
+
+openssl x509 -req -in {dir}/domain/domain.csr -CA {dir}/root/CA.pem -CAkey {dir}/root/CA.key -CAcreateserial -out {dir}/domain/domain.crt -days 397 -sha256 -extfile {dir}/config/domain.ext
+"""
+
+
+SERVER_DIR = input("Input server directory: ").strip().rstrip('/\\')
+if not SERVER_DIR:
     raise ValueError("Directory value is empty!")
 
-if SERVER_DIRECTORY == '.' or not SERVER_DIRECTORY:
-    SERVER_DIRECTORY = os.path.abspath('.')
+if SERVER_DIR == '.':
+    SERVER_DIR = os.path.abspath('.')
 
-if not os.path.exists(SERVER_DIRECTORY):
+if not os.path.exists(SERVER_DIR):
     raise ValueError("Directory does not exist!")
 
 
@@ -87,28 +102,28 @@ if len(COUNTRY_CODE) != 2:
 
 
 def make_service():
-    folder = os.path.join(SERVER_DIRECTORY, "Gun", "service")
+    folder = os.path.join(SERVER_DIR, "Gun", "service")
     if not os.path.exists(folder):
         os.makedirs(folder)
 
     with open(os.path.join(folder, "passmeta-server-app.service"), 'wb') as file:
-        file.write(SERVICE_TEMPLATE.format(server_dir=SERVER_DIRECTORY).encode("UTF-8"))
+        file.write(SERVICE_TEMPLATE.format(server_dir=SERVER_DIR).encode("UTF-8"))
 
 
 def make_gunicorn_configs():
-    folder = os.path.join(SERVER_DIRECTORY, "Gun", "service", "config")
+    folder = os.path.join(SERVER_DIR, "Gun", "service", "config")
     if not os.path.exists(folder):
         os.makedirs(folder)
 
     with open(os.path.join(folder, "autoload.py"), 'wb') as file:
-        file.write(CONFIG_TEMPLATE.format(server_dir=SERVER_DIRECTORY, daemon=False).encode("UTF-8"))
+        file.write(CONFIG_TEMPLATE.format(server_dir=SERVER_DIR, daemon=False).encode("UTF-8"))
 
     with open(os.path.join(folder, "manual.py"), 'wb') as file:
-        file.write(CONFIG_TEMPLATE.format(server_dir=SERVER_DIRECTORY, daemon=True).encode("UTF-8"))
+        file.write(CONFIG_TEMPLATE.format(server_dir=SERVER_DIR, daemon=True).encode("UTF-8"))
 
 
 def make_openssl_configs():
-    folder = os.path.join(SERVER_DIRECTORY, "Gun", "ssl", "config")
+    folder = os.path.join(SERVER_DIR, "Gun", "ssl", "config")
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -119,13 +134,21 @@ def make_openssl_configs():
         file.write(OPENSSL_EXT.format(host=HOST).encode("UTF-8"))
 
 
-print("Service file...")
+def make_certmaker():
+    with open(os.path.join(SERVER_DIR, "Gun", "ssl", "certmaker.sh"), 'wb') as file:
+        file.write(CERT_MAKER.format(dir='/'.join((SERVER_DIR, "Gun", "ssl"))).encode("UTF-8"))
+
+
+print("Service...")
 make_service()
 
-print("Gunicorn config files...")
+print("Gunicorn configs...")
 make_gunicorn_configs()
 
-print("Openssl config files...")
+print("Openssl configs...")
 make_openssl_configs()
+
+print("Certmaker...")
+make_certmaker()
 
 print("Ready!")

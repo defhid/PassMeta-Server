@@ -1,5 +1,7 @@
 .idea
 venv
 __pycache__
-/App/settings_private.py
+private_settings.py
 /Data
+/Gun/service
+/Gun/ssl
