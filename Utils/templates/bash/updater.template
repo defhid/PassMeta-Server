@@ -1,17 +1,28 @@
 #!/bin/bash
 
+# stop the service
 sudo systemctl stop {gun_service_name}
 
+# get and unzip
 wget -P /tmp https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip
-unzip /tmp/master.zip
+unzip /tmp/master.zip -d /tmp
 rm /tmp/master.zip
-rm -r {dir}/App
-cp -r /tmp/PassMeta-Server-master/* {dir}
+
+# clear old
+rm -f -r {dir}/App
+
+# copy and remove tmp
+cp -a /tmp/PassMeta-Server-master/. {dir}
 rm -r /tmp/PassMeta-Server-master
 
-printf "Start service now? (Y/n) \n"
+# refresh bash scripts
+env/bin/python {dir}/Utils/makescripts.py
 
-if [ "$?" == "Y" ];
+# ask for the service start
+printf "Start service now? (Y/n) \n"
+read answ
+
+if [ "$answ" == "Y" ];
 then
     sudo systemctl start passmeta-server-app
 fi
