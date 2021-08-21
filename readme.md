@@ -26,10 +26,10 @@ password storage and password management tools.
 
 
 + **Download and unzip the project, change current directory:**
-  - `wget https://github.com/vlad120/PM-Server/archive/refs/heads/master.zip`
+  - `wget https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip`
   - `unzip proj.zip`
   - `rm proj.zip`
-  - `mv PM-Server-master passmeta`
+  - `mv PassMeta-Server-master passmeta`
   - `cd passmeta`
 
 
