@@ -44,7 +44,7 @@ distributed password storage and password management tools.
 
 
 + **Install python environment and dependencies:**
-  - `sudo Scripts/dependency-installer.sh`
+  - `sudo bash Scripts/dependency-installer.sh`
 
 
 + **Generate configuration files:**
@@ -57,32 +57,32 @@ distributed password storage and password management tools.
 
 
 + **Generate SSL Certificates**
-  - `sudo Scripts/certmaker.sh`
+  - `sudo bash Scripts/certmaker.sh`
 
 
 ### Launch as service
 
 + **Setup:**
-  - `sudo Scripts/service-maker.sh`
+  - `sudo bash Scripts/service-maker.sh`
 
 
 + **Enable-disable:**
-  - `sudo Scripts/service-enabler.sh`
-  - `sudo Scripts/service-disabler.sh`
+  - `sudo bash Scripts/service-enabler.sh`
+  - `sudo bash Scripts/service-disabler.sh`
 
 
 + **Start-stop:**
-  - `sudo Scripts/service-starter.sh`
-  - `sudo Scripts/service-stopper.sh`
+  - `sudo bash Scripts/service-starter.sh`
+  - `sudo bash Scripts/service-stopper.sh`
 
 
 ### Launch as process
-+ **Start:** `sudo Scripts/process-starter.sh`
-+ **Stop:** `sudo Scripts/process-killer.sh`
++ **Start:** `sudo bash Scripts/process-starter.sh`
++ **Stop:** `sudo bash Scripts/process-killer.sh`
 
 
 ### Update
-+ `sudo Scripts/updater.sh`
++ `sudo bash Scripts/updater.sh`
 
 ### Tests
 + Not implemented yet...
