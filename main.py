@@ -1,8 +1,8 @@
 def before_load():
-    from App.settings import load_private_settings
-    import private_settings
+    from App.settings import load_custom_settings
+    import app_settings
 
-    load_private_settings(private_settings)
+    load_custom_settings(app_settings)
 
 
 before_load()

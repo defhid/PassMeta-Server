@@ -1,46 +1,96 @@
+"""
+Service default settings.
+
+Requires using load_custom_settings() method before import app,
+to load required settings or override default.
+
+Also can be used as 'app_settings.py' generator ('__main__' context).
+"""
+
 import os
 
 
-def load_private_settings(private_settings):
-    global DEBUG, DB_CONNECTION_STRING, KEY_PHRASE_BYTES
+DEBUG: bool = False
 
-    DEBUG = private_settings.DEBUG
-    DB_CONNECTION_STRING = private_settings.DB_CONNECTION_STRING
-    KEY_PHRASE_BYTES = private_settings.KEY_PHRASE_BYTES
-
-
-DEBUG: bool
 DB_CONNECTION_STRING: str  # PostgreSQL database connection string
 KEY_PHRASE_BYTES: bytes  # Generated key from Fernet.generate_key()
 
 
 # region SqlAlchemy
 
-DB_CONNECTION_POOL_SIZE = 20
+DB_CONNECTION_POOL_SIZE: int = 20
 
 # endregion
 
 
 # region File System
 
-ROOT_DIR = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__file__)))[:-1])
+ROOT_DIR: str = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__file__)))[:-1])
 
-PASSFILES_FOLDER = os.path.join(ROOT_DIR, 'Data', 'PassFiles')
-PASSFILES_ARCHIVE_FOLDER = os.path.join(ROOT_DIR, 'Data', 'PassFilesArchive')
+PASSFILES_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFiles')
+PASSFILES_ARCHIVE_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFilesArchive')
 
 # endregion
 
 
 # region Others
 
-SESSION_LIFETIME_DAYS = 120
+SESSION_LIFETIME_DAYS: int = 120
 
-ARCHIVED_PASSFILE_LIFETIME_DAYS = 30
+ARCHIVED_PASSFILE_LIFETIME_DAYS: int = 30
 
-OLD_SESSIONS_CHECKING_INTERVAL_MINUTES = 60 * 3
-OLD_SESSIONS_CHECKING_ON_STARTUP = True
+OLD_SESSIONS_CHECKING_INTERVAL_MINUTES: int = 60 * 3
+OLD_SESSIONS_CHECKING_ON_STARTUP: bool = True
 
-OLD_PASSFILES_CHECKING_INTERVAL_MINUTES = 60 * 24
-OLD_PASSFILES_CHECKING_ON_STARTUP = True
+OLD_PASSFILES_CHECKING_INTERVAL_MINUTES: int = 60 * 24
+OLD_PASSFILES_CHECKING_ON_STARTUP: bool = True
 
 # endregion
+
+
+def load_custom_settings(custom_settings):
+    required = [
+        'DB_CONNECTION_STRING',
+        'KEY_PHRASE_BYTES',
+    ]
+
+    for name in dir(custom_settings):
+        if name.isupper():
+            globals()[name] = getattr(custom_settings, name)
+            if name in required:
+                required.remove(name)
+
+    if required:
+        raise ImportError(f"Required custom settings not found! ({', '.join(required)})")
+
+
+if __name__ == '__main__':
+
+    def __make_custom_settings():
+        from cryptography.fernet import Fernet
+
+        filepath = os.path.join(os.path.split(os.path.abspath('.'))[0], "app_settings.py")
+        if os.path.exists(filepath):
+            ok = input(f"'{filepath}' already EXISTS! Current app settings may be lost, continue? (Y/n) ").strip()
+            if ok != 'Y':
+                print("Canceled!")
+                return
+
+        template = """
+            DB_CONNECTION_STRING = 'postgresql+asyncpg://{username}:{password}@localhost:5432/passmeta'
+            KEY_PHRASE_BYTES = {key_phrase}
+        """.strip().split('\n')
+
+        key_phrase = Fernet.generate_key()
+
+        username = input("Input PostgreSQL username: ").strip()
+        password = input(f"Input PostgreSQL password for user '{username}': ").strip()
+
+        with open(filepath, 'wb') as file:
+            file.write(('\n\n'.join(ln.strip() for ln in template) + '\n')
+                       .format(key_phrase=key_phrase, username=username, password=password).encode("utf-8"))
+
+        print("Ready!")
+        return
+
+    __make_custom_settings()

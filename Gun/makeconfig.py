@@ -38,7 +38,7 @@ loglevel = 'info'
 """.strip()
 
 
-OPENSSL_CONFIG = """
+OPENSSL_CONFIG_TEMPLATE = """
 [ req ]
 distinguished_name          = req_distinguished_name
 prompt                      = no
@@ -54,7 +54,7 @@ emailAddress                = None
 """.strip()
 
 
-OPENSSL_EXT = """
+OPENSSL_EXT_TEMPLATE = """
 authorityKeyIdentifier  = keyid,issuer
 basicConstraints        = CA:FALSE
 keyUsage                = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
@@ -65,7 +65,7 @@ DNS.1       = %%{host}%%
 """.strip()
 
 
-CERT_MAKER = """
+CERT_MAKER_TEMPLATE = """
 mkdir -p {dir}/root
 
 openssl genrsa -out {dir}/root/CA.key 2048
@@ -80,15 +80,7 @@ openssl x509 -req -in {dir}/domain/domain.csr -CA {dir}/root/CA.pem -CAkey {dir}
 """
 
 
-SERVER_DIR = input("Input server directory: ").strip().rstrip('/\\')
-if not SERVER_DIR:
-    raise ValueError("Directory value is empty!")
-
-if SERVER_DIR == '.':
-    SERVER_DIR = os.path.abspath('.')
-
-if not os.path.exists(SERVER_DIR):
-    raise ValueError("Directory does not exist!")
+SERVER_DIR = os.path.abspath('.')
 
 
 HOST = input("Input server host: ").strip().strip('/')
@@ -128,15 +120,15 @@ def make_openssl_configs():
         os.makedirs(folder)
 
     with open(os.path.join(folder, "domain.conf"), 'wb') as file:
-        file.write(OPENSSL_CONFIG.format(host=HOST, country_code=COUNTRY_CODE).encode("UTF-8"))
+        file.write(OPENSSL_CONFIG_TEMPLATE.format(host=HOST, country_code=COUNTRY_CODE).encode("UTF-8"))
 
     with open(os.path.join(folder, "domain.ext"), 'wb') as file:
-        file.write(OPENSSL_EXT.format(host=HOST).encode("UTF-8"))
+        file.write(OPENSSL_EXT_TEMPLATE.format(host=HOST).encode("UTF-8"))
 
 
 def make_certmaker():
     with open(os.path.join(SERVER_DIR, "Gun", "ssl", "certmaker.sh"), 'wb') as file:
-        file.write(CERT_MAKER.format(dir='/'.join((SERVER_DIR, "Gun", "ssl"))).encode("UTF-8"))
+        file.write(CERT_MAKER_TEMPLATE.format(dir='/'.join((SERVER_DIR, "Gun", "ssl"))).encode("UTF-8"))
 
 
 print("Service...")
