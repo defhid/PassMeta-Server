@@ -9,9 +9,9 @@ rm -r {dir}/App
 cp -r /tmp/PassMeta-Server-master/* {dir}
 rm -r /tmp/PassMeta-Server-master
 
-echo -n "Start service now? (Y/n) "
-read answ
+printf "Start service now? (Y/n) \n"
 
-if "$answ" == "Y" then
-    sudo systemctl start {gun_service_name}
+if [ "$?" == "Y" ];
+then
+    sudo systemctl start passmeta-server-app
 fi

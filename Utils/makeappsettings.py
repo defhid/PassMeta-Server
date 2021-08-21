@@ -4,12 +4,12 @@ Creates:
 """
 
 from cryptography.fernet import Fernet
-from _common import render_etc, get_server_directory
+from _common import render_etc, SERVER_DIR
 import os
 
 
 def main():
-    filepath = os.path.join(get_server_directory(), "app_settings.py")
+    filepath = os.path.join(SERVER_DIR, "app_settings.py")
     if os.path.exists(filepath):
         ok = input(f"'{filepath}' already EXISTS! Current app settings may be lost, continue? (Y/n) ").strip()
         if ok != 'Y':

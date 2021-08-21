@@ -9,7 +9,7 @@ Creates:
   * Gun/ssl/config/domain.ext
 """
 
-from _common import render_config, get_server_directory, GUN_SERVICE_NAME
+from _common import render_config, SERVER_DIR, GUN_SERVICE_NAME
 import os
 
 
@@ -25,8 +25,6 @@ def to_path(*path_components) -> str:
 
 
 def main():
-    server_dir = get_server_directory()
-
     host = input("Input server host: ").strip().strip('/')
     if not host:
         raise ValueError("Host value is empty!")
@@ -35,22 +33,22 @@ def main():
     if len(country_code) != 2:
         raise ValueError("Country code is incorrect!")
 
-    folder = make_dir(server_dir, 'Gun', 'service')
+    folder = make_dir(SERVER_DIR, 'Gun', 'service')
     render_config('gunicorn-service', to_path(folder, f'{GUN_SERVICE_NAME}.service'), dict(
-        server_dir=server_dir
+        server_dir=SERVER_DIR
     ))
 
-    folder = make_dir(server_dir, 'Gun', 'service', 'config')
+    folder = make_dir(SERVER_DIR, 'Gun', 'service', 'config')
     render_config('gunicorn-config', to_path(folder, 'autoload.py'), dict(
-        server_dir=server_dir,
+        server_dir=SERVER_DIR,
         daemon=False
     ))
     render_config('gunicorn-config', to_path(folder, 'manual.py'), dict(
-        server_dir=server_dir,
+        server_dir=SERVER_DIR,
         daemon=True
     ))
 
-    folder = make_dir(server_dir, 'Gun', 'ssl', 'config')
+    folder = make_dir(SERVER_DIR, 'Gun', 'ssl', 'config')
     render_config('openssl-config', to_path(folder, 'domain.conf'), dict(
         host=host,
         country_code=country_code

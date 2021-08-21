@@ -1,9 +1,9 @@
 import os
-from _common import get_server_directory
+from _common import SERVER_DIR
 from signal import SIGINT, SIGTERM
 from time import sleep
 
-PID_FILE = os.path.join(get_server_directory(), 'Gun', 'service', 'process.pid')
+PID_FILE = os.path.join(SERVER_DIR, 'Gun', 'service', 'process.pid')
 
 
 def is_running(pid: int) -> bool:

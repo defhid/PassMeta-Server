@@ -1,6 +1,7 @@
 #!/bin/bash
 
-if [ ! -d "{dir}/env" ] then
+if [ ! -d "{dir}/env" ];
+then
     python3 -m venv env
 fi
 
