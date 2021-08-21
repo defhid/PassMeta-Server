@@ -3,8 +3,6 @@ Service default settings.
 
 Requires using load_custom_settings() method before import app,
 to load required settings or override default.
-
-Also can be used as 'app_settings.py' generator ('__main__' context).
 """
 
 import os
@@ -62,35 +60,3 @@ def load_custom_settings(custom_settings):
 
     if required:
         raise ImportError(f"Required custom settings not found! ({', '.join(required)})")
-
-
-if __name__ == '__main__':
-
-    def __make_custom_settings():
-        from cryptography.fernet import Fernet
-
-        filepath = os.path.join(os.path.split(os.path.split(__file__)[0])[0], "app_settings.py")
-        if os.path.exists(filepath):
-            ok = input(f"'{filepath}' already EXISTS! Current app settings may be lost, continue? (Y/n) ").strip()
-            if ok != 'Y':
-                print("Canceled!")
-                return
-
-        template = """
-            DB_CONNECTION_STRING = 'postgresql+asyncpg://{username}:{password}@localhost:5432/passmeta'
-            KEY_PHRASE_BYTES = {key_phrase}
-        """.strip().split('\n')
-
-        key_phrase = Fernet.generate_key()
-
-        username = input("Input PostgreSQL username: ").strip()
-        password = input(f"Input PostgreSQL password for user '{username}': ").strip()
-
-        with open(filepath, 'wb') as file:
-            file.write(('\n\n'.join(ln.strip() for ln in template) + '\n')
-                       .format(key_phrase=key_phrase, username=username, password=password).encode("utf-8"))
-
-        print("Ready!")
-        return
-
-    __make_custom_settings()

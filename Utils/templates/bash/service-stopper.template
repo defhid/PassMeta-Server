@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sudo systemctl stop {gun_service_name}

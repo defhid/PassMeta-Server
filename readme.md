@@ -16,6 +16,14 @@ distributed password storage and password management tools.
 
 ### Deployment
 
++ **Download and unzip the project, change current directory:**
+  - `wget https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip`
+  - `unzip master.zip`
+  - `rm master.zip`
+  - `mv PassMeta-Server-master /home/passmeta`
+  - `cd /home/passmeta`
+
+
 + **Install python 3.8, postgresql, unzip:**
   - `sudo apt update`
   - `sudo apt install python3`
@@ -26,76 +34,55 @@ distributed password storage and password management tools.
   - `sudo apt install unzip`
 
 
-+ **Download and unzip the project, change current directory:**
-  - `wget https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip`
-  - `unzip master.zip`
-  - `rm master.zip`
-  - `mv PassMeta-Server-master /home/passmeta`
-  - `cd /home/passmeta`
-
-
-+ **Install python environment and dependencies:**
-  - `python3 -m venv env`
-  - `env/bin/pip install -r requirements.txt`
-  - `env/bin/pip install uvicorn[standard]`
-  - `env/bin/pip install gunicorn`
-
-
 + **Create database:**
   - `sudo -u postgres psql`
   - `CREATE DATABASE passmeta;`
 
 
-+ **Generate configuration files and SSL Certificates:**
-  - `env/bin/python App/settings.py`
++ **Generate bash scripts:**
+  - `env/bin/python Utils/makescripts.py`
+
+
++ **Install python environment and dependencies:**
+  - `sudo Scripts/dependency-installer.sh`
+
+
++ **Generate configuration files:**
+  - `env/bin/python Utils/makeappsettings.py`
     - input username for local PostgreSQL server
     - input password for that user
-  - `env/bin/python Gun/makeconfig.py`
+  - `env/bin/python Utils/makeconfig.py`
     - input server host, like `x.x.x.x` or `my-server-host.com`
     - input server country code, like `RU`
-  - `sudo bash Gun/ssl/certmaker.sh`
+
+
++ **Generate SSL Certificates**
+  - `sudo Scripts/certmaker.sh`
 
 
 ### Launch as service
 
 + **Setup:**
-  - `sudo cp Gun/service/passmeta-server-app.service /etc/systemd/system/`
-  - `sudo chmod 664 /etc/systemd/system/passmeta-server-app.service`
-  - `sudo systemctl daemon-reload`
+  - `sudo Scripts/service-maker.sh`
 
 
 + **Enable-disable:**
-  - `sudo systemctl enable passmeta-server-app`
-  - `sudo systemctl disable passmeta-server-app`
+  - `sudo Scripts/service-enabler.sh`
+  - `sudo Scripts/service-disabler.sh`
 
 
 + **Start-stop:**
-  - `sudo systemctl start passmeta-server-app`
-  - `sudo systemctl stop passmeta-server-app`
+  - `sudo Scripts/service-starter.sh`
+  - `sudo Scripts/service-stopper.sh`
 
 
 ### Launch as process
-+ Ensure auto-launch disabled:
-  - `sudo systemctl stop passmeta-server-app`
-  - `sudo systemctl disable passmeta-server-app`
-  
-
-+ **Start:** `sudo env/bin/python -m gunicorn --config Gun/config/manual.py`
-+ **Stop:** `sudo env/bin/python Gun/kill.py`
++ **Start:** `sudo Scripts/process-starter.sh`
++ **Stop:** `sudo Scripts/process-killer.sh`
 
 
 ### Update
-+ Bash script:
-  ```
-  sudo systemctl stop passmeta-server-app
-  wget https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip
-  unzip master.zip
-  rm master.zip
-  mkdir -p /home/passmeta
-  cp -r PassMeta-Server-master/* /home/passmeta
-  rm -r PassMeta-Server-master
-  ```
-+ `sudo systemctl start passmeta-server-app`
++ `sudo Scripts/updater.sh`
 
 ### Tests
 + Not implemented yet...

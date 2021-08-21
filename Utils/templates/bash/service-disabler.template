@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sudo systemctl stop {gun_service_name}
+sudo systemctl disable {gun_service_name}

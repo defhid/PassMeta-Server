@@ -1,8 +1,9 @@
 import os
+from _common import get_server_directory
 from signal import SIGINT, SIGTERM
 from time import sleep
 
-PID_FILE = os.path.abspath('Gun/service/process.pid')
+PID_FILE = os.path.join(get_server_directory(), 'Gun', 'service', 'process.pid')
 
 
 def is_running(pid: int) -> bool:
@@ -48,9 +49,9 @@ def kill() -> bool:
         pid = file.readline().strip()
 
     if not pid or not pid.isdigit():
-        print(f"File '{PID_FILE}' is empty! (something went wrong)")
+        print(f"Something went wrong (pid file '{PID_FILE}' is empty)")
         os.remove(PID_FILE)
-        print(f"Empty file '{PID_FILE}' was removed")
+        print("Empty pid file was removed")
         return False
 
     print(f"PID found: {pid}")
@@ -70,7 +71,7 @@ def kill() -> bool:
         return try_kill_unsafe(f"Something went wrong! ({e})")
 
     if os.path.exists(PID_FILE):
-        sleep(3)
+        sleep(5)
         if is_running(pid):
             return try_kill_unsafe(f"Something went wrong! (the process {pid} is still running)")
         remove_pid_file(2)

@@ -1,0 +1,13 @@
+chdir = r'{server_dir}'
+wsgi_app = 'main:app'
+bind = ['0.0.0.0:8080']
+worker_class = 'uvicorn.workers.UvicornWorker'
+workers = 1
+daemon = {daemon}
+pidfile = 'Gun/service/process.pid'
+keyfile = 'Gun/ssl/domain/domain.key'
+certfile = 'Gun/ssl/domain/domain.crt'
+accesslog = 'Gun/logs/access.log'
+access_log_format = '%(h)s %(t)s "%(r)s" %(s)s'
+errorlog = 'Gun/logs/info.log'
+loglevel = 'info'

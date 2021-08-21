@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [[ $(systemctl list-units --all -t service --full --no-legend "{gun_service_name}.service" | cut -f1 -d' ') == {gun_service_name}.service ]]; then
+    sudo systemctl stop {gun_service_name}
+    sudo systemctl disable {gun_service_name}
+fi
+
+sudo cp {dir}/Gun/service/{gun_service_name}.service /etc/systemd/system/
+sudo chmod 664 /etc/systemd/system/{gun_service_name}.service
+sudo systemctl daemon-reload
+
+sudo systemctl enable {gun_service_name}

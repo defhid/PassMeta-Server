@@ -1,0 +1,13 @@
+#!/bin/bash
+
+mkdir -p {dir}/root
+
+openssl genrsa -out {dir}/root/CA.key 2048
+
+openssl req -x509 -new -nodes -key {dir}/root/CA.key -sha256 -days 3650 -out {dir}/root/CA.pem -config {dir}/config/domain.conf
+
+mkdir -p {dir}/domain
+
+openssl req -newkey rsa:2048 -sha256 -nodes -keyout {dir}/domain/domain.key -out {dir}/domain/domain.csr -config {dir}/config/domain.conf
+
+openssl x509 -req -in {dir}/domain/domain.csr -CA {dir}/root/CA.pem -CAkey {dir}/root/CA.key -CAcreateserial -out {dir}/domain/domain.crt -days 397 -sha256 -extfile {dir}/config/domain.ext

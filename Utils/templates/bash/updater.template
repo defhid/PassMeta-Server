@@ -1,0 +1,17 @@
+#!/bin/bash
+
+sudo systemctl stop {gun_service_name}
+
+wget -P /tmp https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip
+unzip /tmp/master.zip
+rm /tmp/master.zip
+rm -r {dir}/App
+cp -r /tmp/PassMeta-Server-master/* {dir}
+rm -r /tmp/PassMeta-Server-master
+
+echo -n "Start service now? (Y/n) "
+read answ
+
+if "$answ" == "Y" then
+    sudo systemctl start {gun_service_name}
+fi

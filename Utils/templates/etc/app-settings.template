@@ -1,0 +1,2 @@
+DB_CONNECTION_STRING = 'postgresql+asyncpg://{username}:{password}@localhost:5432/passmeta'
+KEY_PHRASE_BYTES = {key_phrase}

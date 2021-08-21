@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sudo systemctl enable {gun_service_name}
+sudo systemctl stop {gun_service_name}
+sudo systemctl start {gun_service_name}

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ ! -d "{dir}/env" ] then
+    python3 -m venv env
+fi
+
+{dir}/env/bin/pip install -r requirements.txt
+{dir}/env/bin/pip install uvicorn[standard]
+{dir}/env/bin/pip install gunicorn
