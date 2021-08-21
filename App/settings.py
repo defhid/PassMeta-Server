@@ -69,7 +69,7 @@ if __name__ == '__main__':
     def __make_custom_settings():
         from cryptography.fernet import Fernet
 
-        filepath = os.path.join(os.path.split(os.path.abspath('.'))[0], "app_settings.py")
+        filepath = os.path.join(os.path.split(os.path.split(__file__)[0])[0], "app_settings.py")
         if os.path.exists(filepath):
             ok = input(f"'{filepath}' already EXISTS! Current app settings may be lost, continue? (Y/n) ").strip()
             if ok != 'Y':

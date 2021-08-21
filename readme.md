@@ -3,10 +3,11 @@
 
 
 ### About the project
-PassMeta Server is a part of PassMeta System, which provides reliable distributed
+PassMeta Server is a part of PassMeta System, which provides reliable
 <br>
-password storage and password management tools.
+distributed password storage and password management tools.
 <br>
+**P.S.** Client applications are currently under development.
 
 
 ### Technologies
@@ -27,10 +28,10 @@ password storage and password management tools.
 
 + **Download and unzip the project, change current directory:**
   - `wget https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip`
-  - `unzip proj.zip`
-  - `rm proj.zip`
-  - `mv PassMeta-Server-master passmeta`
-  - `cd passmeta`
+  - `unzip master.zip`
+  - `rm master.zip`
+  - `mv PassMeta-Server-master /home/passmeta`
+  - `cd /home/passmeta`
 
 
 + **Install python environment and dependencies:**
@@ -82,6 +83,19 @@ password storage and password management tools.
 + **Start:** `sudo env/bin/python -m gunicorn --config Gun/config/manual.py`
 + **Stop:** `sudo env/bin/python Gun/kill.py`
 
+
+### Update
++ Bash script:
+  ```
+  sudo systemctl stop passmeta-server-app
+  wget https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip
+  unzip master.zip
+  rm master.zip
+  mkdir -p /home/passmeta
+  cp -r PassMeta-Server-master/* /home/passmeta
+  rm -r PassMeta-Server-master
+  ```
++ `sudo systemctl start passmeta-server-app`
 
 ### Tests
 + Not implemented yet...
