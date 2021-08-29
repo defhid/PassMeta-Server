@@ -31,6 +31,13 @@ PASSFILES_ARCHIVE_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFilesArchive
 # endregion
 
 
+# region info
+
+APP_VERSION = "0.9.0"
+
+# endregion
+
+
 # region Others
 
 SESSION_LIFETIME_DAYS: int = 120

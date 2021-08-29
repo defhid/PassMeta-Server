@@ -40,13 +40,6 @@ class ResMore(dict):
             self['required'] = list(values)
         return self
 
-    def related(self, *values: Any) -> 'ResMore':
-        if 'related' in self:
-            self['related'].extend(values)
-        else:
-            self['related'] = list(values)
-        return self
-
     def min_allowed(self, value: Union[int, float]) -> 'ResMore':
         self['min_allowed'] = value
         return self
@@ -77,10 +70,6 @@ class MORE:
     @staticmethod
     def required(*values: Any) -> ResMore:
         return ResMore(required=list(values))
-
-    @staticmethod
-    def related(*values: Any) -> ResMore:
-        return ResMore(related=list(values))
 
     @staticmethod
     def min_allowed(val: Union[int, float]) -> ResMore:

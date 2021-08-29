@@ -1,6 +1,5 @@
 class ResMessage(str):
     __slots__ = ('response_status_code', )
-    rus: str
     response_status_code: int
 
     def __init__(self, _, response_status_code=200):
@@ -19,11 +18,6 @@ class ResMessage(str):
 
     def __delattr__(self, item):
         raise TypeError(f"{type(self).__name__} object is immutable!")
-
-    def to(self, locale):
-        if locale == "ru":
-            return self.rus
-        return self
 
 
 ACCESS_ERR = ResMessage(

@@ -27,7 +27,6 @@ app = FastAPI(debug=DEBUG)
 
 # region Middlewares
 
-
 @app.middleware('http')
 async def catch_exceptions_middleware(request: Request, call_next):
     try:
@@ -38,23 +37,19 @@ async def catch_exceptions_middleware(request: Request, call_next):
         logger.error("Request error", e, _need_trace=False)
         return Bad(None, SERVER_ERR, MORE.text(str(e)) if e.args else None).as_response()
 
-
 # endregion
 
 
 # region FastApi exception handlers
 
-
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(_: Request, ex: RequestValidationError):
     return Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})).as_response()
-
 
 # endregion
 
 
 # region Event handlers
-
 
 @app.on_event("startup")
 async def on_startup():
@@ -84,7 +79,6 @@ async def on_startup():
 
     scheduler.run()
 
-
 # endregion
 
 
@@ -112,12 +106,10 @@ async def controller(
     await AuthService(db_session).sign_out(request)
     return Ok().as_response()
 
-
 # endregion
 
 
 # region Passfile
-
 
 @app.get("/passfiles/{passfile_id}")
 async def controller(
@@ -150,7 +142,6 @@ async def controller(
     user = await AuthService(db_session).get_user(request)
     await PassFileService(db_session).delete_file(passfile_id, user, request)
     return Ok().as_response()
-
 
 # endregion
 
@@ -186,5 +177,22 @@ async def controller(
     user = await UserService(db_session).edit_user(user.id, body, user, request)
     return Ok().as_response(data=user.to_dict())
 
+# endregion
+
+
+# region info
+
+@app.get("/info")
+async def controller(
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
+    user = await AuthService(db_session).get_user(request)
+
+    return Ok().as_response(data={
+        'user': user.to_dict() if user else None,
+        'messages_translate_pack': OK_BAD_MESSAGES_TRANSLATE_PACK,
+        'app_version': APP_VERSION,
+    })
 
 # endregion
