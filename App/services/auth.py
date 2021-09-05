@@ -108,7 +108,7 @@ class AuthService(DbServiceBase):
 
     async def sign_out(self, request: Request):
         """ Auto-commit. """
-        session = self.get_session(request)
+        session = await self.get_session(request)
         if session:
             await self.db.delete(session)
             await self.db.commit()

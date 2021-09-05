@@ -187,7 +187,10 @@ async def controller(
         request: Request,
         db_session: AsyncDbSession = DB
 ):
-    user = await AuthService(db_session).get_user(request)
+    try:
+        user = await AuthService(db_session).get_user(request)
+    except Bad:
+        user = None
 
     return Ok().as_response(data={
         'user': user.to_dict() if user else None,
