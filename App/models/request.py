@@ -39,7 +39,7 @@ class UserPatchData(BaseModel):
 
 
 class PassfilePostData(BaseModel):
-    passfile_id: Optional[conint(gt=0)]
+    name: str
     smth: constr(max_length=2_097_152)
 
     class Config:

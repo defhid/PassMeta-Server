@@ -4,8 +4,8 @@ __all__ = (
 
 
 class HistoryKind:
-    __slots__ = ('id', 'name')
+    __slots__ = ('id', 'name_loc')
 
-    def __init__(self, kind_id: int, kind_name: str):
+    def __init__(self, kind_id: int, kind_name_loc: dict[str, str]):
         self.id = kind_id
-        self.name = kind_name
+        self.name_loc = kind_name_loc

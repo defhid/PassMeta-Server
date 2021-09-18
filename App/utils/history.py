@@ -16,7 +16,12 @@ class HistoryWriter:
     def __init__(self, db_session: AsyncDbSession):
         self.db = db_session
 
-    async def write(self, kind: HistoryKind, user: Optional[User], more: str = None, request: Request = None):
+    async def write(self,
+                    kind: HistoryKind,
+                    user: Optional[User],
+                    more: str = None,
+                    request: Request = None,
+                    autocommit: bool = True) -> History:
         """ Auto-commit.
         """
         h = History(kind_id=kind.id, user_id=None if user is None else user.id)
@@ -32,4 +37,7 @@ class HistoryWriter:
             h_more = HistoryMore(history_id=h.id, info=more)
             self.db.add(h_more)
 
-        await self.db.commit()
+        if autocommit:
+            await self.db.commit()
+
+        return h

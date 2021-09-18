@@ -51,8 +51,10 @@ class PassFileUtils:
             bytes_content = Fernet(KEY_PHRASE_BYTES).encrypt(content.encode('utf-8'))
 
             path = cls._make_filepath_normal(passfile.user_id, passfile.id)
-            if not os.path.exists(os.path.dirname(path)):
-                os.mkdir(path)
+            directory = os.path.dirname(path)
+
+            if not os.path.exists(directory):
+                os.mkdir(directory)
 
             async with aiofiles.open(path, 'wb') as f:
                 await f.write(bytes_content)
@@ -77,6 +79,41 @@ class PassFileUtils:
             assert not os.path.exists(path_archived), "File Does Not Exist"
         except Exception as e:
             logger.critical("File archiving error!", e)
+            return False
+        else:
+            return True
+
+    @classmethod
+    def unarchive_file(cls, passfile: 'PassFile') -> bool:
+        """ Move file from archived path to normal.
+            :returns file moved successfully?
+        """
+        try:
+            path_normal = cls._make_filepath_normal(passfile.user_id, passfile.id)
+            path_archived = cls._make_filepath_archived(passfile.id)
+
+            if os.path.exists(path_archived):
+                os.replace(path_archived, path_normal)
+
+            assert not os.path.exists(path_normal), "File Does Not Exist"
+        except Exception as e:
+            logger.critical("File archiving error!", e)
+            return False
+        else:
+            return True
+
+    @classmethod
+    def delete_file(cls, passfile: 'PassFile') -> bool:
+        """ Delete file from file system.
+            :returns file deleted successfully?
+        """
+        try:
+            path = cls.get_filepath(passfile)
+
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception as e:
+            logger.critical("File deleting error!", e)
             return False
         else:
             return True

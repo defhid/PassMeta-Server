@@ -82,13 +82,22 @@ async def on_startup():
 # endregion
 
 
+# region Aliases
+
+GET = app.get
+POST = app.post
+PATCH = app.patch
+PUT = app.put
+DELETE = app.delete
 DB = Depends(db_utils.session_maker)
+
+# endregion
 
 
 # region Auth
 
-@app.post("/auth/sign-in")
-async def controller(
+@POST("/auth/sign-in")
+async def _(
         body: SignInPostData,
         request: Request,
         db_session: AsyncDbSession = DB
@@ -98,8 +107,8 @@ async def controller(
     return await service.authorize(user, request)
 
 
-@app.post("/auth/sign-out")
-async def controller(
+@POST("/auth/sign-out")
+async def _(
         request: Request,
         db_session: AsyncDbSession = DB
 ):
@@ -111,8 +120,8 @@ async def controller(
 
 # region Passfile
 
-@app.get("/passfiles/{passfile_id}")
-async def controller(
+@GET("/passfiles/{passfile_id}")
+async def _(
         passfile_id: int,
         request: Request,
         db_session: AsyncDbSession = DB
@@ -122,25 +131,71 @@ async def controller(
     return Ok().as_response(data=passfile.to_dict(data))
 
 
-@app.post("/passfiles/new")
-async def controller(
+@GET("/passfiles/list")
+async def _(
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
+    user = await AuthService(db_session).get_user(request)
+    passfiles = await PassFileService(db_session).get_user_passfiles(user)
+    converted = list(map(lambda p: p.to_dict(), passfiles))
+    return Ok().as_response(data=converted)
+
+
+@POST("/passfiles/new")
+async def _(
         body: PassfilePostData,
         request: Request,
         db_session: AsyncDbSession = DB
 ):
     user = await AuthService(db_session).get_user(request)
-    passfile = await PassFileService(db_session).save_file(body, user, request)
+    passfile = await PassFileService(db_session).add_file(body, user, request)
     return Ok().as_response(data=passfile.to_dict())
 
 
-@app.post("/passfiles/{passfile_id}")
-async def controller(
+@PATCH("/passfiles/{passfile_id}")
+async def _(
+        passfile_id: int,
+        body: PassfilePostData,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
+    user = await AuthService(db_session).get_user(request)
+    await PassFileService(db_session).edit_file(passfile_id, body, user, request)
+    return Ok().as_response()
+
+
+@PUT("/passfiles/{passfile_id}/to/archive")
+async def _(
         passfile_id: int,
         request: Request,
         db_session: AsyncDbSession = DB
 ):
     user = await AuthService(db_session).get_user(request)
-    await PassFileService(db_session).delete_file(passfile_id, user, request)
+    await PassFileService(db_session).archive_file(passfile_id, user, request)
+    return Ok().as_response()
+
+
+@PUT("/passfiles/{passfile_id}/to/actual")
+async def _(
+        passfile_id: int,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
+    user = await AuthService(db_session).get_user(request)
+    await PassFileService(db_session).unarchive_file(passfile_id, user, request)
+    return Ok().as_response()
+
+
+@DELETE("/passfiles/{passfile_id}")
+async def _(
+        passfile_id: int,
+        check_password: str,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
+    user = await AuthService(db_session).get_user(request)
+    await PassFileService(db_session).delete_file(passfile_id, check_password, user, request)
     return Ok().as_response()
 
 # endregion
@@ -148,8 +203,8 @@ async def controller(
 
 # region Users
 
-@app.post("/users/new")
-async def controller(
+@POST("/users/new")
+async def _(
         body: SignUpPostData,
         request: Request,
         db_session: AsyncDbSession = DB
@@ -158,8 +213,8 @@ async def controller(
     return await AuthService(db_session).authorize(user, request)
 
 
-@app.get("/users/me")
-async def controller(
+@GET("/users/me")
+async def _(
         request: Request,
         db_session: AsyncDbSession = DB
 ):
@@ -167,8 +222,8 @@ async def controller(
     return Ok().as_response(data=user.to_dict())
 
 
-@app.patch("/users/me")
-async def controller(
+@PATCH("/users/me")
+async def _(
         body: UserPatchData,
         request: Request,
         db_session: AsyncDbSession = DB
@@ -182,8 +237,8 @@ async def controller(
 
 # region info
 
-@app.get("/info")
-async def controller(
+@GET("/info")
+async def _(
         request: Request,
         db_session: AsyncDbSession = DB
 ):

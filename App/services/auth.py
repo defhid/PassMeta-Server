@@ -112,3 +112,7 @@ class AuthService(DbServiceBase):
         if session:
             await self.db.delete(session)
             await self.db.commit()
+
+    @classmethod
+    def check_password(cls, raw_password: str, user: User) -> bool:
+        return hashlib.sha512(raw_password.encode('utf-8')).hexdigest() == user.pwd
