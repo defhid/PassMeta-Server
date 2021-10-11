@@ -1,4 +1,4 @@
-from pydantic import BaseModel, constr, conint
+from pydantic import BaseModel, constr
 from typing import Optional
 
 __all__ = (
@@ -40,6 +40,7 @@ class UserPatchData(BaseModel):
 
 class PassfilePostData(BaseModel):
     name: str
+    color: Optional[str]
     smth: constr(max_length=2_097_152)
 
     class Config:

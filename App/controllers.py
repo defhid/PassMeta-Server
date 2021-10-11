@@ -120,17 +120,6 @@ async def _(
 
 # region Passfile
 
-@GET("/passfiles/{passfile_id}")
-async def _(
-        passfile_id: int,
-        request: Request,
-        db_session: AsyncDbSession = DB
-):
-    user = await AuthService(db_session).get_user(request)
-    passfile, data = await PassFileService(db_session).get_file(passfile_id, user, request)
-    return Ok().as_response(data=passfile.to_dict(data))
-
-
 @GET("/passfiles/list")
 async def _(
         request: Request,
@@ -140,6 +129,17 @@ async def _(
     passfiles = await PassFileService(db_session).get_user_passfiles(user)
     converted = list(map(lambda p: p.to_dict(), passfiles))
     return Ok().as_response(data=converted)
+
+
+@GET("/passfiles/{passfile_id}")
+async def _(
+        passfile_id: int,
+        request: Request,
+        db_session: AsyncDbSession = DB
+):
+    user = await AuthService(db_session).get_user(request)
+    passfile, data = await PassFileService(db_session).get_file(passfile_id, user, request)
+    return Ok().as_response(data=passfile.to_dict(data))
 
 
 @POST("/passfiles/new")
@@ -161,8 +161,8 @@ async def _(
         db_session: AsyncDbSession = DB
 ):
     user = await AuthService(db_session).get_user(request)
-    await PassFileService(db_session).edit_file(passfile_id, body, user, request)
-    return Ok().as_response()
+    passfile = await PassFileService(db_session).edit_file(passfile_id, body, user, request)
+    return Ok().as_response(data=passfile.to_dict())
 
 
 @PUT("/passfiles/{passfile_id}/to/archive")

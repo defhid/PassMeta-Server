@@ -48,7 +48,8 @@ class PassFile(DbModelBase):
     __tablename__ = "passfile"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False)
+    name = Column(String(100), nullable=False)
+    color = Column(String(6), nullable=True)  # hex
     user_id = Column(Integer, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     changed_on = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -59,6 +60,7 @@ class PassFile(DbModelBase):
         d = {
             'id': self.id,
             'name': self.name,
+            'color': self.color,
             'created_on': str(self.created_on),
             'changed_on': str(self.changed_on),
             'version': self.version,

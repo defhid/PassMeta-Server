@@ -9,6 +9,7 @@ from App.special import *
 from sqlalchemy import select
 from starlette.requests import Request
 import datetime
+import re
 
 __all__ = (
     'PassFileService',
@@ -52,7 +53,7 @@ class PassFileService(DbServiceBase):
         """
         self._validate_data(data, True)
 
-        passfile = PassFile(user_id=user.id, name=data.name)
+        passfile = PassFile(user_id=user.id, name=data.name, color=data.color)
         self.db.add(passfile)
 
         h = await self.history_writer.write(
@@ -93,6 +94,7 @@ class PassFileService(DbServiceBase):
         passfile.changed_on = datetime.datetime.utcnow()
         passfile.version += 1
         passfile.name = data.name
+        passfile.color = data.color
 
         await self.history_writer.write(
             History.Kind.EDIT_PASSFILE_SUCCESS,
@@ -225,3 +227,11 @@ class PassFileService(DbServiceBase):
 
         if content_required and len(data.name) < 1:
             raise Bad('name', TOO_SHORT_ERR)
+
+        if not data.color or len(data.color) != 6:
+            data.color = None
+
+        if data.color:
+            data.color = data.color.lstrip("#").upper()
+            if not re.fullmatch(re.compile("[0-9A-B]"), data.color):
+                raise Bad('color', VAL_ERR)
