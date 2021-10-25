@@ -53,7 +53,7 @@ class PassFileService(DbServiceBase):
         """
         self._validate_data(data, True)
 
-        passfile = PassFile(user_id=user.id, name=data.name, color=data.color)
+        passfile = PassFile(user_id=user.id, name=data.name, color=data.color, check_key=data.check_key)
         self.db.add(passfile)
 
         h = await self.history_writer.write(
@@ -95,6 +95,7 @@ class PassFileService(DbServiceBase):
         passfile.version += 1
         passfile.name = data.name
         passfile.color = data.color
+        passfile.check_key = data.check_key
 
         await self.history_writer.write(
             History.Kind.EDIT_PASSFILE_SUCCESS,
@@ -235,3 +236,9 @@ class PassFileService(DbServiceBase):
             data.color = data.color.lstrip("#").upper()
             if not re.fullmatch(re.compile("[0-9A-B]"), data.color):
                 raise Bad('color', VAL_ERR)
+
+        if data.check_key is None:
+            raise Bad('check_key', VAL_MISSED_ERR)
+
+        if len(data.check_key) != 128:
+            raise Bad('check_key', VAL_ERR, MORE.text("incorrect length"))

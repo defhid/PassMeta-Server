@@ -190,12 +190,12 @@ async def _(
 @DELETE("/passfiles/{passfile_id}")
 async def _(
         passfile_id: int,
-        check_password: str,
+        body: PassfileDeleteData,
         request: Request,
         db_session: AsyncDbSession = DB
 ):
     user = await AuthService(db_session).get_user(request)
-    await PassFileService(db_session).delete_file(passfile_id, check_password, user, request)
+    await PassFileService(db_session).delete_file(passfile_id, body.check_password, user, request)
     return Ok().as_response()
 
 # endregion

@@ -51,6 +51,7 @@ class PassFile(DbModelBase):
     name = Column(String(100), nullable=False)
     color = Column(String(6), nullable=True)  # hex
     user_id = Column(Integer, nullable=False)
+    check_key = Column(String(128), nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     changed_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     version = Column(Integer, default=1, nullable=False)
@@ -61,6 +62,7 @@ class PassFile(DbModelBase):
             'id': self.id,
             'name': self.name,
             'color': self.color,
+            'check_key': self.check_key,
             'created_on': str(self.created_on),
             'changed_on': str(self.changed_on),
             'version': self.version,

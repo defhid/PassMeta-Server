@@ -6,6 +6,7 @@ __all__ = (
     'SignUpPostData',
     'UserPatchData',
     'PassfilePostData',
+    'PassfileDeleteData',
 )
 
 
@@ -41,7 +42,15 @@ class UserPatchData(BaseModel):
 class PassfilePostData(BaseModel):
     name: str
     color: Optional[str]
+    check_key: str
     smth: constr(max_length=2_097_152)
+
+    class Config:
+        extra = "forbid"
+
+
+class PassfileDeleteData(BaseModel):
+    check_password: str
 
     class Config:
         extra = "forbid"
