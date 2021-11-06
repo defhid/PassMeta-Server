@@ -19,7 +19,7 @@ __all__ = (
 class PassFileService(DbServiceBase):
     __slots__ = ()
 
-    async def get_user_passfiles(self, user: User) -> list[PassFile]:
+    async def get_user_passfiles(self, user: User) -> List[PassFile]:
         return list(await self.db.query(PassFile, select(PassFile).where(PassFile.user_id == user.id)))
 
     async def get_file(self, passfile_id: int, user: User, request: Request) -> (PassFile, bytes):
