@@ -234,7 +234,7 @@ class PassFileService(DbServiceBase):
 
         if data.color:
             data.color = data.color.lstrip("#").upper()
-            if not re.fullmatch(re.compile("[0-9A-B]"), data.color):
+            if not re.fullmatch(re.compile("^[0-9A-F]{6}$"), data.color):
                 raise Bad('color', VAL_ERR)
 
         if data.check_key is None:
