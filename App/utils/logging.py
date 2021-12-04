@@ -6,6 +6,8 @@ __all__ = (
     'Logger',
 )
 
+from App.settings import DEBUG
+
 
 class Logger:
     __slots__ = ('location', )
@@ -36,10 +38,11 @@ class Logger:
 
     def info(self, _text: str, **kwargs):
         if kwargs:
-            self._logger.info(f"{_text} ({', '.join(f'{k}={v}' for k, v in kwargs.items())})")
+            self._log_info(f"{_text} ({', '.join(f'{k}={v}' for k, v in kwargs.items())})")
         else:
-            self._logger.info(f"{_text}")
+            self._log_info(f"{_text}")
 
     @classmethod
     def init(cls, logger_name: str):
         cls._logger = logging.getLogger(logger_name)
+        cls._log_info = cls._logger.error if DEBUG else cls._logger.info

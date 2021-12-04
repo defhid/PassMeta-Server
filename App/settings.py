@@ -8,15 +8,20 @@ to load required settings or override default.
 import os
 
 
+# region Common
+
+APP_VERSION = "0.9.0"
+
 DEBUG: bool = False
 
-DB_CONNECTION_STRING: str  # PostgreSQL database connection string
-KEY_PHRASE_BYTES: bytes  # Generated key from Fernet.generate_key()
+# endregion
 
 
-# region SqlAlchemy
+# region Database
 
-DB_CONNECTION_POOL_SIZE: int = 20
+DB_CONNECTION: dict  # PostgreSQL database connection setup: host, port, user, password, database etc.
+DB_CONNECTION_POOL_MIN_SIZE: int = 10
+DB_CONNECTION_POOL_MAX_SIZE: int = 30
 
 # endregion
 
@@ -28,34 +33,40 @@ ROOT_DIR: str = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__fi
 PASSFILES_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFiles')
 PASSFILES_ARCHIVE_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFilesArchive')
 
-# endregion
-
-
-# region info
-
-APP_VERSION = "0.9.0"
+KEY_PHRASE_BYTES: bytes  # Generated key from Fernet.generate_key()
 
 # endregion
 
 
 # region Others
 
-SESSION_LIFETIME_DAYS: int = 120
+SESSION_LIFETIME_DAYS: int = 120  # how long to keep user web session
 
-ARCHIVED_PASSFILE_LIFETIME_DAYS: int = 30
+SESSION_CACHE_SIZE: int = 200  # limit on the number of cached sessions
 
-OLD_SESSIONS_CHECKING_INTERVAL_MINUTES: int = 60 * 3
-OLD_SESSIONS_CHECKING_ON_STARTUP: bool = True
+ARCHIVED_PASSFILE_LIFETIME_DAYS: int = 365  # how long to store archived files
 
-OLD_PASSFILES_CHECKING_INTERVAL_MINUTES: int = 60 * 24
-OLD_PASSFILES_CHECKING_ON_STARTUP: bool = True
+PASSFILE_KEEP_VERSIONS: int = 3  # max number of stored file versions
+
+HISTORY_KEEP_MONTHS: int = 12  # how many last months to store history more info (the origin history is permanent)
+
+OLD_SESSIONS_CHECKING_INTERVAL_MINUTES: int = 60 * 3  # how often to check old user web sessions
+OLD_SESSIONS_CHECKING_ON_STARTUP: bool = True  # launch checking old user web sessions on application startup
+
+OLD_PASSFILES_CHECKING_INTERVAL_MINUTES: int = 60 * 24  # how often to check old archived passfiles
+OLD_PASSFILES_CHECKING_ON_STARTUP: bool = True  # launch checking old archived passfiles on application startup
+
+OLD_HISTORY_CHECKING_INTERVAL_DAYS: int = 30  # how often to check old history more info
+OLD_HISTORY_CHECKING_ON_STARTUP: bool = True  # launch checking old history more info on application startup
+
+CHECK_DATABASE_ON_SATRTUP: bool = True  # ensure all db models exist, create if required
 
 # endregion
 
 
 def load_custom_settings(custom_settings):
     required = [
-        'DB_CONNECTION_STRING',
+        'DB_CONNECTION',
         'KEY_PHRASE_BYTES',
     ]
 

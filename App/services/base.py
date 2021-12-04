@@ -1,12 +1,12 @@
-from App.utils.db import AsyncDbSession
 from App.utils.history import HistoryWriter
+from passql import DbConnection
 
 
 class DbServiceBase:
     __slots__ = ('db', '_history_writer')
 
-    def __init__(self, db_session: AsyncDbSession):
-        self.db = db_session
+    def __init__(self, db_connection: DbConnection):
+        self.db = db_connection
 
     @property
     def history_writer(self) -> HistoryWriter:

@@ -1,43 +1,69 @@
-from App.utils.db import AsyncDbSession
 from App.models.extra import HistoryKind
-from App.models.db import History, HistoryMore, User
+from App.models.db import History
+from App.models.entities import RequestInfo
 
-from starlette.requests import Request
+from passql import DbConnection
 from typing import Optional
 
 __all__ = (
     'HistoryWriter',
 )
 
+from App.utils.db import MakeSql
+
 
 class HistoryWriter:
     __slots__ = ('db', )
 
-    def __init__(self, db_session: AsyncDbSession):
-        self.db = db_session
+    def __init__(self, db_connection: DbConnection):
+        self.db = db_connection
 
     async def write(self,
                     kind: HistoryKind,
-                    user: Optional[User],
+                    user_id: Optional[int],
+                    affected_user_id: Optional[int],
                     more: str = None,
-                    request: Request = None,
-                    autocommit: bool = True) -> History:
-        """ Auto-commit.
+                    request: RequestInfo = None) -> History:
+        """ Write history.
+
+        :param kind: History kind from special enum.
+        :param user_id: Actor user id.
+        :param affected_user_id: Affected user id.
+        :param more: Additional text information.
+        :param request: Current request.
+        :return: Created history object.
         """
-        h = History(kind_id=kind.id, user_id=None if user is None else user.id)
-        self.db.add(h)
 
         if request is not None:
             if more:
-                more += f",host:{request.client.host},port:{request.client.port}"
+                more += f",host:{request.request.client.host},port:{request.request.client.port}"
             else:
-                more = f"host:{request.client.host},port:{request.client.port}"
+                more = f"host:{request.request.client.host},port:{request.request.client.port}"
 
-        if more:
-            h_more = HistoryMore(history_id=h.id, info=more)
-            self.db.add(h_more)
+        h = History()
+        h.kind_id = kind.id
+        h.user_id = user_id,
+        h.affected_user_id = affected_user_id
+        h.more = more
 
-        if autocommit:
-            await self.db.commit()
-
+        h.id = await self.db.query_scalar(int, self._ADD_HISTORY_WITH_MORE if more else self._ADD_HISTORY, h)
         return h
+
+    # region SQL
+
+    _ADD_HISTORY = MakeSql("""
+        INSERT INTO history.history (kind_id, user_id, affected_user_id)
+        VALUES (@kind_id, @user_id, @affected_user_id)
+        RETURNING *
+    """)
+
+    _ADD_HISTORY_WITH_MORE = MakeSql("""
+        WITH his AS (
+            INSERT INTO history.history (kind_id, user_id, affected_user_id)
+            VALUES (@kind_id, @user_id, @affected_user_id)
+            RETURNING *
+        )
+        SELECT add_history_more(id, @more) as history_id FROM his
+    """)
+
+    # endregion

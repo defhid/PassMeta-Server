@@ -1,7 +1,6 @@
 from App.utils.db import DbUtils
 from App.utils.logging import Logger
-from threading import Thread
-from time import sleep
+from threading import Thread, Event
 from datetime import datetime, timedelta
 from typing import Any, Optional, Callable, Dict, Coroutine
 import asyncio
@@ -16,32 +15,39 @@ logger = Logger(__file__)
 
 class SchedulerThread(Thread):
     def __init__(self, scheduler: 'Scheduler'):
-        super().__init__()
-        self.scheduler = scheduler
-        self.running = False
-        self.daemon = True
+        super().__init__(daemon=True)
+        self._scheduler = scheduler
+        self._stop_event = Event()
 
     def run(self):
         loop = asyncio.new_event_loop()
-        task_context = SchedulerTask.Context(DbUtils())
+        asyncio.set_event_loop(loop)
 
-        self.running = True
-        while self.running:
+        db_utils = DbUtils(1)
+        loop.run_until_complete(db_utils.init())
+
+        self._stop_event.clear()
+        while not self._stop_event.is_set():
+            self.sleeping = False
             now = datetime.now()
 
-            for task_name in tuple(self.scheduler.tasks.keys()):
-                task = self.scheduler.tasks.get(task_name)
+            for task_name in tuple(self._scheduler.tasks.keys()):
+                task = self._scheduler.tasks.get(task_name)
 
                 if task is None or not task.is_active or now < task.next_time:
                     continue
 
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(task.run(task_context))
+                loop.run_until_complete(task.run(SchedulerTask.Context(db_utils)))
 
                 if task.is_single:
-                    self.scheduler.tasks.pop(task_name, None)
+                    self._scheduler.tasks.pop(task_name, None)
 
-            sleep(self.scheduler.period_s)
+            self._stop_event.wait(self._scheduler.period_s)
+
+        loop.run_until_complete(db_utils.dispose())
+
+    def stop(self):
+        self._stop_event.set()
 
 
 class SchedulerTask:
@@ -138,5 +144,6 @@ class Scheduler:
         self.tasks[name].activate(start_now)
 
     def stop(self):
-        self.thread.running = False
+        self.thread.stop()
         self.thread.join()
+        self.thread = None

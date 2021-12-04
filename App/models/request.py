@@ -1,4 +1,4 @@
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, conint
 from typing import Optional
 
 __all__ = (
@@ -6,7 +6,10 @@ __all__ = (
     'SignUpPostData',
     'UserPatchData',
     'PassfilePostData',
+    'PassfileInfoPatchData',
+    'PassfileSmthPatchData',
     'PassfileDeleteData',
+    'HistoryPage',
 )
 
 
@@ -43,7 +46,23 @@ class PassfilePostData(BaseModel):
     name: str
     color: Optional[str]
     check_key: str
-    smth: constr(max_length=2_097_152)
+    smth: constr(min_length=1, max_length=2_097_152)
+
+    class Config:
+        extra = "forbid"
+
+
+class PassfileInfoPatchData(BaseModel):
+    name: str
+    color: Optional[str]
+
+    class Config:
+        extra = "forbid"
+
+
+class PassfileSmthPatchData(BaseModel):
+    check_key: str
+    smth: constr(min_length=1, max_length=2_097_152)
 
     class Config:
         extra = "forbid"
@@ -54,3 +73,8 @@ class PassfileDeleteData(BaseModel):
 
     class Config:
         extra = "forbid"
+
+
+class HistoryPage(BaseModel):
+    limit: conint(gt=0, lt=100)
+    offset: conint(ge=0)

@@ -20,94 +20,50 @@ class ResMessage(str):
         raise TypeError(f"{type(self).__name__} object is immutable!")
 
 
-ACCESS_ERR = ResMessage(
-    "ACCESS ERROR",
-    403
-)
+ACCESS_ERR = ResMessage("ACCESS ERROR", 403)
 
-ALREADY_USED_ERR = ResMessage(
-    "ALREADY USED"
-)
+ALREADY_USED_ERR = ResMessage("ALREADY USED")
 
-AUTH_ERR = ResMessage(
-    "AUTH ERROR",
-    401
-)
+AUTH_ERR = ResMessage("AUTH ERROR", 401)
 
-BAD_REQUEST_ERR = ResMessage(
-    "BAD REQUEST",
-    400
-)
+BAD_REQUEST_ERR = ResMessage("BAD REQUEST", 400)
 
-DATA_ERR = ResMessage(
-    "INVALID DATA"
-)
+DATA_ERR = ResMessage("INVALID DATA")
 
-FORMAT_ERR = ResMessage(
-    "INCORRECT FORMAT"
-)
+FORMAT_ERR = ResMessage("INCORRECT FORMAT")
 
-NOT_AVAILABLE = ResMessage(
-    "NOT AVAILABLE"
-)
+FROZEN_ERR = ResMessage("FROZEN")
 
-NOT_EXIST_ERR = ResMessage(
-    "NOT EXIST"
-)
+INVALID_OPERATION_ERR = ResMessage("INVALID OPERATION")
 
-NOT_IMPLEMENTED_ERR = ResMessage(
-    "NOT IMPLEMENTED"
-)
+NOT_AVAILABLE = ResMessage("NOT AVAILABLE")
 
-OK = ResMessage(
-    "OK"
-)
+NOT_EXIST_ERR = ResMessage("NOT EXIST")
 
-PROHIBITED_ERR = ResMessage(
-    "PROHIBITED"
-)
+NOT_IMPLEMENTED_ERR = ResMessage("NOT IMPLEMENTED")
 
-SERVER_ERR = ResMessage(
-    "SERVER ERROR",
-    500
-)
+OK = ResMessage("OK")
 
-SIZE_ERR = ResMessage(
-    "SIZE ERROR"
-)
+PROHIBITED_ERR = ResMessage("PROHIBITED")
 
-TOO_FEW_ERR = ResMessage(
-    "TOO FEW"
-)
+SERVER_ERR = ResMessage("SERVER ERROR", 500)
 
-TOO_LONG_ERR = ResMessage(
-    "TOO LONG"
-)
+SIZE_ERR = ResMessage("SIZE ERROR")
 
-TOO_MUCH_ERR = ResMessage(
-    "TOO MUCH"
-)
+TOO_FEW_ERR = ResMessage("TOO FEW")
 
-TOO_SHORT_ERR = ResMessage(
-    "TOO SHORT"
-)
+TOO_LONG_ERR = ResMessage("TOO LONG")
 
-TOO_SIMPLE_ERR = ResMessage(
-    "TOO SIMPLE"
-)
+TOO_MUCH_ERR = ResMessage("TOO MUCH")
 
-UNKNOWN_ERR = ResMessage(
-    "UNKNOWN ERROR"
-)
+TOO_SHORT_ERR = ResMessage("TOO SHORT")
 
-VAL_ERR = ResMessage(
-    "INCORRECT VALUE"
-)
+TOO_SIMPLE_ERR = ResMessage("TOO SIMPLE")
 
-VAL_MISSED_ERR = ResMessage(
-    "VALUE MISSED"
-)
+UNKNOWN_ERR = ResMessage("UNKNOWN ERROR")
 
-WRONG_VAL_ERR = ResMessage(
-    "WRONG VALUE"
-)
+VAL_ERR = ResMessage("INCORRECT VALUE")
+
+VAL_MISSED_ERR = ResMessage("VALUE MISSED")
+
+WRONG_VAL_ERR = ResMessage("WRONG VALUE")

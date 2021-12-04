@@ -26,6 +26,9 @@ class Result(Exception):
     def __str__(self) -> str:
         return str(self.args[0])
 
+    def __bool__(self) -> bool:
+        return self.message is OK
+
     def __call__(self, **kwargs) -> 'Result':
         """ Set attributes """
         for field in kwargs:
@@ -33,6 +36,14 @@ class Result(Exception):
             if val is not None:
                 setattr(self, field, val)
         return self
+
+    @property
+    def success(self) -> bool:
+        return self.message is OK
+
+    @property
+    def failure(self) -> bool:
+        return self.message is not OK
 
     @property
     def what(self) -> Optional[str]:
@@ -72,7 +83,7 @@ class Result(Exception):
         return self.args[0].get('sub')
 
     @sub.setter
-    def sub(self, value: Optional[List[Union['Result', dict]]]):
+    def sub(self, value: Optional[Union['Result', dict, List['Result'], List[dict]]]):
         if value is None:
             self.args[0].pop('sub', None)
         else:
@@ -88,6 +99,10 @@ class Result(Exception):
         if data is not None:
             self.args[0]['data'] = data
         return JSONResponse(self.args[0], status_code=self.message.response_status_code)
+
+    def raise_if_failure(self):
+        if self.failure:
+            raise self
 
 
 class Bad(Result):

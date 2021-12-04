@@ -31,6 +31,14 @@ OK_BAD_MESSAGES_TRANSLATE_PACK = {
         default="incorrect format",
         ru="некорректный формат",
     ),
+    str(FROZEN_ERR): loc(
+        default="frozen (not active)",
+        ru="заблокирован (не активен)"
+    ),
+    str(INVALID_OPERATION_ERR): loc(
+        default="invalid operation",
+        ru="недопустимая операция"
+    ),
     str(NOT_AVAILABLE): loc(
         default="not available",
         ru="недоступно",

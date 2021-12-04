@@ -78,3 +78,7 @@ class MORE:
     @staticmethod
     def max_allowed(val: Union[int, float]) -> ResMore:
         return ResMore(max_allowed=val)
+
+    @staticmethod
+    def exception(ex: BaseException) -> ResMore:
+        return ResMore(text=str(ex))
