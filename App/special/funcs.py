@@ -1,3 +1,4 @@
+from App.special.consts import Locales
 from typing import Dict
 
 __all__ = (
@@ -7,6 +8,6 @@ __all__ = (
 
 def loc(default: str, ru: str) -> Dict[str, str]:
     return {
-        "default": default,
-        "ru": ru,
+        Locales.DEFAULT.code: default,
+        Locales.RU.code: ru,
     }

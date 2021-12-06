@@ -1,4 +1,4 @@
-from pydantic import BaseModel, constr, conint
+from pydantic import BaseModel, constr
 from typing import Optional
 
 __all__ = (
@@ -9,7 +9,6 @@ __all__ = (
     'PassfileInfoPatchData',
     'PassfileSmthPatchData',
     'PassfileDeleteData',
-    'HistoryPage',
 )
 
 
@@ -73,8 +72,3 @@ class PassfileDeleteData(BaseModel):
 
     class Config:
         extra = "forbid"
-
-
-class HistoryPage(BaseModel):
-    limit: conint(gt=0, lt=100)
-    offset: conint(ge=0)

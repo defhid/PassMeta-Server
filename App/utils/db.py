@@ -2,6 +2,7 @@ from App.settings import DB_CONNECTION, DB_CONNECTION_POOL_MIN_SIZE
 from passql.defaults import SqlDefaultConverters
 from passql import *
 from typing import Generator
+from types import GeneratorType
 import asyncpg
 
 __all__ = (
@@ -9,8 +10,16 @@ __all__ = (
     'MakeSql',
 )
 
+
+def _custom_sql_in(val, converter) -> str:
+    result = ','.join(converter(v) for v in val)
+    return result if result else 'SELECT NULL WHERE FALSE'
+
+
 MakeSql = SqlMaker(SqlDefaultConverters.POSTGRES + SqlConverter({
-    str: lambda val, converter: "'" + val.replace("'", "") + "'::text",  # TODO: + $ + escaping...
+    tuple: _custom_sql_in,
+    range: _custom_sql_in,
+    GeneratorType: _custom_sql_in,
 }))
 
 

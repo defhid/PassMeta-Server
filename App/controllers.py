@@ -1,7 +1,7 @@
 from App.special import *
 
 from App.models.request import *
-from App.models.entities import RequestInfo
+from App.models.entities import RequestInfo, PageRequest
 from App.models.db import check_entities
 
 from App.utils.db import DbUtils
@@ -128,6 +128,24 @@ REQUEST_INFO = Depends(request_utils.request_info_maker)
 # endregion
 
 
+# region info
+
+@GET("/info")
+async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
+    if request.session is not None:
+        user = (await request.session.get_user(db)).to_dict()
+    else:
+        user = None
+
+    return Ok().as_response(data={
+        'user': user,
+        'messages_translate_pack': OK_BAD_MESSAGES_TRANSLATE_PACK,
+        'app_version': APP_VERSION,
+    })
+
+# endregion
+
+
 # region Auth
 
 @POST("/auth/sign-in")
@@ -240,19 +258,13 @@ async def ctrl(body: UserPatchData,
 # endregion
 
 
-# region info
+# region History
 
-@GET("/info")
-async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
-    if request.session is not None:
-        user = (await request.session.get_user(db)).to_dict()
-    else:
-        user = None
-
-    return Ok().as_response(data={
-        'user': user,
-        'messages_translate_pack': OK_BAD_MESSAGES_TRANSLATE_PACK,
-        'app_version': APP_VERSION,
-    })
+@GET("/history/{kind}")
+async def ctrl(kind: str, page: PageRequest = Depends(request_utils.page_getter),
+               request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
+    request.ensure_user_is_authorized()
+    page = await HistoryService(db).get_page(page, kind, request)
+    return Ok().as_response(page)
 
 # endregion

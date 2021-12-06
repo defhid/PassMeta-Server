@@ -4,6 +4,7 @@ from collections import OrderedDict
 __all__ = (
     'Enum',
     'LRUCache',
+    'Locale',
 )
 
 KT = TypeVar('KT')
@@ -54,14 +55,14 @@ class Enum(Generic[VT, IdT]):
 
     @classmethod
     def get(cls, predicate: Callable[[VT], bool], default=None) -> Union[VT, Any]:
-        for item in cls.__items:
+        for item in cls.__item_names.keys():
             if predicate(item):
                 return item
 
         return default
 
     @classmethod
-    def get_by_id(cls, item_id: IdT, default=None) -> Union[IdT, Any]:
+    def get_by_id(cls, item_id: IdT, default=None) -> Union[VT, Any]:
         return cls.__items.get(item_id, default)
 
     @classmethod
@@ -100,3 +101,14 @@ class LRUCache(Generic[KT, VT]):
 
     def pop(self, key: KT, default=None) -> Union[VT, Any]:
         return self._cache.pop(key, default)
+
+
+class Locale:
+    __slots__ = ('_code', )
+
+    def __init__(self, code: str):
+        self._code = code
+
+    @property
+    def code(self):
+        return self._code

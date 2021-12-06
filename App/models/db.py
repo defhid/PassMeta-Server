@@ -153,11 +153,11 @@ class PassFile(DbEntity):
             'name': self.name,
             'color': self.color,
             'check_key': self.check_key,
-            'created_on': str(self.created_on),
-            'changed_on': str(self.changed_on),
+            'created_on': self.created_on.isoformat(),
+            'changed_on': self.changed_on.isoformat(),
             'version': self.version,
             'is_archived': self.is_archived,
-            'archived_on': self.archived_on,
+            'archived_on': self.archived_on.isoformat() if self.archived_on is not None else None,
             'smth': None if data is None else data.decode('utf-8'),
         }
 
@@ -230,11 +230,11 @@ class History(DbEntity):
         return {
             'id': self.id,
             'kind_id': self.kind_id,
-            'kind': self.Kind.get(lambda k: k.id == self.kind_id).name_loc[lang],
+            'kind': self.Kind.get_by_id(self.kind_id).name_loc[lang],
             'user_login': self.user_login,
             'affected_user_login': self.affected_user_login,
             'more': self.more,
-            'timestamp': self.timestamp,
+            'timestamp': self.timestamp.isoformat(),
         }
 
 

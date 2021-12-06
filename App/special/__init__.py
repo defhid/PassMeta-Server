@@ -1,4 +1,5 @@
 from .classes import *
+from .consts import *
 from .funcs import *
 
 from .ok_bad.messages import *
