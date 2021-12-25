@@ -44,7 +44,6 @@ class UserPatchData(BaseModel):
 class PassfilePostData(BaseModel):
     name: str
     color: Optional[str]
-    check_key: str
     smth: constr(min_length=1, max_length=2_097_152)
 
     class Config:
@@ -60,7 +59,6 @@ class PassfileInfoPatchData(BaseModel):
 
 
 class PassfileSmthPatchData(BaseModel):
-    check_key: str
     smth: constr(min_length=1, max_length=2_097_152)
 
     class Config:

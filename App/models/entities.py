@@ -6,6 +6,7 @@ __all__ = (
     'RequestInfo',
     'PageRequest',
     'PageResult',
+    'PassFilePath',
 )
 
 
@@ -50,3 +51,22 @@ class PageResult(dict):
 
     def __init__(self, lst: List, total: int, offset: int, limit: int):
         super().__init__(list=lst, total=total, offset=offset, limit=limit)
+
+
+class PassFilePath:
+    __slots__ = ('id', 'version', 'full_path')
+
+    def __init__(self, filename: str, full_path: str):
+        parts = filename.split('v')
+
+        try:
+            self.id = int(parts[0])
+        except ValueError:
+            self.id = None
+
+        try:
+            self.version = int(parts[1].split('.')[0])
+        except ValueError:
+            self.version = -1
+
+        self.full_path = full_path

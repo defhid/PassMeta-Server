@@ -84,15 +84,6 @@ async def on_startup():
     ))
 
     scheduler.add(SchedulerTask(
-        'APASCHECK',
-        active=True,
-        single=False,
-        interval_minutes=OLD_PASSFILES_CHECKING_INTERVAL_MINUTES,
-        start_now=OLD_PASSFILES_CHECKING_ON_STARTUP,
-        func=PassFileService.scheduled__check_archived_files
-    ))
-
-    scheduler.add(SchedulerTask(
         'OHISCHECK',
         active=True,
         single=False,
@@ -178,8 +169,17 @@ async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
 async def ctrl(passfile_id: int,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
-    passfile, data = await PassFileService(db).get_file(passfile_id, request)
+    passfile, data = await PassFileService(db).get_file(passfile_id, None, request)
     return Ok().as_response(data=passfile.to_dict(data))
+
+
+@GET("/passfiles/{passfile_id}/smth")
+async def ctrl(passfile_id: int,
+               version: int = None,
+               request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
+    request.ensure_user_is_authorized()
+    _, data = await PassFileService(db).get_file(passfile_id, version, request)
+    return Ok().as_response(data=data)
 
 
 @POST("/passfiles/new")
@@ -204,22 +204,6 @@ async def ctrl(passfile_id: int, body: PassfileSmthPatchData,
     request.ensure_user_is_authorized()
     passfile = await PassFileService(db).edit_file_smth(passfile_id, body, request)
     return Ok().as_response(data=passfile.to_dict())
-
-
-@PUT("/passfiles/{passfile_id}/to/archive")
-async def ctrl(passfile_id: int,
-               request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
-    request.ensure_user_is_authorized()
-    await PassFileService(db).archive_file(passfile_id, request)
-    return Ok().as_response()
-
-
-@PUT("/passfiles/{passfile_id}/to/actual")
-async def ctrl(passfile_id: int,
-               request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
-    request.ensure_user_is_authorized()
-    await PassFileService(db).unarchive_file(passfile_id, request)
-    return Ok().as_response()
 
 
 @DELETE("/passfiles/{passfile_id}")

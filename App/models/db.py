@@ -106,15 +106,12 @@ class PassFile(DbEntity):
         name varchar(@NAME_LEN_MAX) NOT NULL,
         color char(@COLOR_LEN) NULL,
         user_id int NOT NULL REFERENCES public.user(id),
-        check_key char(@CHECK_KEY_LEN) NOT NULL,
         created_on timestamp NOT NULL DEFAULT now(),
         changed_on timestamp NOT NULL,
         version int NOT NULL DEFAULT 0,
-        archived_on timestamp NULL,
         
         CONSTRAINT name_min CHECK (length(name) >= @NAME_LEN_MIN),
-        CONSTRAINT color_len CHECK (length(trim(color)) = @COLOR_LEN),
-        CONSTRAINT check_key_len CHECK (length(trim(check_key)) = @CHECK_KEY_LEN)
+        CONSTRAINT color_len CHECK (length(trim(color)) = @COLOR_LEN)
     );
     CREATE UNIQUE INDEX IF NOT EXISTS passfile_id_ix ON public.passfile(id);
     CREATE INDEX IF NOT EXISTS passfile_user_id_ix ON public.passfile(user_id);
@@ -126,8 +123,6 @@ class PassFile(DbEntity):
 
         COLOR_LEN = 6
 
-        CHECK_KEY_LEN = 128
-
         class Raw:
             SMTH_MIN_LEN = 1
 
@@ -137,27 +132,18 @@ class PassFile(DbEntity):
     name: str
     color: Optional[str]  # hex
     user_id: int
-    check_key: str
     created_on: datetime
     changed_on: datetime  # info changed
     version: int  # 'smth' data changed
-    archived_on: datetime
-
-    @property
-    def is_archived(self) -> bool:
-        return self.archived_on is not None
 
     def to_dict(self, data: bytes = None) -> Dict[str, Any]:
         return {
             'id': self.id,
             'name': self.name,
             'color': self.color,
-            'check_key': self.check_key,
             'created_on': self.created_on.isoformat(),
             'changed_on': self.changed_on.isoformat(),
             'version': self.version,
-            'is_archived': self.is_archived,
-            'archived_on': self.archived_on.isoformat() if self.archived_on is not None else None,
             'smth': None if data is None else data.decode('utf-8'),
         }
 

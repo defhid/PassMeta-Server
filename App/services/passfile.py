@@ -1,6 +1,5 @@
 from App.services.base import DbServiceBase
 from App.services import AuthService
-from App.settings import ARCHIVED_PASSFILE_LIFETIME_DAYS
 from App.special import *
 
 from App.models.db import User, PassFile, History
@@ -9,9 +8,7 @@ from App.models.entities import RequestInfo
 
 from App.utils.db import MakeSql
 from App.utils.passfile import PassFileUtils
-from App.utils.scheduler import SchedulerTask
 
-import datetime
 import re
 
 __all__ = (
@@ -25,7 +22,7 @@ class PassFileService(DbServiceBase):
     async def get_user_passfiles(self, user: User) -> List[PassFile]:
         return await self.db.query_list(PassFile, self._SELECT_BY_USER_ID, {'user_id': user.id})
 
-    async def get_file(self, passfile_id: int, request: RequestInfo) -> (PassFile, bytes):
+    async def get_file(self, passfile_id: int, version: Optional[int], request: RequestInfo) -> (PassFile, bytes):
         """ Raises: Bad [NOT_EXIST_ERR, ACCESS_ERR].
         """
         passfile = await self._get_passfile_or_raise(passfile_id)
@@ -40,7 +37,7 @@ class PassFileService(DbServiceBase):
                                         request.user_id, passfile.user_id,
                                         more=f"pf:{passfile.id}", request=request)
 
-        return passfile, await PassFileUtils.read_file(passfile)
+        return passfile, await PassFileUtils.read_file(passfile, version)
 
     async def add_file(self, data: PassfilePostData, request: RequestInfo) -> PassFile:
         """ Raises: Bad.
@@ -55,7 +52,6 @@ class PassFileService(DbServiceBase):
                 'user_id': request.user_id,
                 'name': data.name,
                 'color': data.color,
-                'check_key': data.check_key,
             })
 
             result = await PassFileUtils.write_file(passfile, data.smth)
@@ -113,11 +109,7 @@ class PassFileService(DbServiceBase):
                                             more=f"ACCESS,pf:{passfile.id}", request=request)
             raise Bad(None, ACCESS_ERR)
 
-        if passfile.is_archived:
-            raise Bad('passfile', INVALID_OPERATION_ERR, MORE.text("ARCHIVED"))
-
         passfile.version += 1
-        passfile.check_key = data.check_key
 
         result = await PassFileUtils.write_file(passfile, data.smth)
         result.raise_if_failure()
@@ -140,73 +132,10 @@ class PassFileService(DbServiceBase):
 
         return passfile
 
-    async def archive_file(self, passfile_id: int, request: RequestInfo) -> PassFile:
-        """ Raises: Bad.
-        """
-        passfile = await self._get_passfile_or_raise(passfile_id)
-
-        if passfile.user_id != request.user_id:
-            await self.history_writer.write(History.Kind.ARCHIVE_PASSFILE_FAILURE,
-                                            request.user_id, passfile.user_id,
-                                            more=f"ACCESS,pf:{passfile.id}", request=request)
-            raise Bad(None, ACCESS_ERR)
-
-        if passfile.is_archived:
-            raise Bad('passfile', INVALID_OPERATION_ERR, MORE.text("ARCHIVED"))
-
-        async with self.db.transaction():
-            passfile = await self.db.query_first(PassFile, self._ARCHIVE, passfile)
-
-            await self.history_writer.write(History.Kind.ARCHIVE_PASSFILE_SUCCESS,
-                                            request.user_id, passfile.user_id,
-                                            more=f"pf:{passfile.id}", request=request)
-
-        PassFileUtils.archive_file(passfile)
-        return passfile
-
-    async def unarchive_file(self, passfile_id: int, request: RequestInfo) -> PassFile:
-        """ Raises: Bad.
-        """
-        passfile = await self._get_passfile_or_raise(passfile_id)
-
-        if passfile.user_id != request.user_id:
-            await self.history_writer.write(History.Kind.UNARCHIVE_PASSFILE_FAILURE,
-                                            request.user_id, passfile.user_id,
-                                            more=f"ACCESS,pf:{passfile.id}", request=request)
-            raise Bad(None, ACCESS_ERR)
-
-        if not passfile.is_archived:
-            raise Bad('passfile', INVALID_OPERATION_ERR, MORE.text("NOT ARCHIVED"))
-
-        result = None
-        transaction = self.db.transaction()
-        try:
-            await transaction.start()
-            passfile = await self.db.query_first(PassFile, self._UNARCHIVE, passfile)
-
-            result = PassFileUtils.unarchive_file(passfile)
-            result.raise_if_failure()
-
-            await self.history_writer.write(History.Kind.UNARCHIVE_PASSFILE_SUCCESS,
-                                            request.user_id, passfile.user_id,
-                                            more=f"pf:{passfile.id}", request=request)
-        except BaseException:
-            await transaction.rollback()
-            if result:
-                PassFileUtils.archive_file(passfile)
-            raise
-        else:
-            await transaction.commit()
-
-        return passfile
-
     async def delete_file(self, passfile_id: int, check_password: str, request: RequestInfo):
         """ Raises: Bad.
         """
         passfile = await self._get_passfile_or_raise(passfile_id)
-
-        if not passfile.is_archived:
-            raise Bad('passfile', INVALID_OPERATION_ERR, MORE.text("NOT ARCHIVED"))
 
         user = await request.session.get_user(self.db)
 
@@ -263,28 +192,8 @@ class PassFileService(DbServiceBase):
 
     @staticmethod
     def _validate_smth(data):
-        if data.check_key is None:
-            raise Bad('check_key', VAL_MISSED_ERR)
-
-        if len(data.check_key) != PassFile.Constrains.CHECK_KEY_LEN:
-            raise Bad('check_key', VAL_ERR, MORE.text("incorrect length"))
-
         if len(data.smth) < PassFile.Constrains.Raw.SMTH_MIN_LEN:
             raise Bad('smth', VAL_MISSED_ERR)
-
-    @classmethod
-    async def scheduled__check_archived_files(cls, context: 'SchedulerTask.Context') -> str:
-        """ Delete old archived files (SchedulerTask).
-        """
-        expired = datetime.date.today() - datetime.timedelta(days=ARCHIVED_PASSFILE_LIFETIME_DAYS)
-
-        async with context.db_utils.context_connection() as db:
-            old_passfiles = await db.query_list(PassFile, cls._DELETE_OLD_ARCHIVED, {'expired_date': expired})
-
-        for pf in old_passfiles:
-            PassFileUtils.delete_file(pf)
-
-        return ', '.join(str(p.id) for p in old_passfiles)
 
     # region SQL
 
@@ -293,8 +202,8 @@ class PassFileService(DbServiceBase):
     _SELECT_BY_ID = MakeSql("""SELECT * FROM passfile WHERE id = @id""")
 
     _INSERT = MakeSql("""
-        INSERT INTO passfile (name, user_id, color, check_key) 
-        VALUES (@name, @user_id, @color, @check_key)
+        INSERT INTO passfile (name, user_id, color) 
+        VALUES (@name, @user_id, @color)
         RETURNING *
     """)
 
@@ -305,17 +214,11 @@ class PassFileService(DbServiceBase):
     """)
 
     _UPDATE_SMTH = MakeSql("""
-        UPDATE passfile SET (version, check_key) = (@version, @check_key)
+        UPDATE passfile SET version = @version
         WHERE id = @id
         RETURNING *
     """)
 
-    _ARCHIVE = MakeSql("""UPDATE passfile SET archived_on = now() WHERE id = @id RETURNING *""")
-
-    _UNARCHIVE = MakeSql("""UPDATE passfile SET archived_on = NULL WHERE id = @id RETURNING *""")
-
     _DELETE = MakeSql("""DELETE FROM passfile WHERE id = @id""")
-
-    _DELETE_OLD_ARCHIVED = MakeSql("""DELETE FROM passfile WHERE archived_on < @expired_date RETURNING *""")
 
     # endregion

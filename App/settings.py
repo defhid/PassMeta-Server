@@ -44,17 +44,12 @@ SESSION_LIFETIME_DAYS: int = 120  # how long to keep user web session
 
 SESSION_CACHE_SIZE: int = 200  # limit on the number of cached sessions
 
-ARCHIVED_PASSFILE_LIFETIME_DAYS: int = 365  # how long to store archived files
-
 PASSFILE_KEEP_VERSIONS: int = 3  # max number of stored file versions
 
 HISTORY_KEEP_MONTHS: int = 12  # how many last months to store history more info (the origin history is permanent)
 
 OLD_SESSIONS_CHECKING_INTERVAL_MINUTES: int = 60 * 3  # how often to check old user web sessions
 OLD_SESSIONS_CHECKING_ON_STARTUP: bool = True  # launch checking old user web sessions on application startup
-
-OLD_PASSFILES_CHECKING_INTERVAL_MINUTES: int = 60 * 24  # how often to check old archived passfiles
-OLD_PASSFILES_CHECKING_ON_STARTUP: bool = True  # launch checking old archived passfiles on application startup
 
 OLD_HISTORY_CHECKING_INTERVAL_DAYS: int = 30  # how often to check old history more info
 OLD_HISTORY_CHECKING_ON_STARTUP: bool = True  # launch checking old history more info on application startup
