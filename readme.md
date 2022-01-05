@@ -1,5 +1,5 @@
 # PassMeta Server — *your passwords SAFE*
-#### © 2021 Vladislav Mironov
+#### © 2022 Vladislav Mironov
 
 
 ### About the project
@@ -11,7 +11,7 @@ distributed password storage and password management tools.
 
 
 ### Technologies
-*Python 3.8, FastAPI, SqlAlchemy, PostgreSQL.*
+*Python 3.8, FastAPI, PasSQL, PostgreSQL.*
 
 
 ### Deployment
