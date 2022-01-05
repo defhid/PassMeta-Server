@@ -1,5 +1,6 @@
 from pydantic import BaseModel, constr
 from typing import Optional
+import datetime
 
 __all__ = (
     'SignInPostData',
@@ -44,7 +45,8 @@ class UserPatchData(BaseModel):
 class PassfilePostData(BaseModel):
     name: str
     color: Optional[str]
-    smth: constr(min_length=1, max_length=2_097_152)
+    created_on: datetime.datetime
+    smth: constr(min_length=1, max_length=10_485_760)
 
     class Config:
         extra = "forbid"

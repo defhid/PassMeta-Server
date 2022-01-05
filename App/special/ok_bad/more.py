@@ -72,11 +72,11 @@ class MORE:
         return ResMore(required=list(values))
 
     @staticmethod
-    def min_allowed(val: Union[int, float]) -> ResMore:
+    def min_allowed(val: Union[int, float, str]) -> ResMore:
         return ResMore(min_allowed=val)
 
     @staticmethod
-    def max_allowed(val: Union[int, float]) -> ResMore:
+    def max_allowed(val: Union[int, float, str]) -> ResMore:
         return ResMore(max_allowed=val)
 
     @staticmethod

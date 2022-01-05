@@ -10,6 +10,7 @@ from App.utils.db import MakeSql
 from App.utils.passfile import PassFileUtils
 
 import re
+import datetime
 
 __all__ = (
     'PassFileService',
@@ -52,6 +53,7 @@ class PassFileService(DbServiceBase):
                 'user_id': request.user_id,
                 'name': data.name,
                 'color': data.color,
+                'created_on': data.created_on,
             })
 
             result = await PassFileUtils.write_file(passfile, data.smth)
@@ -96,7 +98,7 @@ class PassFileService(DbServiceBase):
         return passfile
 
     async def edit_file_smth(self, passfile_id: int,
-                             data: PassfileSmthPatchData, request: RequestInfo) -> PassFile:
+                             data: PassfileSmthPatchData, request: RequestInfo) -> (PassFile, bytes):
         """ Raises: Bad.
         """
         self._validate_smth(data)
@@ -130,7 +132,7 @@ class PassFileService(DbServiceBase):
             await transaction.commit()
             PassFileUtils.optimize_file_versions(passfile)
 
-        return passfile
+        return passfile, await PassFileUtils.read_file(passfile)
 
     async def delete_file(self, passfile_id: int, check_password: str, request: RequestInfo):
         """ Raises: Bad.
@@ -165,6 +167,9 @@ class PassFileService(DbServiceBase):
     def _validate_post_data(cls, data: PassfilePostData):
         cls._validate_info(data)
         cls._validate_smth(data)
+
+        if data.created_on > datetime.datetime.now():
+            raise Bad('created_on', TOO_MUCH_ERR, MORE.max_allowed(str(datetime.datetime.now())))
 
     @staticmethod
     def _validate_info(data):
@@ -202,19 +207,19 @@ class PassFileService(DbServiceBase):
     _SELECT_BY_ID = MakeSql("""SELECT * FROM passfile WHERE id = @id""")
 
     _INSERT = MakeSql("""
-        INSERT INTO passfile (name, user_id, color) 
-        VALUES (@name, @user_id, @color)
+        INSERT INTO passfile (name, user_id, color, created_on, info_changed_on, version_changed_on) 
+        VALUES (@name, @user_id, @color, @created_on, now(), now())
         RETURNING *
     """)
 
     _UPDATE_INFO = MakeSql("""
-        UPDATE passfile SET (name, color, changed_on) = (@name, @color, now())
+        UPDATE passfile SET (name, color, info_changed_on) = (@name, @color, now())
         WHERE id = @id
         RETURNING *
     """)
 
     _UPDATE_SMTH = MakeSql("""
-        UPDATE passfile SET version = @version
+        UPDATE passfile SET (version, version_changed_on) = (@version, now())
         WHERE id = @id
         RETURNING *
     """)

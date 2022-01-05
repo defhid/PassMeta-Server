@@ -67,7 +67,6 @@ async def on_startup():
     Logger.init('uvicorn.error' if __name__ == '__main__' else 'gunicorn.error')
 
     await db_utils.init()
-    await request_utils.init()
 
     async with db_utils.context_connection() as db:
         await check_entities(db)
@@ -98,7 +97,6 @@ async def on_startup():
 @app.on_event("shutdown")
 async def on_shutdown():
     scheduler.stop()
-    await request_utils.dispose()
     await db_utils.dispose()
 
 
@@ -113,8 +111,8 @@ PATCH = app.patch
 PUT = app.put
 DELETE = app.delete
 
-DB = Depends(db_utils.connection_maker)
-REQUEST_INFO = Depends(request_utils.request_info_maker)
+DB = Depends(db_utils.connection_maker, use_cache=False)
+REQUEST_INFO = Depends(request_utils.request_info_maker, use_cache=False)
 
 # endregion
 
@@ -133,6 +131,11 @@ async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
         'messages_translate_pack': OK_BAD_MESSAGES_TRANSLATE_PACK,
         'app_version': APP_VERSION,
     })
+
+
+@GET("/check")
+async def ctrl():
+    return Ok().as_response()
 
 # endregion
 
@@ -202,8 +205,8 @@ async def ctrl(passfile_id: int, body: PassfileInfoPatchData,
 async def ctrl(passfile_id: int, body: PassfileSmthPatchData,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
-    passfile = await PassFileService(db).edit_file_smth(passfile_id, body, request)
-    return Ok().as_response(data=passfile.to_dict())
+    passfile, data = await PassFileService(db).edit_file_smth(passfile_id, body, request)
+    return Ok().as_response(data=passfile.to_dict(data))
 
 
 @DELETE("/passfiles/{passfile_id}")

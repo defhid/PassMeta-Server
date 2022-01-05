@@ -106,9 +106,10 @@ class PassFile(DbEntity):
         name varchar(@NAME_LEN_MAX) NOT NULL,
         color char(@COLOR_LEN) NULL,
         user_id int NOT NULL REFERENCES public.user(id),
-        created_on timestamp NOT NULL DEFAULT now(),
-        changed_on timestamp NOT NULL,
         version int NOT NULL DEFAULT 0,
+        created_on timestamp NOT NULL,
+        info_changed_on timestamp NOT NULL,
+        version_changed_on timestamp NOT NULL,
         
         CONSTRAINT name_min CHECK (length(name) >= @NAME_LEN_MIN),
         CONSTRAINT color_len CHECK (length(trim(color)) = @COLOR_LEN)
@@ -132,18 +133,20 @@ class PassFile(DbEntity):
     name: str
     color: Optional[str]  # hex
     user_id: int
+    version: int
     created_on: datetime
-    changed_on: datetime  # info changed
-    version: int  # 'smth' data changed
+    info_changed_on: datetime
+    version_changed_on: datetime
 
     def to_dict(self, data: bytes = None) -> Dict[str, Any]:
         return {
             'id': self.id,
             'name': self.name,
             'color': self.color,
-            'created_on': self.created_on.isoformat(),
-            'changed_on': self.changed_on.isoformat(),
             'version': self.version,
+            'created_on': self.created_on.isoformat(),
+            'info_changed_on': self.info_changed_on.isoformat(),
+            'version_changed_on': self.version_changed_on.isoformat(),
             'smth': None if data is None else data.decode('utf-8'),
         }
 
