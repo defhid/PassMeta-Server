@@ -11,7 +11,7 @@ distributed password storage and password management tools.
 
 
 ### Technologies
-*Python 3.8, FastAPI, PasSQL, PostgreSQL.*
+*Python 3.8, FastAPI, asyncpg + passql, PostgreSQL.*
 
 
 ### Deployment
