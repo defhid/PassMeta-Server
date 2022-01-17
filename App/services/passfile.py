@@ -168,7 +168,7 @@ class PassFileService(DbServiceBase):
         cls._validate_info(data)
         cls._validate_smth(data)
 
-        if data.created_on > datetime.datetime.now():
+        if data.created_on.timestamp() > datetime.datetime.now().timestamp():
             raise Bad('created_on', TOO_MUCH_ERR, MORE.max_allowed(str(datetime.datetime.now())))
 
     @staticmethod

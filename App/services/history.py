@@ -97,7 +97,7 @@ class HistoryService(DbServiceBase):
             WHERE table_schema = 'history' 
               AND table_name SIMILAR TO 'history_more_\d\d\d\d_\d\d'
         )
-        SELECT table_name
+        SELECT 'history.' || table_name
         FROM history_more_tables
         WHERE year < @year
            OR (year = @year AND month < @month)

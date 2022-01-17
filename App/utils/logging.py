@@ -18,10 +18,12 @@ class Logger:
         self.location = os_sep.join(location.split(os_sep)[-2:])
 
     def _complex_message(self, text: str, ex: BaseException, params: dict, need_trace=True) -> str:
+        trace = ""
         if need_trace:
-            trace = f", ln{traceback.extract_stack()[-2].lineno}"
-        else:
-            trace = ""
+            for t in reversed(traceback.extract_stack()):
+                if t.filename.endswith(self.location):
+                    trace = f", ln{t.lineno}"
+                    break
         if params:
             data = ", " + ", ".join(f"{k}={v}" for k, v in params.items())
         else:

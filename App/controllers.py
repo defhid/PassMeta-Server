@@ -49,7 +49,7 @@ class ErrorsLoggingRoute(APIRoute):
             except RequestValidationError as ex:
                 return Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})).as_response()
             except Exception as ex:
-                logger.error("Request error", ex)
+                logger.error("Request error", ex, False, url=request.url.path)
                 return Bad(None, SERVER_ERR, MORE.text(str(ex)) if ex.args else None).as_response()
 
         return custom_route_handler

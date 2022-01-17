@@ -31,7 +31,6 @@ DB_CONNECTION_POOL_MAX_SIZE: int = 30
 ROOT_DIR: str = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__file__)))[:-1])
 
 PASSFILES_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFiles')
-PASSFILES_ARCHIVE_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFilesArchive')
 
 KEY_PHRASE_BYTES: bytes  # Generated key from Fernet.generate_key()
 

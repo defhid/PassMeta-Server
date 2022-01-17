@@ -1,6 +1,5 @@
 from App.settings import (
     PASSFILES_FOLDER,
-    PASSFILES_ARCHIVE_FOLDER,
     KEY_PHRASE_BYTES,
     PASSFILE_KEEP_VERSIONS
 )
@@ -17,7 +16,7 @@ __all__ = (
     'PassFileUtils',
 )
 
-logger = Logger(__name__)
+logger = Logger(__file__)
 
 
 class PassFileUtils:
@@ -150,6 +149,3 @@ class PassFileUtils:
         """
         if not os.path.exists(PASSFILES_FOLDER):
             os.makedirs(PASSFILES_FOLDER)
-
-        if not os.path.exists(PASSFILES_ARCHIVE_FOLDER):
-            os.makedirs(PASSFILES_ARCHIVE_FOLDER)
