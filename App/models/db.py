@@ -1,7 +1,7 @@
 from App.models.extra import *
 from App.utils.db import MakeSql
 from App.utils.logging import Logger
-from App.settings import CHECK_DATABASE_ON_SATRTUP
+from App.settings import CHECK_DATABASE_ON_SATRTUP, PASSFILES_ENCODING
 from passql.models import DbEntity, register_entities
 from passql import DbConnection
 from datetime import datetime
@@ -148,7 +148,7 @@ class PassFile(DbEntity):
             'created_on': self.created_on.isoformat(),
             'info_changed_on': self.info_changed_on.isoformat(),
             'version_changed_on': self.version_changed_on.isoformat(),
-            'smth': None if data is None else data.decode('utf-8'),
+            'smth': None if data is None else data.decode(PASSFILES_ENCODING),
         }
 
 

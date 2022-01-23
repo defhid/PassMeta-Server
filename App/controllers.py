@@ -182,7 +182,7 @@ async def ctrl(passfile_id: int,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     _, data = await PassFileService(db).get_file(passfile_id, version, request)
-    return Ok().as_response(data=data)
+    return Ok().as_response(data=data.decode(PASSFILES_ENCODING))
 
 
 @POST("/passfiles/new")
@@ -205,8 +205,8 @@ async def ctrl(passfile_id: int, body: PassfileInfoPatchData,
 async def ctrl(passfile_id: int, body: PassfileSmthPatchData,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
-    passfile, data = await PassFileService(db).edit_file_smth(passfile_id, body, request)
-    return Ok().as_response(data=passfile.to_dict(data))
+    passfile = await PassFileService(db).edit_file_smth(passfile_id, body, request)
+    return Ok().as_response(data=passfile.to_dict())
 
 
 @DELETE("/passfiles/{passfile_id}")

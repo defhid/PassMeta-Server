@@ -93,12 +93,12 @@ class PassFileService(DbServiceBase):
             passfile = await self.db.query_first(PassFile, self._UPDATE_INFO, passfile)
 
             await self.history_writer.write(History.Kind.EDIT_PASSFILE_INFO_SUCCESS,
-                                            request.user_id, passfile.id,
+                                            request.user_id, passfile.user_id,
                                             more=f"pf:{passfile.id}", request=request)
         return passfile
 
     async def edit_file_smth(self, passfile_id: int,
-                             data: PassfileSmthPatchData, request: RequestInfo) -> (PassFile, bytes):
+                             data: PassfileSmthPatchData, request: RequestInfo) -> PassFile:
         """ Raises: Bad.
         """
         self._validate_smth(data)
@@ -132,7 +132,7 @@ class PassFileService(DbServiceBase):
             await transaction.commit()
             PassFileUtils.optimize_file_versions(passfile)
 
-        return passfile, await PassFileUtils.read_file(passfile)
+        return passfile
 
     async def delete_file(self, passfile_id: int, check_password: str, request: RequestInfo):
         """ Raises: Bad.

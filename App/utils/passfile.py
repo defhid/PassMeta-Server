@@ -1,5 +1,6 @@
 from App.settings import (
     PASSFILES_FOLDER,
+    PASSFILES_ENCODING,
     KEY_PHRASE_BYTES,
     PASSFILE_KEEP_VERSIONS
 )
@@ -56,7 +57,7 @@ class PassFileUtils:
         :return: Success.
         """
         try:
-            bytes_content = Fernet(KEY_PHRASE_BYTES).encrypt(content.encode('utf-8'))
+            bytes_content = Fernet(KEY_PHRASE_BYTES).encrypt(content.encode(PASSFILES_ENCODING))
         except Exception as e:
             logger.critical("File encryption error!", e)
             return Bad(None, UNKNOWN_ERR, MORE.text("Server-Side Encryption Failed"))
