@@ -86,8 +86,6 @@ class HistoryService(DbServiceBase):
         WHERE table_schema = 'history' AND table_name IN (@table_names)
     """)
 
-    _SELECT_MORE = MakeSql("""""")
-
     _SELECT_OLD_TABLES = MakeSql("""
         WITH history_more_tables AS (
             SELECT table_name,

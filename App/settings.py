@@ -32,7 +32,7 @@ ROOT_DIR: str = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__fi
 
 PASSFILES_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFiles')
 
-PASSFILES_ENCODING = "UTF-16"
+PASSFILES_ENCODING = "UTF-8"
 
 KEY_PHRASE_BYTES: bytes  # Generated key from Fernet.generate_key()
 

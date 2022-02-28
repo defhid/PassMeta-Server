@@ -86,7 +86,7 @@ async def on_startup():
         'OHISCHECK',
         active=True,
         single=False,
-        interval_minutes=OLD_HISTORY_CHECKING_INTERVAL_DAYS,
+        interval_minutes=OLD_HISTORY_CHECKING_INTERVAL_DAYS * 24 * 60,
         start_now=OLD_HISTORY_CHECKING_ON_STARTUP,
         func=HistoryService.scheduled__check_old_histories
     ))
