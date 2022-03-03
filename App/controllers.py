@@ -247,11 +247,17 @@ async def ctrl(body: UserPatchData,
 
 # region History
 
-@GET("/history/{kind}")
-async def ctrl(kind: str, page: PageRequest = Depends(request_utils.page_getter),
+@GET("/history/kinds")
+def ctrl():
+    kinds = HistoryService.get_history_kinds()
+    return Ok().as_response(kinds)
+
+
+@GET("/history")
+async def ctrl(kind: str = None, page: PageRequest = Depends(request_utils.page_getter),
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
-    page = await HistoryService(db).get_page(page, kind, request)
-    return Ok().as_response(page)
+    page_result = await HistoryService(db).get_page(page, kind, request)
+    return Ok().as_response(page_result)
 
 # endregion

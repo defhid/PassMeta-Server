@@ -216,11 +216,10 @@ class History(DbEntity):
 
     Kind = HistoryKinds.init()
 
-    def to_dict(self, lang: str) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'kind_id': self.kind_id,
-            'kind': self.Kind.get_by_id(self.kind_id).name_loc[lang],
             'user_login': self.user_login,
             'affected_user_login': self.affected_user_login,
             'more': self.more,

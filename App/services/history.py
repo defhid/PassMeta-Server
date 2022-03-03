@@ -15,13 +15,25 @@ __all__ = (
 class HistoryService(DbServiceBase):
     __slots__ = ()
 
-    async def get_page(self, page: PageRequest, kind: str, request: RequestInfo) -> PageResult:
-        if kind != 'all':
+    HISTORY_KINDS_CACHE = [
+        {
+            'id': kind.id,
+            'name': kind.name_loc
+        }
+        for kind in History.Kind.items()
+    ]
+
+    @classmethod
+    def get_history_kinds(cls) -> List[dict]:
+        return cls.HISTORY_KINDS_CACHE
+
+    async def get_page(self, page: PageRequest, kind: Optional[str], request: RequestInfo) -> PageResult:
+        if kind:
             kinds = kind.split(',')
             try:
                 kinds = tuple(int(k) for k in kinds)
             except ValueError:
-                raise Bad('kind', VAL_ERR, MORE.allowed('all', '<id:int>,'))
+                raise Bad('kind', VAL_ERR, MORE.allowed('<id:int>,...'))
             else:
                 page.kinds = kinds
                 page.kinds_condition = self._KINDS_CONDITION
@@ -47,7 +59,7 @@ class HistoryService(DbServiceBase):
         for history in histories:
             history.more = mores.get(history.id, (None, None))[1]
 
-        return PageResult([h.to_dict(request.loc) for h in histories], total, page.offset, page.limit)
+        return PageResult([h.to_dict() for h in histories], total, page.offset, page.limit)
 
     @classmethod
     async def scheduled__check_old_histories(cls, context: 'SchedulerTask.Context') -> str:

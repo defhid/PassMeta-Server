@@ -10,73 +10,67 @@ __all__ = (
 KT = TypeVar('KT')
 VT = TypeVar('VT')
 IdT = TypeVar('IdT')
+EnumT = TypeVar('EnumT')
 
 
 class Enum(Generic[VT, IdT]):
     """ Abstract enum class.
-        Before using, you need to call base method _init().
+        Before using an instance, you need to call base method _init().
     """
 
-    __items: Dict[IdT, VT] = dict()
+    __items: Dict[IdT, VT]
     __item_names: Dict[VT, str] = dict()
     __type: Type
 
     @classmethod
-    def _init(cls, value_type: Type, id_getter: Callable[[VT], IdT]):
-        cls.__type = value_type
+    def _init(cls, instance: EnumT, value_type: Type, id_getter: Callable[[VT], IdT]) -> EnumT:
+        instance.__type = value_type
+        instance.__items = dict()
+        instance.__item_names = dict()
         for attr_name, item in cls.__dict__.items():
             if type(item) is value_type and not attr_name.startswith('_'):
-                cls.__items[id_getter(item)] = item
-                cls.__item_names[item] = attr_name
+                instance.__items[id_getter(item)] = item
+                instance.__item_names[item] = attr_name
+        return instance
 
-    @classmethod
-    def contains(cls, item: VT):
-        return item in cls.__item_names
+    def contains(self, item: VT):
+        return item in self.__item_names
 
-    @classmethod
-    def contains_id(cls, item_id: Union[VT, IdT]):
-        return item_id in cls.__items
+    def contains_id(self, item_id: Union[VT, IdT]):
+        return item_id in self.__items
 
-    @classmethod
-    def contains_name(cls, item_name: str):
-        return item_name in cls.__item_names.values()
+    def contains_name(self, item_name: str):
+        return item_name in self.__item_names.values()
 
-    @classmethod
-    def items(cls) -> Iterator[VT]:
-        return iter(cls.__items.values())
+    def items(self) -> Iterator[VT]:
+        return iter(self.__items.values())
 
-    @classmethod
-    def item_ids(cls) -> Iterator[IdT]:
-        return iter(cls.__items.keys())
+    def item_ids(self) -> Iterator[IdT]:
+        return iter(self.__items.keys())
 
-    @classmethod
-    def item_names(cls) -> Iterator[str]:
-        return iter(cls.__item_names.values())
+    def item_names(self) -> Iterator[str]:
+        return iter(self.__item_names.values())
 
-    @classmethod
-    def get(cls, predicate: Callable[[VT], bool], default=None) -> Union[VT, Any]:
-        for item in cls.__item_names.keys():
+    def get(self, predicate: Callable[[VT], bool], default=None) -> Union[VT, Any]:
+        for item in self.__item_names.keys():
             if predicate(item):
                 return item
 
         return default
 
-    @classmethod
-    def get_by_id(cls, item_id: IdT, default=None) -> Union[VT, Any]:
-        return cls.__items.get(item_id, default)
+    def get_by_id(self, item_id: IdT, default=None) -> Union[VT, Any]:
+        return self.__items.get(item_id, default)
 
-    @classmethod
-    def get_by_name(cls, item_name: str, default=None) -> Union[VT, Any]:
-        for item, name in cls.__item_names:
+    def get_by_name(self, item_name: str, default=None) -> Union[VT, Any]:
+        for item, name in self.__item_names:
             if name == item_name:
                 return item
         return default
 
-    @classmethod
-    def name_of(cls, item_or_id: Union[VT, IdT]) -> Optional[str]:
-        if type(item_or_id) is not cls.__type:
-            item_or_id = cls.__items.get(item_or_id)
-        return cls.__item_names.get(item_or_id)
+    def name_of(self, item_or_id: Union[VT, IdT]) -> Optional[str]:
+        if type(item_or_id) is not self.__type:
+            item_or_id = self.__items.get(item_or_id)
+        return self.__item_names.get(item_or_id)
 
 
 class LRUCache(Generic[KT, VT]):

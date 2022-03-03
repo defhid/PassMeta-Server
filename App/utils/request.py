@@ -17,13 +17,13 @@ class RequestUtils:
     def __init__(self, db_utils: DbUtils):
         self._db_utils = db_utils
 
-    async def request_info_maker(self, request: Request, loc: str = None) -> Generator[RequestInfo, None, None]:
+    async def request_info_maker(self, request: Request) -> Generator[RequestInfo, None, None]:
         """ Gets request session, creates RequestInfo and yields it.
         """
         async with self._db_utils.context_connection() as db:
             session = await AuthService(db).get_session(request)
 
-        yield RequestInfo(request, session, loc)
+        yield RequestInfo(request, session)
 
     @staticmethod
     def page_getter(offset: conint(ge=0), limit: conint(gt=0, lt=100)) -> PageRequest:

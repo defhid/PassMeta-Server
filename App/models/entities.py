@@ -11,12 +11,11 @@ __all__ = (
 
 
 class RequestInfo:
-    __slots__ = ('_request', '_session', '_loc')
+    __slots__ = ('_request', '_session')
 
-    def __init__(self, request: Request, session: Optional[Session], locale: Optional[str]):
+    def __init__(self, request: Request, session: Optional[Session]):
         self._request = request
         self._session = session
-        self._loc = locale if Locales.contains_id(locale) else Locales.DEFAULT.code
 
     @property
     def request(self) -> Request:
@@ -25,10 +24,6 @@ class RequestInfo:
     @property
     def session(self) -> Session:
         return self._session
-
-    @property
-    def loc(self) -> str:
-        return self._loc
 
     @property
     def user_id(self) -> Optional[bool]:

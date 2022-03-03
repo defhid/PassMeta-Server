@@ -1,5 +1,5 @@
 from App.special import Enum, loc
-from typing import Dict, Type
+from typing import Dict
 
 __all__ = (
     'HistoryKind',
@@ -17,9 +17,8 @@ class HistoryKind:
 
 class HistoryKinds(Enum[HistoryKind, int]):
     @classmethod
-    def init(cls) -> 'Type[HistoryKinds]':
-        cls._init(HistoryKind, lambda i: i.id)
-        return cls
+    def init(cls):
+        return cls._init(cls(), HistoryKind, lambda i: i.id)
 
     # region User
 

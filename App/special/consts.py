@@ -11,7 +11,7 @@ class Locales(Enum[Locale, str]):
 
     @classmethod
     def init(cls):
-        cls._init(Locale, lambda i: i.code)
+        return cls._init(cls(), Locale, lambda i: i.code)
 
 
 Locales.init()
