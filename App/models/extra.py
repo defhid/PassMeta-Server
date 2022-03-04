@@ -85,29 +85,11 @@ class HistoryKinds(Enum[HistoryKind, int]):
         ru="Неудачное изменение файла паролей",
     ))
 
-    ARCHIVE_PASSFILE_SUCCESS = HistoryKind(14, loc(
-        default="Successful passfile archiving",
-        ru="Успешное архивирование файла паролей",
-    ))
-    ARCHIVE_PASSFILE_FAILURE = HistoryKind(15, loc(
-        default="Failure passfile archiving",
-        ru="Неудачное архивирование файла паролей",
-    ))
-
-    UNARCHIVE_PASSFILE_SUCCESS = HistoryKind(16, loc(
-        default="Successful passfile unarchiving",
-        ru="Успешное разархивирование файла паролей",
-    ))
-    UNARCHIVE_PASSFILE_FAILURE = HistoryKind(17, loc(
-        default="Failure passfile unarchiving",
-        ru="Неудачное разархивирование файла паролей",
-    ))
-
-    DELETE_PASSFILE_SUCCESS = HistoryKind(18, loc(
+    DELETE_PASSFILE_SUCCESS = HistoryKind(14, loc(
         default="Successful passfile deletion",
         ru="Успешное удаление файла паролей",
     ))
-    DELETE_PASSFILE_FAILURE = HistoryKind(19, loc(
+    DELETE_PASSFILE_FAILURE = HistoryKind(15, loc(
         default="Failure passfile deletion",
         ru="Неудачное удаление файла паролей",
     ))
