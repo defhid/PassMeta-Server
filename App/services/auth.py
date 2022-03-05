@@ -89,7 +89,11 @@ class AuthService(DbServiceBase):
 
     @classmethod
     def check_password(cls, raw_password: str, pwd: str) -> bool:
-        return hashlib.sha512(raw_password.encode('utf-8')).hexdigest() == pwd
+        return cls.make_pwd(raw_password) == pwd
+
+    @classmethod
+    def make_pwd(cls, raw_password: str) -> str:
+        return hashlib.sha512(raw_password.encode('utf-8')).hexdigest()
 
     @classmethod
     async def scheduled__check_old_sessions(cls, context: 'SchedulerTask.Context'):

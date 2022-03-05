@@ -8,8 +8,6 @@ from App.models.db import User, History
 
 from App.utils.db import MakeSql
 
-import hashlib
-
 __all__ = (
     'UserService',
 )
@@ -123,7 +121,7 @@ class UserService(DbServiceBase):
             if len(password) > c.Raw.PASSWORD_LEN_MAX:
                 errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.Raw.PASSWORD_LEN_MAX)))
 
-            user.pwd = hashlib.sha512(password.encode('utf-8')).hexdigest()
+            user.pwd = AuthService.make_pwd(user.pwd)
 
         elif not user.id:
             errors.append(Bad('password', VAL_MISSED_ERR))
