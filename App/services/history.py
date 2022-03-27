@@ -78,9 +78,9 @@ class HistoryService(DbServiceBase):
     # region SQL
 
     _SELECT_HISTORY_COUNT = MakeSql("""
-            SELECT count(*) FROM history.history h
-            WHERE h.affected_user_id = @affected_user_id @kinds_condition
-        """)
+        SELECT count(*) FROM history.history h
+        WHERE h.affected_user_id = @affected_user_id @kinds_condition
+    """)
 
     _SELECT_HISTORY = MakeSql("""
         SELECT h.*, u.login as user_login, NULL as affected_user_login

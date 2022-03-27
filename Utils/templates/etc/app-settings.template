@@ -1,2 +1,9 @@
-DB_CONNECTION_STRING = 'postgresql+asyncpg://{username}:{password}@localhost:5432/passmeta'
+DB_CONNECTION = {
+    'host': 'localhost',
+    'port': 5432,
+    'user': '{username}',
+    'password': '{password}',
+    'database': 'passmeta',
+    'command_timeout': 30
+}
 KEY_PHRASE_BYTES = {key_phrase}
