@@ -121,7 +121,7 @@ class UserService(DbServiceBase):
             if len(password) > c.Raw.PASSWORD_LEN_MAX:
                 errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.Raw.PASSWORD_LEN_MAX)))
 
-            user.pwd = AuthService.make_pwd(user.pwd)
+            user.pwd = AuthService.make_pwd(password)
 
         elif not user.id:
             errors.append(Bad('password', VAL_MISSED_ERR))

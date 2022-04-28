@@ -13,6 +13,6 @@ if __name__ == '__main__':
     import uvicorn
     import logging
 
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level=logging.INFO)
+    uvicorn.run(app, host="127.0.0.1", port=80, log_level=logging.INFO)
 else:
     from App.controllers import app
