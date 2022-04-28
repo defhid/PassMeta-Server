@@ -1,6 +1,6 @@
 chdir = r'{server_dir}'
 wsgi_app = 'main:app'
-bind = ['0.0.0.0:8080']
+bind = ['0.0.0.0:443']
 worker_class = 'uvicorn.workers.UvicornWorker'
 workers = 1
 daemon = {daemon}
