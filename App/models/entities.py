@@ -1,6 +1,9 @@
+from starlette.responses import JSONResponse
+from fastapi import Request
+
+from App.translate import OK_BAD_MESSAGES_TRANSLATE_PACK, Locale, get_package_text
 from App.models.db import Session
 from App.special import *
-from fastapi import Request
 
 __all__ = (
     'RequestInfo',
@@ -11,15 +14,20 @@ __all__ = (
 
 
 class RequestInfo:
-    __slots__ = ('_request', '_session')
+    __slots__ = ('_request', '_locale', '_session')
 
-    def __init__(self, request: Request, session: Optional[Session]):
+    def __init__(self, request: Request, locale: Optional[str], session: Optional[Session]):
         self._request = request
         self._session = session
+        self._locale = locale
 
     @property
     def request(self) -> Request:
         return self._request
+
+    @property
+    def locale(self) -> str:
+        return self._locale if self._locale else Locale.DEFAULT
 
     @property
     def session(self) -> Session:
@@ -28,6 +36,12 @@ class RequestInfo:
     @property
     def user_id(self) -> Optional[bool]:
         return self._session.user_id if self._session is not None else None
+
+    def make_response(self, result: Result, data: Any = None) -> JSONResponse:
+        d = result.as_dict(lambda code: get_package_text(OK_BAD_MESSAGES_TRANSLATE_PACK, code, self.locale, code.name))
+        if data is not None:
+            d['data'] = data
+        return JSONResponse(d, status_code=result.code.response_status_code)
 
     def ensure_user_is_authorized(self):
         """ Raises: AUTH_ERR """

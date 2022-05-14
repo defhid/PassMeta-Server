@@ -1,4 +1,3 @@
-from App.models.extra import HistoryKind
 from App.models.db import History
 from App.models.entities import RequestInfo
 
@@ -19,14 +18,14 @@ class HistoryWriter:
         self.db = db_connection
 
     async def write(self,
-                    kind: HistoryKind,
+                    kind_id: int,
                     user_id: Optional[int],
                     affected_user_id: Optional[int],
                     more: str = None,
                     request: RequestInfo = None) -> History:
         """ Write history.
 
-        :param kind: History kind from special enum.
+        :param kind_id: History kind identifier.
         :param user_id: Actor user id.
         :param affected_user_id: Affected user id.
         :param more: Additional text information.
@@ -36,13 +35,13 @@ class HistoryWriter:
 
         if request is not None:
             if more:
-                more += f",host:{request.request.client.host},port:{request.request.client.port}"
+                more += f",host:{request.request.client.host}"
             else:
-                more = f"host:{request.request.client.host},port:{request.request.client.port}"
+                more = f"host:{request.request.client.host}"
 
         h = History()
-        h.kind_id = kind.id
-        h.user_id = user_id,
+        h.kind_id = kind_id
+        h.user_id = user_id
         h.affected_user_id = affected_user_id
         h.more = more
 

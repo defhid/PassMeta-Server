@@ -2,9 +2,10 @@ from App.services.base import DbServiceBase
 from App.services import AuthService
 from App.special import *
 
-from App.models.db import User, PassFile, History
+from App.models.db import User, PassFile
 from App.models.request import PassfilePostData, PassfileInfoPatchData, PassfileSmthPatchData
 from App.models.entities import RequestInfo
+from App.models.enums import HistoryKind
 
 from App.utils.db import MakeSql
 from App.utils.passfile import PassFileUtils
@@ -29,12 +30,12 @@ class PassFileService(DbServiceBase):
         passfile = await self._get_passfile_or_raise(passfile_id)
 
         if passfile.user_id != request.user_id:
-            await self.history_writer.write(History.Kind.GET_PASSFILE_FAILURE,
+            await self.history_writer.write(HistoryKind.GET_PASSFILE_FAILURE,
                                             request.user_id, passfile.user_id,
                                             more=f"ACCESS,pf:{passfile.id}", request=request)
             raise Bad('passfile_id', ACCESS_ERR)
 
-        await self.history_writer.write(History.Kind.GET_PASSFILE_SUCCESS,
+        await self.history_writer.write(HistoryKind.GET_PASSFILE_SUCCESS,
                                         request.user_id, passfile.user_id,
                                         more=f"pf:{passfile.id}", request=request)
 
@@ -59,7 +60,7 @@ class PassFileService(DbServiceBase):
             result = await PassFileUtils.write_file(passfile, data.smth)
             result.raise_if_failure()
 
-            await self.history_writer.write(History.Kind.CREATE_PASSFILE_SUCCESS,
+            await self.history_writer.write(HistoryKind.CREATE_PASSFILE_SUCCESS,
                                             request.user_id, passfile.user_id,
                                             more=f"pf:{passfile.id}", request=request)
         except BaseException:
@@ -81,7 +82,7 @@ class PassFileService(DbServiceBase):
         passfile = await self._get_passfile_or_raise(passfile_id)
 
         if passfile.user_id != request.user_id:
-            await self.history_writer.write(History.Kind.EDIT_PASSFILE_INFO_FAILURE,
+            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_INFO_FAILURE,
                                             request.user_id, passfile.user_id,
                                             more=f"ACCESS,pf:{passfile.id}", request=request)
             raise Bad(None, ACCESS_ERR)
@@ -92,7 +93,7 @@ class PassFileService(DbServiceBase):
         async with self.db.transaction():
             passfile = await self.db.query_first(PassFile, self._UPDATE_INFO, passfile)
 
-            await self.history_writer.write(History.Kind.EDIT_PASSFILE_INFO_SUCCESS,
+            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_INFO_SUCCESS,
                                             request.user_id, passfile.user_id,
                                             more=f"pf:{passfile.id}", request=request)
         return passfile
@@ -106,7 +107,7 @@ class PassFileService(DbServiceBase):
         passfile = await self._get_passfile_or_raise(passfile_id)
 
         if passfile.user_id != request.user_id:
-            await self.history_writer.write(History.Kind.EDIT_PASSFILE_SMTH_FAILURE,
+            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_SMTH_FAILURE,
                                             request.user_id, passfile.user_id,
                                             more=f"ACCESS,pf:{passfile.id}", request=request)
             raise Bad(None, ACCESS_ERR)
@@ -121,7 +122,7 @@ class PassFileService(DbServiceBase):
             await transaction.start()
             passfile = await self.db.query_first(PassFile, self._UPDATE_SMTH, passfile)
 
-            await self.history_writer.write(History.Kind.EDIT_PASSFILE_SMTH_SUCCESS,
+            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_SMTH_SUCCESS,
                                             request.user_id, passfile.user_id,
                                             more=f"pf:{passfile.id}", request=request)
         except Exception:
@@ -142,7 +143,7 @@ class PassFileService(DbServiceBase):
         user = await request.session.get_user(self.db)
 
         if not AuthService.check_password(check_password, user.pwd):
-            await self.history_writer.write(History.Kind.DELETE_PASSFILE_FAILURE,
+            await self.history_writer.write(HistoryKind.DELETE_PASSFILE_FAILURE,
                                             request.user_id, passfile.user_id,
                                             more=f"ACCESS,pf:{passfile.id}", request=request)
             raise Bad("check_password", WRONG_VAL_ERR)
@@ -150,7 +151,7 @@ class PassFileService(DbServiceBase):
         async with self.db.transaction():
             await self.db.execute(self._DELETE, passfile)
 
-            await self.history_writer.write(History.Kind.DELETE_PASSFILE_SUCCESS,
+            await self.history_writer.write(HistoryKind.DELETE_PASSFILE_SUCCESS,
                                             request.user_id, passfile.user_id,
                                             more=f"pf:{passfile.id}", request=request)
 

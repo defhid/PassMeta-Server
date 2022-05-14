@@ -1,7 +1,7 @@
-from App.models.extra import *
 from App.utils.db import MakeSql
 from App.utils.logging import Logger
-from App.settings import CHECK_DATABASE_ON_SATRTUP, PASSFILES_ENCODING
+from App.settings import CHECK_DATABASE_ON_STARTUP, PASSFILES_ENCODING
+from App.translate import HISTORY_KINDS_TRANSLATE_PACK, get_package_text
 from passql.models import DbEntity, register_entities
 from passql import DbConnection
 from datetime import datetime
@@ -209,17 +209,16 @@ class History(DbEntity):
     timestamp: datetime
 
     # region +
+    kind: Optional[str]
     more: Optional[str]
     user_login: Optional[str]
     affected_user_login: Optional[str]
     # endregion
 
-    Kind = HistoryKinds.init()
-
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, locale: str) -> Dict[str, Any]:
         return {
             'id': self.id,
-            'kind_id': self.kind_id,
+            'kind': get_package_text(HISTORY_KINDS_TRANSLATE_PACK, self.kind_id, locale, self.kind_id),
             'user_login': self.user_login,
             'affected_user_login': self.affected_user_login,
             'more': self.more,
@@ -240,7 +239,7 @@ async def check_entities(connection: DbConnection):
         (History.FUNCTION, History.Constrains),
     ]
 
-    if CHECK_DATABASE_ON_SATRTUP:
+    if CHECK_DATABASE_ON_STARTUP:
         for check in check_list:
             await connection.execute(check[0], check[1])
 

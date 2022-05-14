@@ -45,12 +45,16 @@ class ErrorsLoggingRoute(APIRoute):
             try:
                 return await original_route_handler(request)
             except Result as ex:
-                return ex.as_response()
+                return RequestUtils.build_request_info_without_session(request).make_response(ex)
+
             except RequestValidationError as ex:
-                return Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})).as_response()
+                return RequestUtils.build_request_info_without_session(request).make_response(
+                    Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})))
+
             except Exception as ex:
                 logger.error("Request error", ex, False, url=request.url.path)
-                return Bad(None, SERVER_ERR, MORE.text(str(ex)) if ex.args else None).as_response()
+                return RequestUtils.build_request_info_without_session(request).make_response(
+                    Bad(None, SERVER_ERR, MORE.text(str(ex)) if ex.args else None))
 
         return custom_route_handler
 
@@ -112,7 +116,9 @@ PUT = app.put
 DELETE = app.delete
 
 DB = Depends(db_utils.connection_maker, use_cache=False)
-REQUEST_INFO = Depends(request_utils.request_info_maker, use_cache=False)
+REQUEST_INFO = Depends(request_utils.build_request_info, use_cache=False)
+REQUEST_INFO_WS = Depends(request_utils.build_request_info_without_session, use_cache=False)
+PAGE = Depends(request_utils.collect_page_params)
 
 # endregion
 
@@ -126,16 +132,16 @@ async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     else:
         user = None
 
-    return Ok().as_response(data={
-        'user': user,
-        'messages_translate_pack': OK_BAD_MESSAGES_TRANSLATE_PACK,
+    return request.make_response(Ok(), data={
+        'app_id': APP_ID,
         'app_version': APP_VERSION,
+        'user': user,
     })
 
 
 @GET("/check")
-async def ctrl():
-    return Ok().as_response()
+async def ctrl(request: RequestInfo = REQUEST_INFO_WS):
+    return request.make_response(Ok())
 
 # endregion
 
@@ -153,7 +159,7 @@ async def ctrl(body: SignInPostData,
 @POST("/auth/sign-out")
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     await AuthService(db).sign_out(request)
-    return Ok().as_response()
+    return request.make_response(Ok())
 
 # endregion
 
@@ -165,7 +171,7 @@ async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfiles = await PassFileService(db).get_user_passfiles(await request.session.get_user(db))
     converted = list(map(lambda p: p.to_dict(), passfiles))
-    return Ok().as_response(data=converted)
+    return request.make_response(Ok(), data=converted)
 
 
 @GET("/passfiles/{passfile_id}")
@@ -173,7 +179,7 @@ async def ctrl(passfile_id: int,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfile, data = await PassFileService(db).get_file(passfile_id, None, request)
-    return Ok().as_response(data=passfile.to_dict(data))
+    return request.make_response(Ok(), data=passfile.to_dict(data))
 
 
 @GET("/passfiles/{passfile_id}/smth")
@@ -182,7 +188,7 @@ async def ctrl(passfile_id: int,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     _, data = await PassFileService(db).get_file(passfile_id, version, request)
-    return Ok().as_response(data=data.decode(PASSFILES_ENCODING))
+    return request.make_response(Ok(), data=data.decode(PASSFILES_ENCODING))
 
 
 @POST("/passfiles/new")
@@ -190,7 +196,7 @@ async def ctrl(body: PassfilePostData,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfile = await PassFileService(db).add_file(body, request)
-    return Ok().as_response(data=passfile.to_dict())
+    return request.make_response(Ok(), data=passfile.to_dict())
 
 
 @PATCH("/passfiles/{passfile_id}/info")
@@ -198,7 +204,7 @@ async def ctrl(passfile_id: int, body: PassfileInfoPatchData,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfile = await PassFileService(db).edit_file_info(passfile_id, body, request)
-    return Ok().as_response(data=passfile.to_dict())
+    return request.make_response(Ok(), data=passfile.to_dict())
 
 
 @PATCH("/passfiles/{passfile_id}/smth")
@@ -206,7 +212,7 @@ async def ctrl(passfile_id: int, body: PassfileSmthPatchData,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfile = await PassFileService(db).edit_file_smth(passfile_id, body, request)
-    return Ok().as_response(data=passfile.to_dict())
+    return request.make_response(Ok(), data=passfile.to_dict())
 
 
 @DELETE("/passfiles/{passfile_id}")
@@ -214,7 +220,7 @@ async def ctrl(passfile_id: int, body: PassfileDeleteData,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     await PassFileService(db).delete_file(passfile_id, body.check_password, request)
-    return Ok().as_response()
+    return request.make_response(Ok())
 
 # endregion
 
@@ -232,7 +238,7 @@ async def ctrl(body: SignUpPostData,
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     user = await request.session.get_user(db)
-    return Ok().as_response(data=user.to_dict())
+    return request.make_response(Ok(), data=user.to_dict())
 
 
 @PATCH("/users/me")
@@ -240,7 +246,7 @@ async def ctrl(body: UserPatchData,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     user = await UserService(db).edit_user(request.user_id, body, request)
-    return Ok().as_response(data=user.to_dict())
+    return request.make_response(Ok(), data=user.to_dict())
 
 # endregion
 
@@ -248,16 +254,16 @@ async def ctrl(body: UserPatchData,
 # region History
 
 @GET("/history/kinds")
-def ctrl():
-    kinds = HistoryService.get_history_kinds()
-    return Ok().as_response(kinds)
+def ctrl(request: RequestInfo = REQUEST_INFO_WS):
+    kinds = HistoryService.get_history_kinds(request)
+    return request.make_response(Ok(), data=kinds)
 
 
 @GET("/history")
-async def ctrl(kind: str = None, page: PageRequest = Depends(request_utils.page_getter),
+async def ctrl(kind: str = None, page: PageRequest = PAGE,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     page_result = await HistoryService(db).get_page(page, kind, request)
-    return Ok().as_response(page_result)
+    return request.make_response(Ok(), data=page_result)
 
 # endregion

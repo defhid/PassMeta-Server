@@ -1,3 +1,7 @@
+APP_ID = {app_id}
+
+KEY_PHRASE_BYTES = {key_phrase}
+
 DB_CONNECTION = {
     'host': 'localhost',
     'port': 5432,
@@ -6,4 +10,3 @@ DB_CONNECTION = {
     'database': 'passmeta',
     'command_timeout': 30
 }
-KEY_PHRASE_BYTES = {key_phrase}

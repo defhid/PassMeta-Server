@@ -4,7 +4,8 @@ from App.special import *
 
 from App.models.request import SignUpPostData, UserPatchData
 from App.models.entities import RequestInfo
-from App.models.db import User, History
+from App.models.enums import HistoryKind
+from App.models.db import User
 
 from App.utils.db import MakeSql
 
@@ -30,19 +31,19 @@ class UserService(DbServiceBase):
 
         existing_user_id = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
         if existing_user_id is not None:
-            await self.history_writer.write(History.Kind.USER_REGISTER_FAILURE,
+            await self.history_writer.write(HistoryKind.USER_REGISTER_FAILURE,
                                             None, existing_user_id, more="LOGIN", request=request)
             if result.success:
                 raise Bad('login', ALREADY_USED_ERR)
             else:
-                result.sub.append(Bad('login', ALREADY_USED_ERR).as_dict())
+                result.sub.append(Bad('login', ALREADY_USED_ERR))
 
         result.raise_if_failure()
 
         async with self.db.transaction():
             user = await self.db.query_first(User, self._INSERT, user)
 
-            await self.history_writer.write(History.Kind.USER_REGISTER_SUCCESS,
+            await self.history_writer.write(HistoryKind.USER_REGISTER_SUCCESS,
                                             user.id, user.id, request=request)
 
         return user
@@ -56,12 +57,12 @@ class UserService(DbServiceBase):
             raise Bad(None, NOT_IMPLEMENTED_ERR)
 
         if data.password_confirm is None:
-            await self.history_writer.write(History.Kind.USER_EDIT_FAILURE,
+            await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
                                             request.user_id, user.id, more=f"passconf_miss", request=request)
             raise Bad('password_confirm', VAL_MISSED_ERR)
 
         if not AuthService.check_password(data.password_confirm, user.pwd):
-            await self.history_writer.write(History.Kind.USER_EDIT_FAILURE,
+            await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
                                             request.user_id, user.id, more=f"passconf_wrong", request=request)
             raise Bad('password_confirm', WRONG_VAL_ERR)
 
@@ -77,14 +78,14 @@ class UserService(DbServiceBase):
             if result.success:
                 raise Bad('login', ALREADY_USED_ERR)
             else:
-                result.sub.append(Bad('login', ALREADY_USED_ERR).as_dict())
+                result.sub.append(Bad('login', ALREADY_USED_ERR))
 
         result.raise_if_failure()
 
         async with self.db.transaction():
             await self.db.query_first(User, self._UPDATE, user)
 
-            await self.history_writer.write(History.Kind.USER_EDIT_SUCCESS,
+            await self.history_writer.write(HistoryKind.USER_EDIT_SUCCESS,
                                             request.user_id, user.id, request=request)
 
         return user

@@ -2,7 +2,8 @@ from App.services.base import DbServiceBase
 from App.settings import SESSION_LIFETIME_DAYS, SESSION_CACHE_SIZE
 from App.special import *
 
-from App.models.db import Session, User, History
+from App.models.db import Session, User
+from App.models.enums import HistoryKind
 from App.models.request import SignInPostData
 from App.models.entities import RequestInfo
 
@@ -24,14 +25,30 @@ class AuthService(DbServiceBase):
 
     __CACHE: LRUCache[str, Session] = LRUCache(SESSION_CACHE_SIZE)
 
+    @classmethod
+    def get_cached_session(cls, request: Request) -> Tuple[bool, Optional[Session]]:
+        """ -> (exactly, session) """
+
+        session_id = request.cookies.get('session')
+        if not session_id:
+            return True, None
+
+        session = cls.__CACHE.get(session_id, None)
+        if session is None:
+            return False, None
+
+        if (datetime.datetime.now() - session.created_on).days > SESSION_LIFETIME_DAYS:
+            cls.__CACHE.pop(session_id, None)
+            return False, None
+
+        return True, session
+
     async def get_session(self, request: Request) -> Optional[Session]:
         session_id = request.cookies.get('session')
         if not session_id:
             return None
 
-        session = self.__CACHE.get(session_id, None)
-        if session is None:
-            session = await self.db.query_first(Session, self._SELECT_SESSION_BY_ID, {'id': session_id})
+        session = await self.db.query_first(Session, self._SELECT_SESSION_BY_ID, {'id': session_id})
 
         if session:
             if (datetime.datetime.now() - session.created_on).days > SESSION_LIFETIME_DAYS:
@@ -51,7 +68,7 @@ class AuthService(DbServiceBase):
         session = await self.db.query_first(Session, self._INSERT_SESSION, {'user_id': user.id})
         self.__CACHE.put(session.id, session)
 
-        response = Ok().as_response(data=user.to_dict())
+        response = request_info.make_response(Ok(), data=user.to_dict())
         response.set_cookie('session', session.id, httponly=True)
 
         return response
@@ -62,21 +79,21 @@ class AuthService(DbServiceBase):
         user = await self.db.query_first(User, self._SELECT_USER_BY_LOGIN, {'login': data.login.strip()})
 
         if user is None:
-            await self.history_writer.write(History.Kind.USER_SIGN_IN_FAILURE,
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE,
                                             None, None, more=f"login:{data.login}", request=request_info)
             raise Bad('user', NOT_EXIST_ERR)
 
         if not self.check_password(data.password, user.pwd):
-            await self.history_writer.write(History.Kind.USER_SIGN_IN_FAILURE,
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE,
                                             None, user.id, more="PWD", request=request_info)
             raise Bad('user', NOT_EXIST_ERR)
 
         if not user.is_active:
-            await self.history_writer.write(History.Kind.USER_SIGN_IN_FAILURE,
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE,
                                             user.id, user.id, more=f"INACTIVE,login:{data.login}", request=request_info)
             raise Bad('user', FROZEN_ERR)
 
-        await self.history_writer.write(History.Kind.USER_SIGN_IN_SUCCESS,
+        await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS,
                                         user.id, user.id, request=request_info)
         return user
 

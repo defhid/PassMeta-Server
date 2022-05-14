@@ -1,0 +1,37 @@
+__all__ = (
+    'HistoryKind',
+)
+
+
+class HistoryKind:
+
+    # region User
+
+    USER_SIGN_IN_SUCCESS = 1
+    USER_SIGN_IN_FAILURE = 2
+
+    USER_REGISTER_SUCCESS = 3
+    USER_REGISTER_FAILURE = 4
+
+    USER_EDIT_SUCCESS = 5
+    USER_EDIT_FAILURE = 6
+
+    # endregion
+
+    # region PassFile
+
+    GET_PASSFILE_SUCCESS = 7
+    GET_PASSFILE_FAILURE = 8
+
+    CREATE_PASSFILE_SUCCESS = 9
+
+    EDIT_PASSFILE_INFO_SUCCESS = 10
+    EDIT_PASSFILE_INFO_FAILURE = 11
+
+    EDIT_PASSFILE_SMTH_SUCCESS = 12
+    EDIT_PASSFILE_SMTH_FAILURE = 13
+
+    DELETE_PASSFILE_SUCCESS = 14
+    DELETE_PASSFILE_FAILURE = 15
+
+    # endregion

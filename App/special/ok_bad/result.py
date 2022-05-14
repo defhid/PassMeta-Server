@@ -1,7 +1,6 @@
-from App.special.ok_bad.messages import ResMessage, OK
+from App.special.ok_bad.code import ResultCode, OK
 from App.special.ok_bad.more import *
-from starlette.responses import JSONResponse
-from typing import Optional, Any, Union, List, Dict
+from typing import Optional, Any, Union, List, Dict, Callable
 
 __all__ = (
     'Result',
@@ -11,94 +10,68 @@ __all__ = (
 
 
 class Result(Exception):
-    __slots__ = ()
+    __slots__ = ('_what', '_code', '_more', '_sub')
 
-    def __init__(self, what: Union[str, Any], message: ResMessage,
-                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
-        super().__init__(dict())
-        self(
-            what=what,
-            message=message,
-            more=more,
-            sub=sub
-        )
+    def __init__(self, what: Union[str, Any], code: ResultCode,
+                 more: 'ResultMore' = None, sub: Union['Result', List['Result']] = None):
+        super().__init__()
+
+        self._what = what
+        self._code = code
+        self._more = more
+        self._sub = []
+
+        if sub:
+            if isinstance(sub, Result):
+                self._sub.append(sub)
+            else:
+                for s in sub:
+                    self._sub.append(s)
 
     def __str__(self) -> str:
         return str(self.args[0])
 
     def __bool__(self) -> bool:
-        return self.message is OK
-
-    def __call__(self, **kwargs) -> 'Result':
-        """ Set attributes """
-        for field in kwargs:
-            val = kwargs[field]
-            if val is not None:
-                setattr(self, field, val)
-        return self
+        return self.code is OK
 
     @property
     def success(self) -> bool:
-        return self.message is OK
+        return self.code is OK
 
     @property
     def failure(self) -> bool:
-        return self.message is not OK
+        return self.code is not OK
+
+    @property
+    def code(self) -> ResultCode:
+        return self._code
+
+    @property
+    def sub(self) -> List['Result']:
+        return self.args[0].get('sub')
 
     @property
     def what(self) -> Optional[str]:
         return self.args[0].get('what')
 
-    @what.setter
-    def what(self, value: Optional[Any]):
-        if value is None:
-            self.args[0].pop('what', None)
-        else:
-            self.args[0]['what'] = value
-
     @property
-    def message(self) -> Union[ResMessage, str]:
-        return self.args[0].get('message')
-
-    @message.setter
-    def message(self, value: Union[ResMessage, str]):
-        """ Raises ValueError if value is None """
-        if value is None:
-            raise ValueError("Message cannot be None!")
-        self.args[0]['message'] = value
-
-    @property
-    def more(self) -> Optional['ResMore']:
+    def more(self) -> Optional['ResultMore']:
         return self.args[0].get('more')
 
-    @more.setter
-    def more(self, value: Optional['ResMore']):
-        if value is None:
-            self.args[0].pop('more', None)
-        else:
-            self.args[0]['more'] = value
+    def as_dict(self, message_provider: Callable[[ResultCode], str]) -> Dict[str, object]:
+        d = {
+            'code': self._code.code,
+            'message': message_provider(self._code)
+        }
 
-    @property
-    def sub(self) -> Optional[List[dict]]:
-        return self.args[0].get('sub')
+        if self._what:
+            d['what'] = self._what
+        if self._more:
+            d['more'] = self._more
+        if self._sub:
+            d['sub'] = [s.as_dict(message_provider) for s in self._sub]
 
-    @sub.setter
-    def sub(self, value: Optional[Union['Result', dict, List['Result'], List[dict]]]):
-        if value is None:
-            self.args[0].pop('sub', None)
-        else:
-            for i in range(len(value)):
-                if isinstance(value[i], Result):
-                    value[i] = value[i].as_dict()
-            self.args[0]['sub'] = value
-
-    def as_dict(self) -> Dict[str, object]:
-        return self.args[0]
-
-    def as_response(self, data: Any = None) -> JSONResponse:
-        if data is not None:
-            self.args[0]['data'] = data
-        return JSONResponse(self.args[0], status_code=self.message.response_status_code)
+        return d
 
     def raise_if_failure(self):
         if self.failure:
@@ -108,14 +81,14 @@ class Result(Exception):
 class Bad(Result):
     __slots__ = ()
 
-    def __init__(self, what: Any, message: ResMessage,
+    def __init__(self, what: Any, code: ResultCode,
                  more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
-        super().__init__(what, message, more, sub)
+        super().__init__(what, code, more, sub)
 
 
 class Ok(Result):
     __slots__ = ()
 
-    def __init__(self, what: Any = None, message: ResMessage = OK,
+    def __init__(self, what: Any = None, code: ResultCode = OK,
                  more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
-        super().__init__(what, message, more, sub)
+        super().__init__(what, code, more, sub)

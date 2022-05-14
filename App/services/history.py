@@ -3,6 +3,7 @@ from App.settings import HISTORY_KEEP_MONTHS
 from App.special import *
 from App.models.entities import RequestInfo, PageRequest, PageResult
 from App.models.db import History
+from App.translate import HISTORY_KINDS_TRANSLATE_PACK, Locale, reverse_translate_package
 from App.utils.db import MakeSql
 from App.utils.scheduler import SchedulerTask
 import datetime
@@ -15,17 +16,13 @@ __all__ = (
 class HistoryService(DbServiceBase):
     __slots__ = ()
 
-    HISTORY_KINDS_CACHE = [
-        {
-            'id': kind.id,
-            'name': kind.name_loc
-        }
-        for kind in History.Kind.items()
-    ]
+    HISTORY_KINDS_CACHE = reverse_translate_package(HISTORY_KINDS_TRANSLATE_PACK,
+                                                    lambda kind, name: {'id': kind, 'name': name})
 
     @classmethod
-    def get_history_kinds(cls) -> List[dict]:
-        return cls.HISTORY_KINDS_CACHE
+    def get_history_kinds(cls, request: RequestInfo) -> List[dict]:
+        kinds = cls.HISTORY_KINDS_CACHE.get(request.locale)
+        return kinds if kinds is not None else cls.HISTORY_KINDS_CACHE.get(Locale.DEFAULT)
 
     async def get_page(self, page: PageRequest, kind: Optional[str], request: RequestInfo) -> PageResult:
         if kind:
@@ -59,7 +56,7 @@ class HistoryService(DbServiceBase):
         for history in histories:
             history.more = mores.get(history.id, (None, None))[1]
 
-        return PageResult([h.to_dict() for h in histories], total, page.offset, page.limit)
+        return PageResult([h.to_dict(request.locale) for h in histories], total, page.offset, page.limit)
 
     @classmethod
     async def scheduled__check_old_histories(cls, context: 'SchedulerTask.Context') -> str:
