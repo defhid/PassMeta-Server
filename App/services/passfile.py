@@ -2,8 +2,8 @@ from App.services.base import DbServiceBase
 from App.services import AuthService
 from App.special import *
 
-from App.models.db import User, PassFile
-from App.models.request import PassfilePostData, PassfileInfoPatchData, PassfileSmthPatchData
+from App.models.orm import User, PassFile
+from App.models.dto import PassfileNewDto, PassfileInfoPatchDto, PassfileSmthPatchDto
 from App.models.entities import RequestInfo
 from App.models.enums import HistoryKind
 
@@ -41,7 +41,7 @@ class PassFileService(DbServiceBase):
 
         return passfile, await PassFileUtils.read_file(passfile, version)
 
-    async def add_file(self, data: PassfilePostData, request: RequestInfo) -> PassFile:
+    async def add_file(self, data: PassfileNewDto, request: RequestInfo) -> PassFile:
         """ Raises: Bad.
         """
         self._validate_post_data(data)
@@ -74,7 +74,7 @@ class PassFileService(DbServiceBase):
         return passfile
 
     async def edit_file_info(self, passfile_id: int,
-                             data: PassfileInfoPatchData, request: RequestInfo) -> PassFile:
+                             data: PassfileInfoPatchDto, request: RequestInfo) -> PassFile:
         """ Raises: Bad.
         """
         self._validate_info(data)
@@ -99,7 +99,7 @@ class PassFileService(DbServiceBase):
         return passfile
 
     async def edit_file_smth(self, passfile_id: int,
-                             data: PassfileSmthPatchData, request: RequestInfo) -> PassFile:
+                             data: PassfileSmthPatchDto, request: RequestInfo) -> PassFile:
         """ Raises: Bad.
         """
         self._validate_smth(data)
@@ -165,7 +165,7 @@ class PassFileService(DbServiceBase):
         return passfile
 
     @classmethod
-    def _validate_post_data(cls, data: PassfilePostData):
+    def _validate_post_data(cls, data: PassfileNewDto):
         cls._validate_info(data)
         cls._validate_smth(data)
 

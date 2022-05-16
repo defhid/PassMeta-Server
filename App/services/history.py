@@ -1,8 +1,10 @@
 from App.services.base import DbServiceBase
 from App.settings import HISTORY_KEEP_MONTHS
 from App.special import *
-from App.models.entities import RequestInfo, PageRequest, PageResult
-from App.models.db import History
+from App.models.entities import RequestInfo
+from App.models.dto import HistoryPageParamsDto
+from App.models.factory import PageFactory
+from App.models.orm import History
 from App.translate import HISTORY_KINDS_TRANSLATE_PACK, Locale, reverse_translate_package
 from App.utils.db import MakeSql
 from App.utils.scheduler import SchedulerTask
@@ -24,23 +26,23 @@ class HistoryService(DbServiceBase):
         kinds = cls.HISTORY_KINDS_CACHE.get(request.locale)
         return kinds if kinds is not None else cls.HISTORY_KINDS_CACHE.get(Locale.DEFAULT)
 
-    async def get_page(self, page: PageRequest, kind: Optional[str], request: RequestInfo) -> PageResult:
-        if kind:
-            kinds = kind.split(',')
+    async def get_page(self, page: HistoryPageParamsDto, request: RequestInfo) -> Dict:
+        params = {
+            'offset': page.offset,
+            'limit': page.limit,
+            'affected_user_id': request.user_id,
+            'kinds_condition': MakeSql.empty()
+        }
+
+        if page.kind:
             try:
-                kinds = tuple(int(k) for k in kinds)
+                params['kinds'] = tuple(int(k) for k in page.kind.split(','))
+                params['kinds_condition'] = self._KINDS_CONDITION
             except ValueError:
                 raise Bad('kind', VAL_ERR, MORE.allowed('<id:int>,...'))
-            else:
-                page.kinds = kinds
-                page.kinds_condition = self._KINDS_CONDITION
-        else:
-            page.kinds_condition = MakeSql.empty()
 
-        page.affected_user_id = request.user_id
-
-        total = await self.db.query_scalar(int, self._SELECT_HISTORY_COUNT, page)
-        histories = await self.db.query_list(History, self._SELECT_HISTORY, page)
+        total = await self.db.query_scalar(int, self._SELECT_HISTORY_COUNT, params)
+        histories = await self.db.query_list(History, self._SELECT_HISTORY, params)
 
         timestamps = set(f"{h.timestamp.year}_{h.timestamp.month:02}" for h in histories)
 
@@ -56,7 +58,12 @@ class HistoryService(DbServiceBase):
         for history in histories:
             history.more = mores.get(history.id, (None, None))[1]
 
-        return PageResult([h.to_dict(request.locale) for h in histories], total, page.offset, page.limit)
+        return PageFactory.create(
+            [h.to_dict(request.locale) for h in histories],
+            total,
+            page.offset,
+            page.limit
+        )
 
     @classmethod
     async def scheduled__check_old_histories(cls, context: 'SchedulerTask.Context') -> str:

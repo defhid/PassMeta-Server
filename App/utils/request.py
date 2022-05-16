@@ -1,8 +1,7 @@
-from App.models.entities import RequestInfo, PageRequest
+from App.models.entities import RequestInfo
 from App.services import AuthService
 from App.utils.db import DbUtils
 
-from pydantic import conint
 from starlette.requests import Request
 
 __all__ = (
@@ -31,7 +30,3 @@ class RequestUtils:
                 session = await AuthService(db).get_session(request)
 
         return RequestInfo(request, request.query_params.get('lang'), session)
-
-    @staticmethod
-    def collect_page_params(offset: conint(ge=0), limit: conint(gt=0, lt=100)) -> PageRequest:
-        return PageRequest(offset, limit)

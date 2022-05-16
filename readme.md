@@ -7,14 +7,13 @@ PassMeta Server is a part of PassMeta System, which provides reliable
 <br>
 distributed password storage and password management tools.
 <br>
-**P.S.** Client applications are currently under development.
 
 
 ### Technologies
 *Python 3.8, FastAPI, asyncpg + passql, PostgreSQL.*
 
 
-### Deployment
+### Deployment on Linux
 
 + **Download and unzip the project, change current directory:**
   - `wget https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip`
@@ -76,13 +75,10 @@ distributed password storage and password management tools.
   - `sudo bash Scripts/service-stopper.sh`
 
 
-### Launch as process
+### Launch as a process
 + **Start:** `sudo bash Scripts/process-starter.sh`
 + **Stop:** `sudo bash Scripts/process-killer.sh`
 
 
 ### Update
 + `sudo bash Scripts/updater.sh`
-
-### Tests
-+ Not implemented yet...

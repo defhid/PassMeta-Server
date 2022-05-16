@@ -10,7 +10,7 @@ import os
 
 # region Common
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 APP_ID: str  # [REQUIRED]: Unique PassMeta server identifier
 
 DEBUG: bool = False

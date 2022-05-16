@@ -1,6 +1,7 @@
-from App.special.ok_bad.code import ResultCode, OK
+from App.special.ok_bad.result_code import ResultCode, OK
 from App.special.ok_bad.more import *
-from typing import Optional, Any, Union, List, Dict, Callable
+from App.translate import OK_BAD_MESSAGES_TRANSLATE_PACK, get_package_text
+from typing import Optional, Any, Union, List, Dict
 
 __all__ = (
     'Result',
@@ -58,18 +59,20 @@ class Result(Exception):
     def more(self) -> Optional['ResultMore']:
         return self.args[0].get('more')
 
-    def as_dict(self, message_provider: Callable[[ResultCode], str]) -> Dict[str, object]:
+    def as_dict(self, locale: str, data: Any = None) -> Dict[str, object]:
         d = {
             'code': self._code.code,
-            'message': message_provider(self._code)
+            'message': get_package_text(OK_BAD_MESSAGES_TRANSLATE_PACK, self._code, locale, self._code.name)
         }
 
+        if data is not None:
+            d['data'] = data
         if self._what:
             d['what'] = self._what
         if self._more:
-            d['more'] = self._more
+            d['more'] = self._more.to_dict(locale)
         if self._sub:
-            d['sub'] = [s.as_dict(message_provider) for s in self._sub]
+            d['sub'] = [s.as_dict(locale) for s in self._sub]
 
         return d
 
@@ -82,7 +85,7 @@ class Bad(Result):
     __slots__ = ()
 
     def __init__(self, what: Any, code: ResultCode,
-                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
+                 more: 'ResultMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
         super().__init__(what, code, more, sub)
 
 
@@ -90,5 +93,5 @@ class Ok(Result):
     __slots__ = ()
 
     def __init__(self, what: Any = None, code: ResultCode = OK,
-                 more: 'ResMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
+                 more: 'ResultMore' = None, sub: Union['Result', dict, List['Result'], List[dict]] = None):
         super().__init__(what, code, more, sub)

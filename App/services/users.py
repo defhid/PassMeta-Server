@@ -2,10 +2,10 @@ from App.services import AuthService
 from App.services.base import DbServiceBase
 from App.special import *
 
-from App.models.request import SignUpPostData, UserPatchData
+from App.models.dto import SignUpDto, UserPatchDto
 from App.models.entities import RequestInfo
 from App.models.enums import HistoryKind
-from App.models.db import User
+from App.models.orm import User
 
 from App.utils.db import MakeSql
 
@@ -17,7 +17,7 @@ __all__ = (
 class UserService(DbServiceBase):
     __slots__ = ()
 
-    async def create_user(self, data: SignUpPostData, request: RequestInfo) -> User:
+    async def create_user(self, data: SignUpDto, request: RequestInfo) -> User:
         """ Raises DATA_ERR, ALREADY_USED_ERR.
         """
         user = User()
@@ -48,7 +48,7 @@ class UserService(DbServiceBase):
 
         return user
 
-    async def edit_user(self, user_id: int, data: UserPatchData, request: RequestInfo) -> User:
+    async def edit_user(self, user_id: int, data: UserPatchDto, request: RequestInfo) -> User:
         """ Raises DATA_ERR, VAL_MISSED_ERR, ALREADY_USED_ERR.
         """
         user = await self.db.query_first(User, self._SELECT_BY_ID, {'id': user_id})

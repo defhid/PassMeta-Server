@@ -2,9 +2,9 @@ from App.services.base import DbServiceBase
 from App.settings import SESSION_LIFETIME_DAYS, SESSION_CACHE_SIZE
 from App.special import *
 
-from App.models.db import Session, User
+from App.models.orm import Session, User
 from App.models.enums import HistoryKind
-from App.models.request import SignInPostData
+from App.models.dto import SignInDto
 from App.models.entities import RequestInfo
 
 from App.utils.db import MakeSql
@@ -73,7 +73,7 @@ class AuthService(DbServiceBase):
 
         return response
 
-    async def authenticate(self, data: SignInPostData, request_info: RequestInfo) -> User:
+    async def authenticate(self, data: SignInDto, request_info: RequestInfo) -> User:
         """ Raises: NOT_EXIST_ERR, FROZEN_ERR.
         """
         user = await self.db.query_first(User, self._SELECT_USER_BY_LOGIN, {'login': data.login.strip()})

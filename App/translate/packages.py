@@ -1,111 +1,136 @@
 from App.translate.helpers import loc
-
-from App.special.ok_bad.code import *
 from App.models.enums import HistoryKind
+import App.special.ok_bad.more_type as more
+import App.special.ok_bad.result_code as result
 
 __all__ = (
     'OK_BAD_MESSAGES_TRANSLATE_PACK',
-    'HISTORY_KINDS_TRANSLATE_PACK'
+    'OK_BAD_MORE_TYPES_TRANSLATE_PACK',
+    'HISTORY_KINDS_TRANSLATE_PACK',
 )
 
 
 OK_BAD_MESSAGES_TRANSLATE_PACK = {
-    ACCESS_ERR: loc(
+    result.ACCESS_ERR: loc(
         default="access error",
         ru="ошибка доступа",
     ),
-    ALREADY_USED_ERR: loc(
+    result.ALREADY_USED_ERR: loc(
         default="already used",
         ru="уже используется",
     ),
-    AUTH_ERR: loc(
+    result.AUTH_ERR: loc(
         default="authorization error",
         ru="ошибка авторизации",
     ),
-    BAD_REQUEST_ERR: loc(
+    result.BAD_REQUEST_ERR: loc(
         default="bad request",
         ru="некорректный запрос",
     ),
-    DATA_ERR: loc(
+    result.DATA_ERR: loc(
         default="incorrect data",
         ru="некорректные данные",
     ),
-    FORMAT_ERR: loc(
+    result.FORMAT_ERR: loc(
         default="incorrect format",
         ru="некорректный формат",
     ),
-    FROZEN_ERR: loc(
+    result.FROZEN_ERR: loc(
         default="frozen (not active)",
         ru="заблокирован (не активен)"
     ),
-    INVALID_OPERATION_ERR: loc(
+    result.INVALID_OPERATION_ERR: loc(
         default="invalid operation",
         ru="недопустимая операция"
     ),
-    NOT_AVAILABLE: loc(
+    result.NOT_AVAILABLE: loc(
         default="not available",
         ru="недоступно",
     ),
-    NOT_EXIST_ERR: loc(
+    result.NOT_EXIST_ERR: loc(
         default="existence error",
         ru="не существует",
     ),
-    NOT_IMPLEMENTED_ERR: loc(
+    result.NOT_IMPLEMENTED_ERR: loc(
         default="functionality is not implemented",
         ru="функционал не реализован",
     ),
-    OK: loc(
+    result.OK: loc(
         default="ok",
         ru="ок",
     ),
-    PROHIBITED_ERR: loc(
+    result.PROHIBITED_ERR: loc(
         default="prohibited",
         ru="запрещено",
     ),
-    SERVER_ERR: loc(
+    result.SERVER_ERR: loc(
         default="server error",
         ru="ошибка сервера",
     ),
-    SIZE_ERR: loc(
+    result.SIZE_ERR: loc(
         default="size error",
         ru="ошибка размера",
     ),
-    TOO_FEW_ERR: loc(
+    result.TOO_FEW_ERR: loc(
         default="too few",
         ru="слишком мало",
     ),
-    TOO_LONG_ERR: loc(
+    result.TOO_LONG_ERR: loc(
         default="too long",
         ru="слишком длинное значение",
     ),
-    TOO_MUCH_ERR: loc(
+    result.TOO_MUCH_ERR: loc(
         default="too much",
         ru="слишком много",
     ),
-    TOO_SHORT_ERR: loc(
+    result.TOO_SHORT_ERR: loc(
         default="too short",
         ru="слишком короткое значение",
     ),
-    TOO_SIMPLE_ERR: loc(
+    result.TOO_SIMPLE_ERR: loc(
         default="too simple",
         ru="слишком просто",
     ),
-    UNKNOWN_ERR: loc(
+    result.UNKNOWN_ERR: loc(
         default="unknown error",
         ru="неизвестная ошибка",
     ),
-    VAL_ERR: loc(
+    result.VAL_ERR: loc(
         default="incorrect value",
         ru="некорректное значение",
     ),
-    VAL_MISSED_ERR: loc(
+    result.VAL_MISSED_ERR: loc(
         default="value missed",
         ru="пропущено значение",
     ),
-    WRONG_VAL_ERR: loc(
+    result.WRONG_VAL_ERR: loc(
         default="wrong value",
         ru="неверное значение",
     ),
+}
+
+
+OK_BAD_MORE_TYPES_TRANSLATE_PACK = {
+    more.REQUIRED: loc(
+        default="Required",
+        ru="Требуется",
+    ),
+    more.ALLOWED: loc(
+        default="Allowed",
+        ru="Разрешено",
+    ),
+    more.DISALLOWED: loc(
+        default="Disallowed",
+        ru="Запрещено",
+    ),
+    more.MIN_ALLOWED: loc(
+        default="Min allowed",
+        ru="Разрешено (мин.)",
+    ),
+    more.MAX_ALLOWED: loc(
+        default="Max allowed",
+        ru="Разрешено (макс.)",
+    )
 }
 
 

@@ -1,4 +1,4 @@
-from App.models.db import History
+from App.models.orm import History
 from App.models.entities import RequestInfo
 
 from passql import DbConnection

@@ -1,8 +1,8 @@
 from App.special import *
 
-from App.models.request import *
-from App.models.entities import RequestInfo, PageRequest
-from App.models.db import check_entities
+from App.models.dto import *
+from App.models.entities import RequestInfo
+from App.models.orm import check_entities
 
 from App.utils.db import DbUtils
 from App.utils.logging import Logger
@@ -118,14 +118,13 @@ DELETE = app.delete
 DB = Depends(db_utils.connection_maker, use_cache=False)
 REQUEST_INFO = Depends(request_utils.build_request_info, use_cache=False)
 REQUEST_INFO_WS = Depends(request_utils.build_request_info_without_session, use_cache=False)
-PAGE = Depends(request_utils.collect_page_params)
 
 # endregion
 
 
 # region info
 
-@GET("/info")
+@GET("/info", response_model=AppInfoDto)
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     if request.session is not None:
         user = (await request.session.get_user(db)).to_dict()
@@ -149,7 +148,7 @@ async def ctrl(request: RequestInfo = REQUEST_INFO_WS):
 # region Auth
 
 @POST("/auth/sign-in")
-async def ctrl(body: SignInPostData,
+async def ctrl(body: SignInDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     service = AuthService(db)
     user = await service.authenticate(body, request)
@@ -166,7 +165,7 @@ async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
 
 # region Passfile
 
-@GET("/passfiles/list")
+@GET("/passfiles/list", response_model=List[PassFileDto])
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfiles = await PassFileService(db).get_user_passfiles(await request.session.get_user(db))
@@ -174,7 +173,7 @@ async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     return request.make_response(Ok(), data=converted)
 
 
-@GET("/passfiles/{passfile_id}")
+@GET("/passfiles/{passfile_id}", response_model=PassFileFullDto)
 async def ctrl(passfile_id: int,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
@@ -182,7 +181,7 @@ async def ctrl(passfile_id: int,
     return request.make_response(Ok(), data=passfile.to_dict(data))
 
 
-@GET("/passfiles/{passfile_id}/smth")
+@GET("/passfiles/{passfile_id}/smth", response_model=str)
 async def ctrl(passfile_id: int,
                version: int = None,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
@@ -191,24 +190,24 @@ async def ctrl(passfile_id: int,
     return request.make_response(Ok(), data=data.decode(PASSFILES_ENCODING))
 
 
-@POST("/passfiles/new")
-async def ctrl(body: PassfilePostData,
+@POST("/passfiles/new", response_model=PassFileDto)
+async def ctrl(body: PassfileNewDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfile = await PassFileService(db).add_file(body, request)
     return request.make_response(Ok(), data=passfile.to_dict())
 
 
-@PATCH("/passfiles/{passfile_id}/info")
-async def ctrl(passfile_id: int, body: PassfileInfoPatchData,
+@PATCH("/passfiles/{passfile_id}/info", response_model=PassFileDto)
+async def ctrl(passfile_id: int, body: PassfileInfoPatchDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfile = await PassFileService(db).edit_file_info(passfile_id, body, request)
     return request.make_response(Ok(), data=passfile.to_dict())
 
 
-@PATCH("/passfiles/{passfile_id}/smth")
-async def ctrl(passfile_id: int, body: PassfileSmthPatchData,
+@PATCH("/passfiles/{passfile_id}/smth", response_model=PassFileDto)
+async def ctrl(passfile_id: int, body: PassfileSmthPatchDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     passfile = await PassFileService(db).edit_file_smth(passfile_id, body, request)
@@ -216,7 +215,7 @@ async def ctrl(passfile_id: int, body: PassfileSmthPatchData,
 
 
 @DELETE("/passfiles/{passfile_id}")
-async def ctrl(passfile_id: int, body: PassfileDeleteData,
+async def ctrl(passfile_id: int, body: PassfileDeleteDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     await PassFileService(db).delete_file(passfile_id, body.check_password, request)
@@ -228,21 +227,21 @@ async def ctrl(passfile_id: int, body: PassfileDeleteData,
 # region Users
 
 @POST("/users/new")
-async def ctrl(body: SignUpPostData,
+async def ctrl(body: SignUpDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     user = await UserService(db).create_user(body, request)
     return await AuthService(db).authorize(user, request)
 
 
-@GET("/users/me")
+@GET("/users/me", response_model=UserDto)
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     user = await request.session.get_user(db)
     return request.make_response(Ok(), data=user.to_dict())
 
 
-@PATCH("/users/me")
-async def ctrl(body: UserPatchData,
+@PATCH("/users/me", response_model=UserDto)
+async def ctrl(body: UserPatchDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
     user = await UserService(db).edit_user(request.user_id, body, request)
@@ -253,17 +252,17 @@ async def ctrl(body: UserPatchData,
 
 # region History
 
-@GET("/history/kinds")
+@GET("/history/kinds", response_model=List[HistoryKindDto])
 def ctrl(request: RequestInfo = REQUEST_INFO_WS):
     kinds = HistoryService.get_history_kinds(request)
     return request.make_response(Ok(), data=kinds)
 
 
-@GET("/history")
-async def ctrl(kind: str = None, page: PageRequest = PAGE,
+@GET("/history", response_model=HistoryPageDto)
+async def ctrl(page: HistoryPageParamsDto = Depends(HistoryPageParamsDto),
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
-    page_result = await HistoryService(db).get_page(page, kind, request)
+    page_result = await HistoryService(db).get_page(page, request)
     return request.make_response(Ok(), data=page_result)
 
 # endregion

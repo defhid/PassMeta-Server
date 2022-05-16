@@ -1,14 +1,12 @@
 from starlette.responses import JSONResponse
 from fastapi import Request
 
-from App.translate import OK_BAD_MESSAGES_TRANSLATE_PACK, Locale, get_package_text
-from App.models.db import Session
+from App.models.orm import Session
+from App.translate import Locale
 from App.special import *
 
 __all__ = (
     'RequestInfo',
-    'PageRequest',
-    'PageResult',
     'PassFilePath',
 )
 
@@ -38,28 +36,12 @@ class RequestInfo:
         return self._session.user_id if self._session is not None else None
 
     def make_response(self, result: Result, data: Any = None) -> JSONResponse:
-        d = result.as_dict(lambda code: get_package_text(OK_BAD_MESSAGES_TRANSLATE_PACK, code, self.locale, code.name))
-        if data is not None:
-            d['data'] = data
-        return JSONResponse(d, status_code=result.code.response_status_code)
+        return JSONResponse(result.as_dict(self.locale, data), status_code=result.code.response_status_code)
 
     def ensure_user_is_authorized(self):
         """ Raises: AUTH_ERR """
         if self._session is None:
             raise Bad(None, AUTH_ERR)
-
-
-class PageRequest:
-    def __init__(self, offset: int, limit: int):
-        self.offset = offset
-        self.limit = limit
-
-
-class PageResult(dict):
-    __slots__ = ()
-
-    def __init__(self, lst: List, total: int, offset: int, limit: int):
-        super().__init__(list=lst, total=total, offset=offset, limit=limit)
 
 
 class PassFilePath:
