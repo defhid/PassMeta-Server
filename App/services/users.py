@@ -1,4 +1,5 @@
-from App.services import AuthService
+from typing import Coroutine
+
 from App.services.base import DbServiceBase
 from App.special import *
 
@@ -8,6 +9,7 @@ from App.models.enums import HistoryKind
 from App.models.orm import User
 
 from App.utils.db import MakeSql
+from App.utils.crypto import CryptoUtils
 
 __all__ = (
     'UserService',
@@ -16,6 +18,12 @@ __all__ = (
 
 class UserService(DbServiceBase):
     __slots__ = ()
+
+    def get_user_by_id(self, user_id: int) -> Coroutine[Any, Any, Optional[User]]:
+        return self.db.query_first(User, self._SELECT_BY_ID, {'id': user_id})
+
+    def get_user_by_login(self, user_login: str) -> Coroutine[Any, Any, Optional[User]]:
+        return self.db.query_first(User, self._SELECT_BY_LOGIN, {'login': user_login.strip()})
 
     async def create_user(self, data: SignUpDto, request: RequestInfo) -> User:
         """ Raises DATA_ERR, ALREADY_USED_ERR.
@@ -61,7 +69,7 @@ class UserService(DbServiceBase):
                                             request.user_id, user.id, more=f"passconf_miss", request=request)
             raise Bad('password_confirm', VAL_MISSED_ERR)
 
-        if not AuthService.check_password(data.password_confirm, user.pwd):
+        if not CryptoUtils.check_user_password(data.password_confirm, user.pwd):
             await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
                                             request.user_id, user.id, more=f"passconf_wrong", request=request)
             raise Bad('password_confirm', WRONG_VAL_ERR)
@@ -122,7 +130,7 @@ class UserService(DbServiceBase):
             if len(password) > c.Raw.PASSWORD_LEN_MAX:
                 errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.Raw.PASSWORD_LEN_MAX)))
 
-            user.pwd = AuthService.make_pwd(password)
+            user.pwd = CryptoUtils.make_user_pwd(password)
 
         elif not user.id:
             errors.append(Bad('password', VAL_MISSED_ERR))
@@ -132,6 +140,8 @@ class UserService(DbServiceBase):
     # region SQL
 
     _SELECT_BY_ID = MakeSql("""SELECT * FROM "user" WHERE id = @id""")
+
+    _SELECT_BY_LOGIN = MakeSql("""SELECT * FROM "user" WHERE login = @login""")
 
     _SELECT_ID_BY_LOGIN = MakeSql("""SELECT id FROM "user" WHERE login = @login""")
 

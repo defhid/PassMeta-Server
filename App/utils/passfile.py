@@ -1,15 +1,14 @@
 from App.settings import (
     PASSFILES_FOLDER,
     PASSFILES_ENCODING,
-    KEY_PHRASE_BYTES,
     PASSFILE_KEEP_VERSIONS
 )
 from App.special import *
 from App.models.orm import PassFile
 from App.models.entities import PassFilePath
+from App.utils.crypto import CryptoUtils
 from App.utils.logging import Logger
 
-from cryptography.fernet import Fernet
 import aiofiles
 import os
 
@@ -56,12 +55,8 @@ class PassFileUtils:
 
         :return: Success.
         """
-        try:
-            bytes_content = Fernet(KEY_PHRASE_BYTES).encrypt(content.encode(PASSFILES_ENCODING))
-        except Exception as e:
-            logger.critical("File encryption error!", e)
-            return Bad(None, UNKNOWN_ERR, MORE.text("Server-Side Encryption Failed"))
 
+        bytes_content = CryptoUtils.encrypt_passfile_smth(content.encode(PASSFILES_ENCODING))
         path = cls.get_filepath(passfile)
 
         try:
@@ -108,7 +103,7 @@ class PassFileUtils:
             logger.critical(f"File reading error! (pf: {passfile.id})", e)
             raise Bad(None, UNKNOWN_ERR)
         else:
-            return Fernet(KEY_PHRASE_BYTES).decrypt(content)
+            return CryptoUtils.decrypt_passfile_smth(content)
 
     @classmethod
     def optimize_file_versions(cls, passfile: 'PassFile') -> Result:

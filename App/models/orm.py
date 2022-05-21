@@ -9,7 +9,6 @@ from typing import Any, Dict, Optional
 
 __all__ = (
     'User',
-    'Session',
     'PassFile',
     'History',
     'check_entities',
@@ -19,7 +18,7 @@ __all__ = (
 class User(DbEntity):
     # region SQL
 
-    TABLE = """
+    TABLE = MakeSql("""
     CREATE TABLE IF NOT EXISTS public.user (
         id serial UNIQUE PRIMARY KEY,
         login varchar(@LOGIN_LEN_MAX) NOT NULL UNIQUE,
@@ -34,7 +33,7 @@ class User(DbEntity):
     );
     CREATE UNIQUE INDEX IF NOT EXISTS user_id_uix ON public.user(id);
     CREATE UNIQUE INDEX IF NOT EXISTS user_login_ix ON public.user(login);
-    """
+    """)
 
     class Constrains:
         LOGIN_LEN_MIN = 5
@@ -71,36 +70,10 @@ class User(DbEntity):
         }
 
 
-class Session(DbEntity):
-    # region SQL
-
-    TABLE = """
-    CREATE TABLE IF NOT EXISTS public.session (
-        id char(36) UNIQUE PRIMARY KEY DEFAULT uuid_in(overlay(
-            overlay(md5(random()::text || ':' || clock_timestamp()::text) placing '4' from 13) 
-            placing to_hex(floor(random()*(11-8+1) + 8)::int)::text from 17)::cstring),
-        user_id int NOT NULL REFERENCES public.user(id),
-        created_on timestamp NOT NULL DEFAULT now()
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS session_id_ix ON public.session(id);
-    """
-
-    _SELECT_USER = MakeSql("""SELECT * FROM "user" WHERE id = @user_id""")
-
-    # endregion
-
-    id: str
-    user_id: int
-    created_on: datetime
-
-    async def get_user(self, db: DbConnection) -> 'User':
-        return await db.query_first(User, self._SELECT_USER, self)
-
-
 class PassFile(DbEntity):
     # region SQL
 
-    TABLE = """
+    TABLE = MakeSql("""
     CREATE TABLE IF NOT EXISTS public.passfile (
         id serial PRIMARY KEY,
         name varchar(@NAME_LEN_MAX) NOT NULL,
@@ -116,7 +89,7 @@ class PassFile(DbEntity):
     );
     CREATE UNIQUE INDEX IF NOT EXISTS passfile_id_ix ON public.passfile(id);
     CREATE INDEX IF NOT EXISTS passfile_user_id_ix ON public.passfile(user_id);
-    """
+    """)
 
     class Constrains:
         NAME_LEN_MIN = 1
@@ -159,7 +132,7 @@ class History(DbEntity):
     CREATE SCHEMA IF NOT EXISTS history;
     """
 
-    TABLE = """
+    TABLE = MakeSql("""
     CREATE TABLE IF NOT EXISTS history.history (
         id bigserial PRIMARY KEY,
         kind_id smallint NOT NULL,
@@ -170,9 +143,9 @@ class History(DbEntity):
         timestamp timestamp NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS history_user_id_ix ON history.history(affected_user_id);
-    """
+    """)
 
-    FUNCTION = """
+    FUNCTION = MakeSql("""
     CREATE OR REPLACE FUNCTION add_history_more(history_id bigint, more text)
     RETURNS bigint
     LANGUAGE plpgsql AS $$
@@ -195,7 +168,7 @@ class History(DbEntity):
         EXECUTE(format('INSERT INTO history.%I (history_id, info) VALUES (%s, %L)', more_table, history_id, more));
         RETURN history_id;
     END; $$
-    """
+    """)
 
     class Constrains:
         MORE_INFO_LEN_MAX = 160
@@ -232,7 +205,6 @@ register_entities()
 async def check_entities(connection: DbConnection):
     check_list = [
         (User.TABLE, User.Constrains),
-        (Session.TABLE, None),
         (PassFile.TABLE, PassFile.Constrains),
         (History.SCHEMA, None),
         (History.TABLE, None),

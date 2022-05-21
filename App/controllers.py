@@ -28,8 +28,6 @@ logger = Logger(__file__)
 
 db_utils = DbUtils(DB_CONNECTION_POOL_MAX_SIZE)
 
-request_utils = RequestUtils(db_utils)
-
 scheduler = Scheduler(period_minutes=10)
 
 app = FastAPI(debug=DEBUG)
@@ -78,15 +76,6 @@ async def on_startup():
     PassFileUtils.ensure_folders_created()
 
     scheduler.add(SchedulerTask(
-        'SESCHECK',
-        active=True,
-        single=False,
-        interval_minutes=OLD_SESSIONS_CHECKING_INTERVAL_MINUTES,
-        start_now=OLD_SESSIONS_CHECKING_ON_STARTUP,
-        func=AuthService.scheduled__check_old_sessions
-    ))
-
-    scheduler.add(SchedulerTask(
         'OHISCHECK',
         active=True,
         single=False,
@@ -116,8 +105,8 @@ PUT = app.put
 DELETE = app.delete
 
 DB = Depends(db_utils.connection_maker, use_cache=False)
-REQUEST_INFO = Depends(request_utils.build_request_info, use_cache=False)
-REQUEST_INFO_WS = Depends(request_utils.build_request_info_without_session, use_cache=False)
+REQUEST_INFO = Depends(RequestUtils.build_request_info, use_cache=False)
+REQUEST_INFO_WS = Depends(RequestUtils.build_request_info_without_session, use_cache=False)
 
 # endregion
 
@@ -127,14 +116,14 @@ REQUEST_INFO_WS = Depends(request_utils.build_request_info_without_session, use_
 @GET("/info", response_model=AppInfoDto)
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     if request.session is not None:
-        user = (await request.session.get_user(db)).to_dict()
+        user = await UserService(db).get_user_by_id(request.user_id)
     else:
         user = None
 
     return request.make_response(Ok(), data={
         'app_id': APP_ID,
         'app_version': APP_VERSION,
-        'user': user,
+        'user': user.to_dict() if user else None,
     })
 
 
@@ -152,13 +141,7 @@ async def ctrl(body: SignInDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     service = AuthService(db)
     user = await service.authenticate(body, request)
-    return await service.authorize(user, request)
-
-
-@POST("/auth/sign-out")
-async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
-    await AuthService(db).sign_out(request)
-    return request.make_response(Ok())
+    return service.authorize(user, request)
 
 # endregion
 
@@ -168,9 +151,11 @@ async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
 @GET("/passfiles/list", response_model=List[PassFileDto])
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
-    passfiles = await PassFileService(db).get_user_passfiles(await request.session.get_user(db))
-    converted = list(map(lambda p: p.to_dict(), passfiles))
-    return request.make_response(Ok(), data=converted)
+
+    user = await UserService(db).get_user_by_id(request.user_id)
+    passfiles = await PassFileService(db).get_user_passfiles(user)
+
+    return request.make_response(Ok(), data=list(map(lambda p: p.to_dict(), passfiles)))
 
 
 @GET("/passfiles/{passfile_id}", response_model=PassFileFullDto)
@@ -230,13 +215,13 @@ async def ctrl(passfile_id: int, body: PassfileDeleteDto,
 async def ctrl(body: SignUpDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     user = await UserService(db).create_user(body, request)
-    return await AuthService(db).authorize(user, request)
+    return AuthService(db).authorize(user, request)
 
 
 @GET("/users/me", response_model=UserDto)
 async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
-    user = await request.session.get_user(db)
+    user = await UserService(db).get_user_by_id(request.user_id)
     return request.make_response(Ok(), data=user.to_dict())
 
 

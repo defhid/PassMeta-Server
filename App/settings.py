@@ -5,13 +5,15 @@ Requires using load_custom_settings() method before import app,
 to load required settings or override default.
 """
 
-import os
+import os as __os
 
 
 # region Common
 
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 APP_ID: str  # [REQUIRED]: Unique PassMeta server identifier
+
+SECRET_KEY_BYTES: bytes  # [REQUIRED]: Generated key from Fernet.generate_key()
 
 DEBUG: bool = False
 
@@ -29,29 +31,22 @@ DB_CONNECTION_POOL_MAX_SIZE: int = 30
 
 # region File System
 
-ROOT_DIR: str = os.path.join(*os.path.split(os.path.dirname(os.path.abspath(__file__)))[:-1])
+ROOT_DIR: str = __os.path.join(*__os.path.split(__os.path.dirname(__os.path.abspath(__file__)))[:-1])
 
-PASSFILES_FOLDER: str = os.path.join(ROOT_DIR, 'Data', 'PassFiles')
+PASSFILES_FOLDER: str = __os.path.join(ROOT_DIR, 'Data', 'PassFiles')
 
 PASSFILES_ENCODING = "UTF-8"
-
-KEY_PHRASE_BYTES: bytes  # [REQUIRED]: Generated key from Fernet.generate_key()
 
 # endregion
 
 
 # region Others
 
-SESSION_LIFETIME_DAYS: int = 120  # how long to keep user web session
-
-SESSION_CACHE_SIZE: int = 200  # limit on the number of cached sessions
+SESSION_LIFETIME_DAYS: int = 120  # how long to keep user's web session
 
 PASSFILE_KEEP_VERSIONS: int = 3  # max number of stored file versions
 
 HISTORY_KEEP_MONTHS: int = 12  # how many last months to store history more info (the origin history is permanent)
-
-OLD_SESSIONS_CHECKING_INTERVAL_MINUTES: int = 60 * 3  # how often to check old user web sessions
-OLD_SESSIONS_CHECKING_ON_STARTUP: bool = True  # launch checking old user web sessions on application startup
 
 OLD_HISTORY_CHECKING_INTERVAL_DAYS: int = 30  # how often to check old history more info
 OLD_HISTORY_CHECKING_ON_STARTUP: bool = True  # launch checking old history more info on application startup
@@ -65,13 +60,17 @@ def load_custom_settings(custom_settings):
     required = [
         'APP_ID',
         'DB_CONNECTION',
-        'KEY_PHRASE_BYTES',
+        'SECRET_KEY_BYTES',
+    ]
+
+    missed = [
+        'APP_VERSION',
     ]
 
     for name in dir(custom_settings):
         if name.isupper():
             globals()[name] = getattr(custom_settings, name)
-            if name in required:
+            if name in required and name not in missed:
                 required.remove(name)
 
     if required:

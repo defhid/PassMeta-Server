@@ -1,14 +1,24 @@
+import datetime
+
 from starlette.responses import JSONResponse
 from fastapi import Request
 
-from App.models.orm import Session
 from App.translate import Locale
 from App.special import *
 
 __all__ = (
+    'Session',
     'RequestInfo',
     'PassFilePath',
 )
+
+
+class Session:
+    __slots__ = ('user_id', 'created_on')
+
+    def __init__(self, user_id: int, created_on: datetime.datetime):
+        self.user_id = user_id
+        self.created_on = created_on
 
 
 class RequestInfo:

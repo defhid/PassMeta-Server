@@ -1,6 +1,6 @@
 APP_ID = {app_id}
 
-KEY_PHRASE_BYTES = {key_phrase}
+SECRET_KEY_BYTES = {key_phrase}
 
 DB_CONNECTION = {
     'host': 'localhost',
