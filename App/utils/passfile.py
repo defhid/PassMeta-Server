@@ -4,7 +4,7 @@ from App.settings import (
     PASSFILE_KEEP_VERSIONS
 )
 from App.special import *
-from App.models.orm import PassFile
+from App.database import PassFile
 from App.models.entities import PassFilePath
 from App.utils.crypto import CryptoUtils
 from App.utils.logging import Logger

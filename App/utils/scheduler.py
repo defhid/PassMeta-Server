@@ -1,4 +1,4 @@
-from App.utils.db import DbUtils
+from App.database import DbUtils
 from App.utils.logging import Logger
 from threading import Thread, Event
 from datetime import datetime, timedelta

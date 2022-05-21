@@ -10,7 +10,7 @@ import os as __os
 
 # region Common
 
-APP_VERSION = "1.0.2"
+APP_VERSION = "1.0.3"
 APP_ID: str  # [REQUIRED]: Unique PassMeta server identifier
 
 SECRET_KEY_BYTES: bytes  # [REQUIRED]: Generated key from Fernet.generate_key()
@@ -51,7 +51,7 @@ HISTORY_KEEP_MONTHS: int = 12  # how many last months to store history more info
 OLD_HISTORY_CHECKING_INTERVAL_DAYS: int = 30  # how often to check old history more info
 OLD_HISTORY_CHECKING_ON_STARTUP: bool = True  # launch checking old history more info on application startup
 
-CHECK_DATABASE_ON_STARTUP: bool = True  # ensure all db models exist, create if required
+CHECK_MIGRATIONS_ON_STARTUP: bool = True  # find and execute new database migrations
 
 # endregion
 

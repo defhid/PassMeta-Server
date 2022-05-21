@@ -1,14 +1,21 @@
 from App.settings import DB_CONNECTION, DB_CONNECTION_POOL_MIN_SIZE
+from App.special import *
+from App.utils.logging import Logger
+from App.database.migrations import MIGRATIONS
+
+from types import GeneratorType
 from passql.defaults import SqlDefaultConverters
 from passql import *
-from typing import Generator
-from types import GeneratorType
 import asyncpg
 
 __all__ = (
     'DbUtils',
     'MakeSql',
+    'Migrator',
 )
+
+
+logger = Logger(__file__)
 
 
 def _custom_sql_in(val, converter) -> str:
@@ -19,7 +26,7 @@ def _custom_sql_in(val, converter) -> str:
 MakeSql = SqlMaker(SqlDefaultConverters.POSTGRES + SqlConverter({
     tuple: _custom_sql_in,
     range: _custom_sql_in,
-    GeneratorType: _custom_sql_in,
+    GeneratorType: _custom_sql_in
 }))
 
 
@@ -82,3 +89,46 @@ class ContextConnectionResolver:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._db_utils.release_connection(self._conn)
         self._conn = None
+
+
+class Migrator:
+    def __init__(self, db: DbConnection):
+        self.db = db
+
+    async def run(self):
+        logger.info("Searching new migrations...")
+
+        migrations = {
+            m.name: m
+            for m in map(lambda m: m(), MIGRATIONS)
+        }
+
+        schema_exists = await self.db.query_scalar(bool, """
+            SELECT EXISTS(
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public'
+                  AND table_name   = 'migrations')
+        """)
+
+        if schema_exists:
+            applied = await self.db.query_values_list(str, "SELECT name FROM migrations WHERE name = any(@names)", {
+                'names': list(migrations.keys())
+            })
+
+            for name in applied:
+                migrations.pop(name, None)
+
+        if migrations:
+            logger.info(f"{len(migrations)} new migration(s) found")
+
+            for migration in migrations.values():
+                logger.info(f"Executing migration {migration.name}...")
+                try:
+                    await migration.execute(self.db)
+                except Exception as e:
+                    logger.info(f"Migration {migration.name} error!")
+                    logger.error(f"Migration {migration.name} error", e)
+                    raise
+                logger.info(f"Executing migration {migration.name} finished!")
+        else:
+            logger.info("No new migrations found")

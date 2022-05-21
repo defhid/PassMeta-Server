@@ -12,4 +12,5 @@ from typing import (
     Tuple,
     TypeVar,
     Generic,
+    Generator,
 )
