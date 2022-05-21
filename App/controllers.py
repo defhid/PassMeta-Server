@@ -149,11 +149,11 @@ async def ctrl(body: SignInDto,
 # region Passfile
 
 @GET("/passfiles/list", response_model=List[PassFileDto])
-async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
+async def ctrl(type_id: int = None, request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     request.ensure_user_is_authorized()
 
     user = await UserService(db).get_user_by_id(request.user_id)
-    passfiles = await PassFileService(db).get_user_passfiles(user)
+    passfiles = await PassFileService(db).get_user_passfiles(user, type_id)
 
     return request.make_response(Ok(), data=list(map(lambda p: p.to_dict(), passfiles)))
 

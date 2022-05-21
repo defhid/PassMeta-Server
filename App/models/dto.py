@@ -58,6 +58,7 @@ class UserPatchDto(BaseModel):
 class PassfileNewDto(BaseModel):
     name: str
     color: Optional[str]
+    type_id: conint(ge=1, le=32767)
     created_on: datetime
     smth: constr(min_length=1, max_length=10_485_760)
 

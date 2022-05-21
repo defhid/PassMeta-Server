@@ -1,5 +1,5 @@
 from App.services.base import DbServiceBase
-from App.services import AuthService
+from App.services import UserService
 from App.special import *
 
 from App.models.dto import PassfileNewDto, PassfileInfoPatchDto, PassfileSmthPatchDto
@@ -7,6 +7,7 @@ from App.models.entities import RequestInfo
 from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User, PassFile
+from App.utils.crypto import CryptoUtils
 from App.utils.passfile import PassFileUtils
 
 import re
@@ -20,8 +21,11 @@ __all__ = (
 class PassFileService(DbServiceBase):
     __slots__ = ()
 
-    async def get_user_passfiles(self, user: User) -> List[PassFile]:
-        return await self.db.query_list(PassFile, self._SELECT_BY_USER_ID, {'user_id': user.id})
+    async def get_user_passfiles(self, user: User, type_id: Optional[int]) -> List[PassFile]:
+        return await self.db.query_list(PassFile, self._SELECT_BY_USER_ID, {
+            'user_id': user.id,
+            'type_id': type_id if type_id is not None else MakeSql('type_id')
+        })
 
     async def get_file(self, passfile_id: int, version: Optional[int], request: RequestInfo) -> (PassFile, bytes):
         """ Raises: Bad [NOT_EXIST_ERR, ACCESS_ERR].
@@ -53,6 +57,7 @@ class PassFileService(DbServiceBase):
                 'user_id': request.user_id,
                 'name': data.name,
                 'color': data.color,
+                'type_id': data.type_id,
                 'created_on': data.created_on,
             })
 
@@ -139,9 +144,9 @@ class PassFileService(DbServiceBase):
         """
         passfile = await self._get_passfile_or_raise(passfile_id)
 
-        user = await request.session.get_user(self.db)
+        user = await UserService(self.db).get_user_by_id(request.user_id)
 
-        if not AuthService.check_password(check_password, user.pwd):
+        if not CryptoUtils.check_user_password(check_password, user.pwd):
             await self.history_writer.write(HistoryKind.DELETE_PASSFILE_FAILURE,
                                             request.user_id, passfile.user_id,
                                             more=f"ACCESS,pf:{passfile.id}", request=request)
@@ -189,7 +194,7 @@ class PassFileService(DbServiceBase):
             data.color = None
         else:
             data.color = data.color.lstrip("#").upper()
-            if not re.fullmatch(re.compile("^[0-9A-F]{6}$"), data.color):
+            if not re.fullmatch(re.compile(r'^[\dA-F]{6}$'), data.color):
                 errors.append(Bad('color', VAL_ERR, MORE.allowed("HEX")))
 
         if errors:
@@ -207,8 +212,8 @@ class PassFileService(DbServiceBase):
     _SELECT_BY_ID = MakeSql("""SELECT * FROM passfiles WHERE id = @id""")
 
     _INSERT = MakeSql("""
-        INSERT INTO passfiles (name, user_id, color, created_on, info_changed_on, version_changed_on) 
-        VALUES (@name, @user_id, @color, @created_on, now(), now())
+        INSERT INTO passfiles (name, user_id, color, type_id, created_on, info_changed_on, version_changed_on) 
+        VALUES (@name, @user_id, @color, @type_id, @created_on, now(), now())
         RETURNING *
     """)
 

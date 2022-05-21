@@ -49,6 +49,7 @@ class PassFile(DbEntity):
     id: int
     name: str
     color: Optional[str]  # hex
+    type_id: int
     user_id: int
     version: int
     created_on: datetime
@@ -60,6 +61,7 @@ class PassFile(DbEntity):
             'id': self.id,
             'name': self.name,
             'color': self.color,
+            'type_id': self.type_id,
             'user_id': self.user_id,
             'version': self.version,
             'created_on': self.created_on.isoformat(),
