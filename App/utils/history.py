@@ -1,5 +1,5 @@
-from App.models.orm import History
 from App.models.entities import RequestInfo
+from App.database import MakeSql, History
 
 from passql import DbConnection
 from typing import Optional
@@ -7,8 +7,6 @@ from typing import Optional
 __all__ = (
     'HistoryWriter',
 )
-
-from App.utils.db import MakeSql
 
 
 class HistoryWriter:
@@ -51,14 +49,15 @@ class HistoryWriter:
     # region SQL
 
     _ADD_HISTORY = MakeSql("""
-        INSERT INTO history.history (kind_id, user_id, affected_user_id)
-        VALUES (@kind_id, @user_id, @affected_user_id)
+        INSERT INTO history.histories (kind_id, user_id, affected_user_id, more_id)
+        VALUES (@kind_id, @user_id, @affected_user_id, NULL)
         RETURNING *
     """)
 
     _ADD_HISTORY_WITH_MORE = MakeSql("""
+        
         WITH his AS (
-            INSERT INTO history.history (kind_id, user_id, affected_user_id)
+            INSERT INTO history.histories (kind_id, user_id, affected_user_id)
             VALUES (@kind_id, @user_id, @affected_user_id)
             RETURNING *
         )

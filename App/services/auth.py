@@ -4,7 +4,7 @@ from App.settings import SESSION_LIFETIME_DAYS
 from App.special import *
 from App.utils.crypto import CryptoUtils
 
-from App.models.orm import User
+from App.database import User
 from App.models.enums import HistoryKind
 from App.models.dto import SignInDto
 from App.models.entities import RequestInfo, Session

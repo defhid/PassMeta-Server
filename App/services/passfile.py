@@ -2,12 +2,11 @@ from App.services.base import DbServiceBase
 from App.services import AuthService
 from App.special import *
 
-from App.models.orm import User, PassFile
 from App.models.dto import PassfileNewDto, PassfileInfoPatchDto, PassfileSmthPatchDto
 from App.models.entities import RequestInfo
 from App.models.enums import HistoryKind
 
-from App.utils.db import MakeSql
+from App.database import MakeSql, User, PassFile
 from App.utils.passfile import PassFileUtils
 
 import re
@@ -203,28 +202,28 @@ class PassFileService(DbServiceBase):
 
     # region SQL
 
-    _SELECT_BY_USER_ID = MakeSql("""SELECT * FROM passfile WHERE user_id = @user_id""")
+    _SELECT_BY_USER_ID = MakeSql("""SELECT * FROM passfiles WHERE user_id = @user_id""")
 
-    _SELECT_BY_ID = MakeSql("""SELECT * FROM passfile WHERE id = @id""")
+    _SELECT_BY_ID = MakeSql("""SELECT * FROM passfiles WHERE id = @id""")
 
     _INSERT = MakeSql("""
-        INSERT INTO passfile (name, user_id, color, created_on, info_changed_on, version_changed_on) 
+        INSERT INTO passfiles (name, user_id, color, created_on, info_changed_on, version_changed_on) 
         VALUES (@name, @user_id, @color, @created_on, now(), now())
         RETURNING *
     """)
 
     _UPDATE_INFO = MakeSql("""
-        UPDATE passfile SET (name, color, info_changed_on) = (@name, @color, now())
+        UPDATE passfiles SET (name, color, info_changed_on) = (@name, @color, now())
         WHERE id = @id
         RETURNING *
     """)
 
     _UPDATE_SMTH = MakeSql("""
-        UPDATE passfile SET (version, version_changed_on) = (@version, now())
+        UPDATE passfiles SET (version, version_changed_on) = (@version, now())
         WHERE id = @id
         RETURNING *
     """)
 
-    _DELETE = MakeSql("""DELETE FROM passfile WHERE id = @id""")
+    _DELETE = MakeSql("""DELETE FROM passfiles WHERE id = @id""")
 
     # endregion

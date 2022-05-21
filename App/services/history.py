@@ -4,9 +4,8 @@ from App.special import *
 from App.models.entities import RequestInfo
 from App.models.dto import HistoryPageParamsDto
 from App.models.factory import PageFactory
-from App.models.orm import History
+from App.database import MakeSql, History
 from App.translate import HISTORY_KINDS_TRANSLATE_PACK, Locale, reverse_translate_package
-from App.utils.db import MakeSql
 from App.utils.scheduler import SchedulerTask
 import datetime
 
@@ -82,14 +81,14 @@ class HistoryService(DbServiceBase):
     # region SQL
 
     _SELECT_HISTORY_COUNT = MakeSql("""
-        SELECT count(*) FROM history.history h
+        SELECT count(*) FROM history.histories h
         WHERE h.affected_user_id = @affected_user_id @kinds_condition
     """)
 
     _SELECT_HISTORY = MakeSql("""
         SELECT h.*, u.login as user_login, NULL as affected_user_login
-        FROM history.history h
-            LEFT JOIN "user" u ON u.id = h.user_id
+        FROM history.histories h
+            LEFT JOIN users u ON u.id = h.user_id
         WHERE h.affected_user_id = @affected_user_id @kinds_condition
         ORDER BY h.id DESC
         OFFSET @offset LIMIT @limit

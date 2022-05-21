@@ -2,9 +2,8 @@ from App.special import *
 
 from App.models.dto import *
 from App.models.entities import RequestInfo
-from App.models.orm import check_entities
+from App.database import DbUtils, Migrator
 
-from App.utils.db import DbUtils
 from App.utils.logging import Logger
 from App.utils.passfile import PassFileUtils
 from App.utils.request import RequestUtils
@@ -70,8 +69,9 @@ async def on_startup():
 
     await db_utils.init()
 
-    async with db_utils.context_connection() as db:
-        await check_entities(db)
+    if CHECK_MIGRATIONS_ON_STARTUP:
+        async with db_utils.context_connection() as db:
+            await Migrator(db).run()
 
     PassFileUtils.ensure_folders_created()
 

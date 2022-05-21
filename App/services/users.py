@@ -6,9 +6,8 @@ from App.special import *
 from App.models.dto import SignUpDto, UserPatchDto
 from App.models.entities import RequestInfo
 from App.models.enums import HistoryKind
-from App.models.orm import User
 
-from App.utils.db import MakeSql
+from App.database import MakeSql, User
 from App.utils.crypto import CryptoUtils
 
 __all__ = (
@@ -139,20 +138,20 @@ class UserService(DbServiceBase):
 
     # region SQL
 
-    _SELECT_BY_ID = MakeSql("""SELECT * FROM "user" WHERE id = @id""")
+    _SELECT_BY_ID = MakeSql("""SELECT * FROM users WHERE id = @id""")
 
-    _SELECT_BY_LOGIN = MakeSql("""SELECT * FROM "user" WHERE login = @login""")
+    _SELECT_BY_LOGIN = MakeSql("""SELECT * FROM users WHERE login = @login""")
 
-    _SELECT_ID_BY_LOGIN = MakeSql("""SELECT id FROM "user" WHERE login = @login""")
+    _SELECT_ID_BY_LOGIN = MakeSql("""SELECT id FROM users WHERE login = @login""")
 
     _INSERT = MakeSql("""
-        INSERT INTO "user" (login, pwd, first_name, last_name, is_active) 
+        INSERT INTO users (login, pwd, first_name, last_name, is_active) 
         VALUES (@login, @pwd, @first_name, @last_name, @is_active)
         RETURNING *
     """)
 
     _UPDATE = MakeSql("""
-        UPDATE "user" SET ( login,  first_name,  last_name,  pwd)
+        UPDATE users SET ( login,  first_name,  last_name,  pwd)
                       = (@login, @first_name, @last_name, @pwd)
         WHERE id = @id
         RETURNING *
