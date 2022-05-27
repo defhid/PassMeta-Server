@@ -57,6 +57,8 @@ def main():
         host=host
     ))
 
+    make_dir(SERVER_DIR, 'Gun', 'logs')
+
     print("Ready!")
 
 
