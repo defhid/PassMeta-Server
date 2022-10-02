@@ -7,24 +7,25 @@ from App.translate import Locale
 from App.special import *
 
 __all__ = (
-    'Session',
+    'JwtSession',
     'RequestInfo',
     'PassFilePath',
 )
 
 
-class Session:
-    __slots__ = ('user_id', 'created_on')
+class JwtSession:
+    __slots__ = ('user_id', 'secret_key', 'expires_on')
 
-    def __init__(self, user_id: int, created_on: datetime.datetime):
+    def __init__(self, user_id: int, secret_key: str, expires_on: datetime.datetime):
         self.user_id = user_id
-        self.created_on = created_on
+        self.secret_key = secret_key
+        self.expires_on = expires_on
 
 
 class RequestInfo:
     __slots__ = ('_request', '_locale', '_session')
 
-    def __init__(self, request: Request, locale: Optional[str], session: Optional[Session]):
+    def __init__(self, request: Request, locale: Optional[str], session: Optional[JwtSession]):
         self._request = request
         self._session = session
         self._locale = locale
@@ -38,11 +39,11 @@ class RequestInfo:
         return self._locale if self._locale else Locale.DEFAULT
 
     @property
-    def session(self) -> Session:
+    def session(self) -> JwtSession:
         return self._session
 
     @property
-    def user_id(self) -> Optional[bool]:
+    def user_id(self) -> Optional[int]:
         return self._session.user_id if self._session is not None else None
 
     def make_response(self, result: Result, data: Any = None) -> JSONResponse:

@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 __all__ = (
     'User',
+    'AuthKey',
     'PassFile',
     'History',
 )
@@ -43,6 +44,12 @@ class User(DbEntity):
         class Raw:
             PASSWORD_LEN_MIN = 5
             PASSWORD_LEN_MAX = 128
+
+
+class AuthKey(DbEntity):
+    id: int
+    user_id: int
+    secret_key: str
 
 
 class PassFile(DbEntity):

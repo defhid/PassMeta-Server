@@ -31,7 +31,7 @@ class Migration(BaseMigration):
 
     async def create_users_table(self):
         await self.db.execute("""
-            CREATE TABLE IF NOT EXISTS public.user (
+            CREATE TABLE IF NOT EXISTS public.users (
                 id serial UNIQUE PRIMARY KEY,
                 login varchar(@LOGIN_LEN_MAX) NOT NULL UNIQUE,
                 pwd char(@PASSWORD_LEN) NOT NULL,
@@ -43,17 +43,13 @@ class Migration(BaseMigration):
                 CONSTRAINT first_name_min CHECK (length(first_name) >= @FIRST_NAME_LEN_MIN),
                 CONSTRAINT last_name_min CHECK (length(last_name) >= @LAST_NAME_LEN_MIN)
             );
-            CREATE UNIQUE INDEX IF NOT EXISTS user_id_uix ON public.user(id);
-            CREATE UNIQUE INDEX IF NOT EXISTS user_login_ix ON public.user(login);
+            CREATE UNIQUE INDEX IF NOT EXISTS users_id_uix ON public.users(id);
+            CREATE UNIQUE INDEX IF NOT EXISTS users_login_ix ON public.users(login);
         """, User.Constrains)
-
-        await self.db.execute("""
-            ALTER TABLE public.user RENAME TO users;
-        """)
 
     async def create_passfiles_table(self):
         await self.db.execute("""
-            CREATE TABLE IF NOT EXISTS public.passfile (
+            CREATE TABLE IF NOT EXISTS public.passfiles (
                 id serial PRIMARY KEY,
                 name varchar(@NAME_LEN_MAX) NOT NULL,
                 color char(@COLOR_LEN) NULL,
@@ -66,13 +62,9 @@ class Migration(BaseMigration):
                 CONSTRAINT name_min CHECK (length(name) >= @NAME_LEN_MIN),
                 CONSTRAINT color_len CHECK (length(trim(color)) = @COLOR_LEN)
             );
-            CREATE UNIQUE INDEX IF NOT EXISTS passfile_id_ix ON public.passfile(id);
-            CREATE INDEX IF NOT EXISTS passfile_user_id_ix ON public.passfile(user_id);
+            CREATE UNIQUE INDEX IF NOT EXISTS passfiles_id_ix ON public.passfiles(id);
+            CREATE INDEX IF NOT EXISTS passfiles_user_id_ix ON public.passfiles(user_id);
         """, PassFile.Constrains)
-
-        await self.db.execute("""
-            ALTER TABLE public.passfile RENAME TO passfiles;
-        """)
 
     async def create_histories_table(self):
         await self.db.execute("""
@@ -85,7 +77,7 @@ class Migration(BaseMigration):
                     ON DELETE SET NULL,
                 timestamp timestamp NOT NULL DEFAULT now()
             );
-            CREATE INDEX IF NOT EXISTS history_user_id_ix ON history.histories(affected_user_id);
+            CREATE INDEX IF NOT EXISTS histories_user_id_ix ON history.histories(affected_user_id);
         """)
 
         await self.db.execute("""

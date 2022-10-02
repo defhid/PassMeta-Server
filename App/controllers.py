@@ -26,6 +26,7 @@ from fastapi.exceptions import RequestValidationError
 logger = Logger(__file__)
 
 db_utils = DbUtils(DB_CONNECTION_POOL_MAX_SIZE)
+request_utils = RequestUtils(db_utils)
 
 scheduler = Scheduler(period_minutes=10)
 
@@ -42,15 +43,15 @@ class ErrorsLoggingRoute(APIRoute):
             try:
                 return await original_route_handler(request)
             except Result as ex:
-                return RequestUtils.build_request_info_without_session(request).make_response(ex)
+                return request_utils.build_request_info_without_session(request).make_response(ex)
 
             except RequestValidationError as ex:
-                return RequestUtils.build_request_info_without_session(request).make_response(
+                return request_utils.build_request_info_without_session(request).make_response(
                     Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})))
 
             except Exception as ex:
                 logger.error("Request error", ex, False, url=request.url.path)
-                return RequestUtils.build_request_info_without_session(request).make_response(
+                return request_utils.build_request_info_without_session(request).make_response(
                     Bad(None, SERVER_ERR, MORE.text(str(ex)) if ex.args else None))
 
         return custom_route_handler
@@ -105,8 +106,8 @@ PUT = app.put
 DELETE = app.delete
 
 DB = Depends(db_utils.connection_maker, use_cache=False)
-REQUEST_INFO = Depends(RequestUtils.build_request_info, use_cache=False)
-REQUEST_INFO_WS = Depends(RequestUtils.build_request_info_without_session, use_cache=False)
+REQUEST_INFO = Depends(request_utils.build_request_info, use_cache=False)
+REQUEST_INFO_WS = Depends(request_utils.build_request_info_without_session, use_cache=False)
 
 # endregion
 
@@ -141,7 +142,19 @@ async def ctrl(body: SignInDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     service = AuthService(db)
     user = await service.authenticate(body, request)
-    return service.authorize(user, request)
+    return await service.authorize(user, request)
+
+
+@POST("/auth/reset/all")
+async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
+    request.ensure_user_is_authorized()
+    return await AuthService(db).reset(request, False)
+
+
+@POST("/auth/reset/all-except-me")
+async def ctrl(request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
+    request.ensure_user_is_authorized()
+    return await AuthService(db).reset(request, True)
 
 # endregion
 
@@ -215,7 +228,7 @@ async def ctrl(passfile_id: int, body: PassfileDeleteDto,
 async def ctrl(body: SignUpDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
     user = await UserService(db).create_user(body, request)
-    return AuthService(db).authorize(user, request)
+    return await AuthService(db).authorize(user, request)
 
 
 @GET("/users/me", response_model=UserDto)
