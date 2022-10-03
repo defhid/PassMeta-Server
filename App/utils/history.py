@@ -55,7 +55,6 @@ class HistoryWriter:
     """)
 
     _ADD_HISTORY_WITH_MORE = MakeSql("""
-        
         WITH his AS (
             INSERT INTO history.histories (kind_id, user_id, affected_user_id)
             VALUES (@kind_id, @user_id, @affected_user_id)
