@@ -8,6 +8,7 @@ __all__ = (
     'User',
     'AuthKey',
     'PassFile',
+    'PassFileVersion',
     'History',
 )
 
@@ -87,32 +88,55 @@ class PassFile(DbEntity):
             SMTH_MIN_LEN = 1
 
 
+class PassFileVersion(DbEntity):
+    passfile_id: Optional[int]
+    version: int
+    version_date: datetime
+
+    # region +
+    user_id: Optional[int]
+    # endregion
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'passfile_id': self.passfile_id,
+            'version': self.version,
+            'version_date': self.version_date.isoformat(),
+        }
+
+
 class History(DbEntity):
     id: int
     kind_id: int
     user_id: Optional[int]
     affected_user_id: Optional[int]
-    timestamp: datetime
+    affected_passfile_id: Optional[int]
+    more: str
+    written_on: datetime
 
     # region +
     kind: Optional[str]
-    more: Optional[str]
     user_login: Optional[str]
     affected_user_login: Optional[str]
+    affected_passfile_name: Optional[str]
     # endregion
 
     def to_dict(self, locale: str) -> Dict[str, Any]:
         return {
             'id': self.id,
             'kind': get_package_text(HISTORY_KINDS_TRANSLATE_PACK, self.kind_id, locale, self.kind_id),
+            'user_id': self.user_id,
             'user_login': self.user_login,
+            'affected_user_id': self.affected_user_id,
             'affected_user_login': self.affected_user_login,
-            'more': self.more,
-            'timestamp': self.timestamp.isoformat(),
+            'affected_passfile_id': self.affected_passfile_id,
+            'affected_passfile_name': self.affected_passfile_name,
+            'more': self.more.strip(),
+            'timestamp': self.written_on.isoformat(),
         }
 
     class Constrains:
-        MORE_INFO_LEN_MAX = 160
+        MORE_LEN = 10
 
 
 register_entities()

@@ -227,7 +227,7 @@ async def ctrl(passfile_id: int, body: PassfileDeleteDto,
 @POST("/users/new")
 async def ctrl(body: SignUpDto,
                request: RequestInfo = REQUEST_INFO, db: DbConnection = DB):
-    user = await UserService(db).create_user(body, request)
+    user = await UserService(db).create_user(body)
     return await AuthService(db).authorize(user, request)
 
 

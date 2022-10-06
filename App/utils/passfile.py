@@ -1,16 +1,15 @@
 from App.settings import (
     PASSFILES_FOLDER,
-    PASSFILES_ENCODING,
-    PASSFILE_KEEP_VERSIONS
+    PASSFILES_ENCODING
 )
 from App.special import *
-from App.database import PassFile
-from App.models.entities import PassFilePath
+from App.database import PassFileVersion
 from App.utils.crypto import CryptoUtils
 from App.utils.logging import Logger
 
 import aiofiles
 import os
+import re
 
 __all__ = (
     'PassFileUtils',
@@ -20,44 +19,27 @@ logger = Logger(__file__)
 
 
 class PassFileUtils:
+    FILENAME_PATTERN = re.compile(r'^\d*v\d*_\d*.pf$')  # <passfile_id>v<version>.pf  TODO: use in auto-managing
+
     @classmethod
-    def get_filepath(cls, passfile: 'PassFile') -> str:
-        """ Get passfile path in format '<PASS_FILES_FOLDER>/<user_id>/<passfile_id>v<version>.tmp'.
+    def get_filepath(cls, pfv: 'PassFileVersion') -> str:
+        """ Get passfile path in format '<PASSFILES_FOLDER>/<user_id>/<filename>'.
 
         :return: String path.
         """
-        return os.path.join(PASSFILES_FOLDER, str(passfile.user_id), f"{passfile.id}v{passfile.version}.tmp")
+        assert pfv.user_id is not None, "User Id Is Not Provided"
+
+        return os.path.join(PASSFILES_FOLDER, str(pfv.user_id), f"{pfv.passfile_id}v{pfv.version}.pf")
 
     @classmethod
-    def collect_filepath_list(cls, passfile: 'PassFile') -> List[PassFilePath]:
-        """ Find all passfile paths (all versions) and sort them by version ascending.
+    async def write_file(cls, pfv: 'PassFileVersion', content: str):
+        """ Write passfile content bytes to the file system
+            by path corresponding to the specified version.
 
-        :return: List of string paths.
+        :raise: Bad.
         """
-        try:
-            directory = os.path.dirname(cls.get_filepath(passfile))
-
-            assert os.path.exists(directory), "User File Directory Does Not Exist"
-
-            items = map(lambda it: PassFilePath(it, os.path.join(directory, it)), os.listdir(directory))
-
-            files = list(filter(lambda it: os.path.isfile(it.full_path) and it.id == passfile.id, items))
-            files.sort(key=lambda it: it.version)
-
-            return files
-        except Exception as e:
-            logger.critical(f"Passfile paths finding error! (pf: {passfile.id})", e)
-            return []
-
-    @classmethod
-    async def write_file(cls, passfile: 'PassFile', content: str) -> Result:
-        """ Write passfile content to its normal path.
-
-        :return: Success.
-        """
-
+        path = cls.get_filepath(pfv)
         bytes_content = CryptoUtils.encrypt_passfile_smth(content.encode(PASSFILES_ENCODING))
-        path = cls.get_filepath(passfile)
 
         try:
             directory = os.path.dirname(path)
@@ -67,81 +49,47 @@ class PassFileUtils:
 
             async with aiofiles.open(path, 'wb') as f:
                 await f.write(bytes_content)
-
-            if not os.path.exists(path):
-                return Bad(None, SERVER_ERR, MORE.text("Result File Does Not Exist"))
         except Exception as e:
-            logger.critical("File writing error!", e)
-            return Bad(None, UNKNOWN_ERR, MORE.exception(e))
-        else:
-            return Ok()
+            logger.critical(f"File writing error! (path: {path})", e)
+            raise Bad(None, UNKNOWN_ERR, MORE.exception(e))
 
     @classmethod
-    async def read_file(cls, passfile: 'PassFile', version: int = None) -> Optional[bytes]:
-        """ Read passfile bytes from its current path.
+    async def read_file(cls, pfv: 'PassFileVersion') -> bytes:
+        """ Read passfile content bytes from the file system
+            by path corresponding to the specified version.
 
         :raise: Bad.
-        :return: Byte array - if passfile has content,
-                 None - if content does not exists.
+        :return: Byte array.
         """
-        if version is None:
-            path = cls.get_filepath(passfile)
-        else:
-            paths = cls.collect_filepath_list(passfile)
-            try:
-                path = next(filter(lambda p: p.version == version, paths)).full_path
-            except StopIteration:
-                raise Bad('version', NOT_EXIST_ERR)
+        path = cls.get_filepath(pfv)
 
         try:
-            if not os.path.exists(path):
-                return None
-
             async with aiofiles.open(path, 'rb') as f:
                 content = await f.read()
         except Exception as e:
-            logger.critical(f"File reading error! (pf: {passfile.id})", e)
+            logger.critical(f"File reading error! (path: {path})", e)
             raise Bad(None, UNKNOWN_ERR)
         else:
             return CryptoUtils.decrypt_passfile_smth(content)
 
     @classmethod
-    def optimize_file_versions(cls, passfile: 'PassFile') -> Result:
-        """ Delete excess passfile versions from file system.
+    def delete_file(cls, pfv: 'PassFileVersion'):
+        """ Delete passfile from the file system.
 
-        :return: Success.
+        :raise: Bad.
         """
-        paths = cls.collect_filepath_list(passfile)
-        try:
-            for i in range(min(len(paths) - PASSFILE_KEEP_VERSIONS, len(paths) - 1)):
-                os.remove(paths[i].full_path)
-        except Exception as e:
-            logger.critical("File versions optimizing error!", e)
-            return Bad(None, UNKNOWN_ERR, MORE.exception(e))
-        else:
-            return Ok()
+        path = cls.get_filepath(pfv)
 
-    @classmethod
-    def delete_file(cls, passfile: 'PassFile') -> Result:
-        """ Delete passfile from file system.
-
-        :return: Success.
-        """
-        paths = cls.collect_filepath_list(passfile)
-        path = None
         try:
-            for path in paths:
-                if os.path.exists(path.full_path):
-                    os.remove(path.full_path)
+            if os.path.exists(path):
+                os.remove(path)
         except Exception as e:
-            logger.critical(f"File '{path}' deleting error!", e)
-            return Bad(None, UNKNOWN_ERR, MORE.exception(e))
-        else:
-            return Ok()
+            logger.critical(f"File deleting error! (path: {path})", e)
+            raise Bad(None, UNKNOWN_ERR, MORE.exception(e))
 
     @classmethod
     def ensure_folders_created(cls):
-        """ Make system directories if not exist.
+        """ Create system directories if required.
         """
         if not os.path.exists(PASSFILES_FOLDER):
             os.makedirs(PASSFILES_FOLDER)

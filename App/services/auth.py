@@ -87,22 +87,18 @@ class AuthService(DbServiceBase):
         user = await UserService(self.db).get_user_by_login(data.login)
 
         if user is None:
-            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE,
-                                            None, None, more=f"login:{data.login}", request=request_info)
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, None, None, None)
             raise Bad('user', NOT_EXIST_ERR)
 
         if not CryptoUtils.check_user_password(data.password, user.pwd):
-            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE,
-                                            None, user.id, more="PWD", request=request_info)
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, None, user.id, None, "PWD")
             raise Bad('user', NOT_EXIST_ERR)
 
         if not user.is_active:
-            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE,
-                                            user.id, user.id, more=f"INACTIVE,login:{data.login}", request=request_info)
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, user.id, None, "INACTIVE")
             raise Bad('user', FROZEN_ERR)
 
-        await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS,
-                                        user.id, user.id, request=request_info)
+        await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS, user.id, user.id, None)
         return user
 
     @classmethod

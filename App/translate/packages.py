@@ -168,8 +168,12 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         ru="Неудачное получение файла паролей",
     ),
     HistoryKind.CREATE_PASSFILE_SUCCESS: loc(
-        default="Passfile success create",
+        default="Successful passfile creation",
         ru="Успешное создание файла паролей",
+    ),
+    HistoryKind.CREATE_PASSFILE_FAILURE: loc(
+        default="Failed passfile creation",
+        ru="Неудачное создание файла паролей",
     ),
     HistoryKind.EDIT_PASSFILE_INFO_SUCCESS: loc(
         default="Successful passfile info changing",

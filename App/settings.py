@@ -10,7 +10,7 @@ import os as __os
 
 # region Common
 
-APP_VERSION = "1.0.4"
+APP_VERSION = "1.0.5"
 APP_ID: str  # [REQUIRED]: Unique PassMeta server identifier
 
 SECRET_KEY_BYTES: bytes  # [REQUIRED]: Generated key from Fernet.generate_key()
@@ -46,7 +46,7 @@ SESSION_LIFETIME_DAYS: int = 120  # how long to keep user's web session
 
 PASSFILE_KEEP_VERSIONS: int = 3  # max number of stored file versions
 
-HISTORY_KEEP_MONTHS: int = 12  # how many last months to store history more info (the origin history is permanent)
+HISTORY_KEEP_MONTHS: int = 12  # how many months to store history
 
 OLD_HISTORY_CHECKING_INTERVAL_DAYS: int = 30  # how often to check old history more info
 OLD_HISTORY_CHECKING_ON_STARTUP: bool = True  # launch checking old history more info on application startup

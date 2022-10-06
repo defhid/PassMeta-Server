@@ -97,6 +97,7 @@ class PageParamsDto(BaseModel):
 
 
 class HistoryPageParamsDto(PageParamsDto):
+    month: datetime
     kind: str = None
 
 # endregion
