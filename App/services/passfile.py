@@ -1,6 +1,7 @@
 from App.services.base import DbServiceBase
 from App.services import UserService
 from App.special import *
+from App.settings import PASSFILE_KEEP_DAY_VERSIONS, PASSFILE_KEEP_VERSIONS
 
 from App.models.dto import PassfileNewDto, PassfileInfoPatchDto, PassfileSmthPatchDto
 from App.models.entities import RequestInfo
@@ -8,7 +9,7 @@ from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User, PassFile, PassFileVersion
 from App.utils.crypto import CryptoUtils
-from App.utils.passfile import PassFileUtils
+from App.utils.passfile import PassFileUtils, ExcessVersionsFinder
 
 import re
 import datetime
@@ -20,6 +21,8 @@ __all__ = (
 
 class PassFileService(DbServiceBase):
     __slots__ = ()
+
+    EXCESS_VERSIONS_FINDER = ExcessVersionsFinder(PASSFILE_KEEP_VERSIONS, PASSFILE_KEEP_DAY_VERSIONS)
 
     async def get_user_passfiles(self, user: User, type_id: Optional[int]) -> List[PassFile]:
         return await self.db.query_list(PassFile, self._SELECT_BY_USER_ID, {
@@ -71,12 +74,7 @@ class PassFileService(DbServiceBase):
                 'type_id': data.type_id,
                 'created_on': data.created_on,
             })
-            passfile_version = await self.db.query_first(PassFileVersion, self._INSERT_VERSION, {
-                'passfile_id': passfile.id,
-            })
-            passfile_version.user_id = passfile.user_id
-
-            await PassFileUtils.write_file(passfile_version, data.smth)
+            passfile_version = await self._save_new_version(passfile, data.smth)
 
             await self.history_writer.write(HistoryKind.CREATE_PASSFILE_SUCCESS,
                                             request.user_id, request.user_id, passfile.id)
@@ -138,22 +136,12 @@ class PassFileService(DbServiceBase):
             raise Bad(None, ACCESS_ERR)
 
         passfile_version = None
-
         transaction = self.db.transaction()
         try:
             await transaction.start()
 
-            passfile.version += 1
             passfile = await self.db.query_first(PassFile, self._UPDATE_SMTH, passfile)
-
-            passfile_version = await self.db.query_first(PassFileVersion, self._INSERT_VERSION, {
-                'passfile_id': passfile.id,
-            })
-            passfile_version.user_id = passfile.user_id
-
-            # TODO: manage previous versions
-
-            await PassFileUtils.write_file(passfile_version, data.smth)
+            passfile_version = await self._save_new_version(passfile, data.smth)
 
             await self.history_writer.write(HistoryKind.EDIT_PASSFILE_SMTH_SUCCESS,
                                             request.user_id, passfile.user_id, passfile.id)
@@ -171,24 +159,6 @@ class PassFileService(DbServiceBase):
             await transaction.commit()
 
         return passfile
-
-    @classmethod
-    def optimize_file_versions(cls, passfile: 'PassFile') -> Result:
-        """ Delete excess passfile versions from file system.
-
-        :return: Success.
-        """
-        pass
-        # TODO
-        # paths = cls.get_filepath_list(passfile)
-        # try:
-        #     for i in range(min(len(paths) - PASSFILE_KEEP_VERSIONS, len(paths) - 1)):
-        #         os.remove(paths[i].full_path)
-        # except Exception as e:
-        #     logger.critical("File versions optimizing error!", e)
-        #     return Bad(None, UNKNOWN_ERR, MORE.exception(e))
-        # else:
-        #     return Ok()
 
     async def delete_file(self, passfile_id: int, check_password: str, request: RequestInfo):
         """ Raises: Bad.
@@ -238,6 +208,51 @@ class PassFileService(DbServiceBase):
             raise Bad('version', NOT_EXIST_ERR)
 
         return passfile_version
+
+    async def _save_new_version(self, passfile: PassFile, smth: str) -> PassFileVersion:
+        versions = await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {'passfile_id': passfile.id})
+
+        to_delete = self.EXCESS_VERSIONS_FINDER.find(versions)
+        override = None
+
+        if to_delete:
+            override = to_delete.pop()
+
+            PassFileUtils.delete_file(override)
+
+            for version in to_delete:
+                PassFileUtils.delete_file(version)
+
+                await self.db.query_first(PassFileVersion, """
+                    DELETE FROM passfile_versions
+                    WHERE passfile_id = #passfile_id
+                      AND version = #version
+                """, version)
+
+        if override:
+            new_version = await self.db.query_first(PassFileVersion, """
+                UPDATE passfile_versions pfv
+                SET version = pf.version,
+                    version_date = pf.version_changed_on
+                FROM passfiles pf
+                WHERE pf.id = #id
+                  AND pfv.passfile_id = pf.id
+                  AND pfv.version = #old_version
+                RETURNING *
+            """, {'id': passfile.id, 'old_version': override.version})
+        else:
+            new_version = await self.db.query_first(PassFileVersion, """
+                INSERT INTO passfile_versions (passfile_id, version, version_date)
+                SELECT pf.id, pf.version, version_changed_on
+                FROM passfiles pf
+                WHERE pf.id = #id
+                RETURNING *
+            """, passfile)
+
+        new_version.user_id = passfile.user_id
+
+        await PassFileUtils.write_file(new_version, smth)
+        return new_version
 
     @classmethod
     def _validate_post_data(cls, data: PassfileNewDto):
@@ -303,12 +318,6 @@ class PassFileService(DbServiceBase):
         RETURNING *
     """)
 
-    _INSERT_VERSION = MakeSql("""
-        INSERT INTO passfile_versions (passfile_id, version, version_date) 
-        SELECT id, version, version_changed_on FROM passfiles WHERE id = #passfile_id
-        RETURNING *
-    """)
-
     _UPDATE_INFO = MakeSql("""
         UPDATE passfiles SET (name, color, info_changed_on) = (#name, #color, now())
         WHERE id = #id
@@ -316,7 +325,7 @@ class PassFileService(DbServiceBase):
     """)
 
     _UPDATE_SMTH = MakeSql("""
-        UPDATE passfiles SET (version, version_changed_on) = (#version, now())
+        UPDATE passfiles SET (version, version_changed_on) = (version + 1, now())
         WHERE id = #id
         RETURNING *
     """)
