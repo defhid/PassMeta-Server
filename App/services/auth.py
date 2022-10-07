@@ -128,18 +128,18 @@ class AuthService(DbServiceBase):
     _SELECT_AUTH_KEY_BY_USER_ID = MakeSql("""
         SELECT id, user_id, secret_key::text
         FROM auth_keys
-        WHERE user_id = @user_id
+        WHERE user_id = #user_id
     """)
 
     _INSERT_AUTH_KEY = MakeSql("""
         INSERT INTO auth_keys (user_id, secret_key)
-        VALUES (@user_id, @secret_key::uuid)
+        VALUES (#user_id, #secret_key::uuid)
     """)
 
     _UPDATE_AUTH_KEY = MakeSql("""
         UPDATE auth_keys
-        SET secret_key = @secret_key::uuid
-        WHERE user_id = @user_id
+        SET secret_key = #secret_key::uuid
+        WHERE user_id = #user_id
     """)
 
     # endregion

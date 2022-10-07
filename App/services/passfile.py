@@ -278,54 +278,54 @@ class PassFileService(DbServiceBase):
 
     # region SQL
 
-    _SELECT_BY_USER_ID = MakeSql("""SELECT * FROM passfiles WHERE user_id = @user_id""")
+    _SELECT_BY_USER_ID = MakeSql("""SELECT * FROM passfiles WHERE user_id = #user_id AND type_id = #type_id""")
 
-    _SELECT_BY_ID = MakeSql("""SELECT * FROM passfiles WHERE id = @id""")
+    _SELECT_BY_ID = MakeSql("""SELECT * FROM passfiles WHERE id = #id""")
 
     _SELECT_VERSION = MakeSql("""
         SELECT pfv.*, pf.user_id
         FROM passfile_versions pfv
             JOIN passfiles pf ON pf.id = pfv.passfile_id
-        WHERE passfile_id = @passfile_id AND version = @version
+        WHERE pfv.passfile_id = #passfile_id AND pfv.version = #version
     """)
 
     _SELECT_VERSION_LIST = MakeSql("""
         SELECT pfv.*, pf.user_id
         FROM passfile_versions pfv
             JOIN passfiles pf ON pf.id = pfv.passfile_id
-        WHERE passfile_id = @passfile_id
+        WHERE passfile_id = #passfile_id
         ORDER BY pfv.version
     """)
 
     _INSERT = MakeSql("""
         INSERT INTO passfiles (name, user_id, color, type_id, created_on, info_changed_on, version_changed_on) 
-        VALUES (@name, @user_id, @color, @type_id, @created_on, now(), now())
+        VALUES (#name, #user_id, #color, #type_id, #created_on, now(), now())
         RETURNING *
     """)
 
     _INSERT_VERSION = MakeSql("""
         INSERT INTO passfile_versions (passfile_id, version, version_date) 
-        SELECT id, version, version_changed_on FROM passfiles WHERE id = @passfile_id
+        SELECT id, version, version_changed_on FROM passfiles WHERE id = #passfile_id
         RETURNING *
     """)
 
     _UPDATE_INFO = MakeSql("""
-        UPDATE passfiles SET (name, color, info_changed_on) = (@name, @color, now())
-        WHERE id = @id
+        UPDATE passfiles SET (name, color, info_changed_on) = (#name, #color, now())
+        WHERE id = #id
         RETURNING *
     """)
 
     _UPDATE_SMTH = MakeSql("""
-        UPDATE passfiles SET (version, version_changed_on) = (@version, now())
-        WHERE id = @id
+        UPDATE passfiles SET (version, version_changed_on) = (#version, now())
+        WHERE id = #id
         RETURNING *
     """)
 
-    _DELETE = MakeSql("""DELETE FROM passfiles WHERE id = @id""")
+    _DELETE = MakeSql("""DELETE FROM passfiles WHERE id = #id""")
 
     _DELETE_VERSION = MakeSql("""
         DELETE FROM passfile_versions
-        WHERE passfile_id = @passfile_id AND version = @version
+        WHERE passfile_id = #passfile_id AND version = #version
     """)
 
     # endregion

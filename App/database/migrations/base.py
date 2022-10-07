@@ -31,5 +31,5 @@ class BaseMigration:
         self.db = db
         async with db.transaction():
             await self.apply()
-            await db.execute("INSERT INTO migrations (name) VALUES (@name)", self)
+            await db.execute("INSERT INTO migrations (name) VALUES (#name)", self)
         self.db = None

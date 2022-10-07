@@ -76,25 +76,25 @@ class HistoryService(DbServiceBase):
     _CHECK_TABLE_EXISTS = MakeSql("""
         SELECT EXISTS(
             SELECT FROM information_schema.tables
-            WHERE table_schema = 'history' AND table_name = '@history_table')
+            WHERE table_schema = 'history' AND table_name = '#history_table')
     """)
 
     _SELECT_COUNT = MakeSql("""
-        SELECT count(*) FROM history.@history_table h
-        WHERE h.affected_user_id = @affected_user_id @kinds_condition
+        SELECT count(*) FROM history.#history_table h
+        WHERE h.affected_user_id = #affected_user_id #kinds_condition
     """)
 
     _SELECT_LIST = MakeSql("""
         SELECT h.*, u.login as user_login, NULL as affected_user_login, pf.name as affected_passfile_name
-        FROM history.@history_table h
+        FROM history.#history_table h
             LEFT JOIN users u ON u.id = h.user_id
             LEFT JOIN passfiles pf ON pf.id = h.affected_passfile_id
-        WHERE h.affected_user_id = @affected_user_id @kinds_condition
+        WHERE h.affected_user_id = #affected_user_id #kinds_condition
         ORDER BY h.id DESC
-        OFFSET @offset LIMIT @limit
+        OFFSET #offset LIMIT #limit
     """)
 
-    _KINDS_CONDITION = MakeSql("""AND h.kind_id IN (@kinds)""")
+    _KINDS_CONDITION = MakeSql("""AND h.kind_id IN (#kinds)""")
 
     _SELECT_OLD_TABLES = MakeSql("""
         WITH history_tables AS (
@@ -107,8 +107,8 @@ class HistoryService(DbServiceBase):
         )
         SELECT 'history.' || table_name
         FROM history_tables
-        WHERE year < @year
-           OR (year = @year AND month < @month)
+        WHERE year < #year
+           OR (year = #year AND month < #month)
     """)
 
     # endregion

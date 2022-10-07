@@ -138,22 +138,22 @@ class UserService(DbServiceBase):
 
     # region SQL
 
-    _SELECT_BY_ID = MakeSql("""SELECT * FROM users WHERE id = @id""")
+    _SELECT_BY_ID = MakeSql("""SELECT * FROM users WHERE id = #id""")
 
-    _SELECT_BY_LOGIN = MakeSql("""SELECT * FROM users WHERE login = @login""")
+    _SELECT_BY_LOGIN = MakeSql("""SELECT * FROM users WHERE login = #login""")
 
-    _SELECT_ID_BY_LOGIN = MakeSql("""SELECT id FROM users WHERE login = @login""")
+    _SELECT_ID_BY_LOGIN = MakeSql("""SELECT id FROM users WHERE login = #login""")
 
     _INSERT = MakeSql("""
         INSERT INTO users (login, pwd, first_name, last_name, is_active) 
-        VALUES (@login, @pwd, @first_name, @last_name, @is_active)
+        VALUES (#login, #pwd, #first_name, #last_name, #is_active)
         RETURNING *
     """)
 
     _UPDATE = MakeSql("""
         UPDATE users SET ( login,  first_name,  last_name,  pwd)
-                      = (@login, @first_name, @last_name, @pwd)
-        WHERE id = @id
+                      = (#login, #first_name, #last_name, #pwd)
+        WHERE id = #id
         RETURNING *
     """)
 

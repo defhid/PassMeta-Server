@@ -44,8 +44,8 @@ class HistoryWriter:
 
     _ADD_HISTORY = MakeSql("""
         SELECT history.add_history(
-        @kind_id::smallint, @user_id::bigint, 
-        @affected_user_id::bigint, @affected_passfile_id::bigint, @more::char(10))
+        #kind_id::smallint, #user_id::bigint, 
+        #affected_user_id::bigint, #affected_passfile_id::bigint, #more::char(10))
     """)
 
     # endregion
