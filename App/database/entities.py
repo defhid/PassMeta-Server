@@ -33,11 +33,17 @@ class User(DbEntity):
         LAST_NAME_LEN_MIN = 1
         LAST_NAME_LEN_MAX = 120
 
+    def __repr__(self) -> str:
+        return f"<User #{self.id} {self.login}>"
+
 
 class AuthKey(DbEntity):
     id: int
     user_id: int
     secret_key: str
+
+    def __repr__(self) -> str:
+        return f"<AuthKey #{self.id} {self.secret_key}>"
 
 
 class PassFile(DbEntity):
@@ -60,6 +66,9 @@ class PassFile(DbEntity):
         class Raw:
             SMTH_MIN_LEN = 1
 
+    def __repr__(self) -> str:
+        return f"<PassFile #{self.id} {self.name} v{self.version}>"
+
 
 class PassFileVersion(DbEntity):
     passfile_id: Optional[int]
@@ -69,6 +78,9 @@ class PassFileVersion(DbEntity):
     # region +
     user_id: Optional[int]
     # endregion
+
+    def __repr__(self) -> str:
+        return f"<PassFileVersion pf{self.passfile_id} v{self.version} {self.version_date}>"
 
 
 class History(DbEntity):
@@ -89,6 +101,9 @@ class History(DbEntity):
 
     class Constrains:
         MORE_LEN = 10
+
+    def __repr__(self) -> str:
+        return f"<History #{self.id} {self.kind_id} {self.more}>"
 
 
 register_entities()
