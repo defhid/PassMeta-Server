@@ -1,4 +1,3 @@
-from App.settings import PASSFILES_ENCODING
 from Tests.common import *
 
 

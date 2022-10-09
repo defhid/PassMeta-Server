@@ -1,7 +1,8 @@
 from App.special.ok_bad.result_code import ResultCode, OK
 from App.special.ok_bad.more import *
-from App.translate import OK_BAD_MESSAGES_TRANSLATE_PACK, get_package_text
 from typing import Optional, Any, Union, List, Dict
+
+import App.translate as translate
 
 __all__ = (
     'Result',
@@ -62,7 +63,8 @@ class Result(Exception):
     def as_dict(self, locale: str, data: Any = None) -> Dict[str, object]:
         d = {
             'code': self._code.code,
-            'message': get_package_text(OK_BAD_MESSAGES_TRANSLATE_PACK, self._code, locale, self._code.name)
+            'message': translate.get_package_text(translate.OK_BAD_MESSAGES_TRANSLATE_PACK,
+                                                  self._code, locale, self._code.name)
         }
 
         if data is not None:

@@ -124,10 +124,10 @@ class UserService(DbServiceBase):
             errors.append(Bad('last_name', TOO_LONG_ERR, MORE.max_allowed(c.LAST_NAME_LEN_MAX)))
 
         if password is not None:
-            if len(password) < c.Raw.PASSWORD_LEN_MIN:
-                errors.append(Bad('password', TOO_SHORT_ERR, MORE.min_allowed(c.Raw.PASSWORD_LEN_MIN)))
-            if len(password) > c.Raw.PASSWORD_LEN_MAX:
-                errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.Raw.PASSWORD_LEN_MAX)))
+            if len(password) < c.PASSWORD_RAW_LEN_MIN:
+                errors.append(Bad('password', TOO_SHORT_ERR, MORE.min_allowed(c.PASSWORD_RAW_LEN_MIN)))
+            if len(password) > c.PASSWORD_RAW_LEN_MAX:
+                errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.PASSWORD_RAW_LEN_MAX)))
 
             user.pwd = CryptoUtils.make_user_pwd(password)
 

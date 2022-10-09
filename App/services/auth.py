@@ -8,6 +8,7 @@ from App.database import User, AuthKey, MakeSql
 from App.models.enums import HistoryKind
 from App.models.dto import SignInDto
 from App.models.entities import RequestInfo, JwtSession
+from App.models.mapping import UserMapping
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -63,7 +64,7 @@ class AuthService(DbServiceBase):
 
         jwt = self.make_jwt(auth_key)
 
-        response = request_info.make_response(Ok(), data=user.to_dict())
+        response = request_info.make_response(Ok(), data=UserMapping.to_dict(user))
         response.set_cookie('session', jwt, httponly=True)
 
         return response

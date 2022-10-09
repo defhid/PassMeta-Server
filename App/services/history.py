@@ -1,3 +1,4 @@
+from App.models.mapping import HistoryMapping
 from App.services.base import DbServiceBase
 from App.settings import HISTORY_KEEP_MONTHS
 from App.special import *
@@ -51,7 +52,7 @@ class HistoryService(DbServiceBase):
             histories = []
 
         return PageFactory.create(
-            [h.to_dict(request.locale) for h in histories],
+            [HistoryMapping.to_dict(h, request.locale) for h in histories],
             total,
             page.offset,
             page.limit
