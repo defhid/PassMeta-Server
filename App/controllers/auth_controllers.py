@@ -16,20 +16,20 @@ def register_auth_controllers(app: FastAPI, inject: Deps):
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
-        service = AuthService(db)
-        user = await service.authenticate(body, request)
-        return await service.authorize(user, request)
+        service = AuthService(db, request)
+        user = await service.authenticate(body)
+        return await service.authorize(user)
 
     @app.post("/auth/reset/all")
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
-        return await AuthService(db).reset(request, False)
+        return await AuthService(db, request).reset(request, False)
 
     @app.post("/auth/reset/all-except-me")
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
-        return await AuthService(db).reset(request, True)
+        return await AuthService(db, request).reset(request, True)

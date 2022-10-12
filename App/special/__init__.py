@@ -7,10 +7,13 @@ from typing import (
     Any,
     Optional,
     Union,
+    Set,
     List,
     Dict,
     Tuple,
     TypeVar,
     Generic,
     Generator,
+    Callable,
+    Coroutine,
 )

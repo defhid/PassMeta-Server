@@ -20,7 +20,7 @@ def register_general_controllers(app: FastAPI, inject: Deps):
                    db: DbConnection = inject.DB):
 
         if request.session is not None:
-            user = await UserService(db).get_user_by_id(request.user_id)
+            user = await UserService(db, request).get_user_by_id(request.user_id)
         else:
             user = None
 

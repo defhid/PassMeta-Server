@@ -59,12 +59,14 @@ class AuthService(DbServiceBase):
 
         return JwtSession(user_id, secret_key, expires_on)
 
-    async def authorize(self, user: User, request_info: RequestInfo) -> JSONResponse:
+    async def authorize(self, user: User) -> JSONResponse:
         auth_key = await self.get_or_create_auth_key(user.id, self.db)
 
         jwt = self.make_jwt(auth_key)
 
-        response = request_info.make_response(Ok(), data=UserMapping.to_dict(user))
+        await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS, user.id, None)
+
+        response = self.request.make_response(Ok(), data=UserMapping.to_dict(user))
         response.set_cookie('session', jwt, httponly=True)
 
         return response
@@ -73,7 +75,10 @@ class AuthService(DbServiceBase):
         auth_key = await self.get_or_create_auth_key(request_info.user_id, self.db)
         auth_key.secret_key = uuid4().hex
 
-        await self.db.execute(self._UPDATE_AUTH_KEY, auth_key)
+        async with self.db.transaction():
+            await self.db.execute(self._UPDATE_AUTH_KEY, auth_key)
+
+            await self.history_writer.write(HistoryKind.USER_AUTH_RESET, auth_key.user_id, None)
 
         jwt = self.make_jwt(auth_key) if keep_current else ""
 
@@ -82,24 +87,23 @@ class AuthService(DbServiceBase):
 
         return response
 
-    async def authenticate(self, data: SignInDto, request_info: RequestInfo) -> User:
+    async def authenticate(self, data: SignInDto) -> User:
         """ Raises: NOT_EXIST_ERR, FROZEN_ERR.
         """
-        user = await UserService(self.db).get_user_by_login(data.login)
+        user = await UserService(self.db, self.request).get_user_by_login(data.login)
 
         if user is None:
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, None, None, None)
             raise Bad('user', NOT_EXIST_ERR)
 
         if not CryptoUtils.check_user_password(data.password, user.pwd):
-            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, None, user.id, None, "PWD")
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, "PWD")
             raise Bad('user', NOT_EXIST_ERR)
 
         if not user.is_active:
-            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, user.id, None, "INACTIVE")
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, "INACTIVE")
             raise Bad('user', FROZEN_ERR)
 
-        await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS, user.id, user.id, None)
         return user
 
     @classmethod

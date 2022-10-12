@@ -41,6 +41,11 @@ class RequestInfo:
     def session(self) -> JwtSession:
         return self._session
 
+    @session.setter
+    def session(self, value):
+        if self._session is None:
+            self._session = value
+
     @property
     def user_id(self) -> Optional[int]:
         return self._session.user_id if self._session is not None else None

@@ -96,6 +96,7 @@ class Migration(BaseMigration):
             CREATE TABLE history.histories_abstract (
                 id bigserial PRIMARY KEY,
                 kind_id smallint NOT NULL,
+                user_ip bigint NOT NULL,
                 user_id bigint NULL,
                 affected_user_id bigint NULL,
                 affected_passfile_id bigint NULL,
@@ -109,6 +110,7 @@ class Migration(BaseMigration):
 
             CREATE FUNCTION history.add_history(
                 p_kind_id smallint,
+                p_user_ip bigint,
                 p_user_id bigint,
                 p_affected_user_id bigint,
                 p_affected_passfile_id bigint,
@@ -122,8 +124,8 @@ class Migration(BaseMigration):
             BEGIN
                 history_table = 'histories_' || to_char(now(), 'YYYY_MM');
 
-                EXECUTE(format('INSERT INTO history.%I (kind_id, user_id, affected_user_id, affected_passfile_id, more, written_on) VALUES (%L, %L, %L, %L, %L, now())',
-                                history_table, p_kind_id, p_user_id, p_affected_user_id, p_affected_passfile_id, coalesce(p_more, '')));
+                EXECUTE(format('INSERT INTO history.%I (kind_id, user_ip, user_id, affected_user_id, affected_passfile_id, more, written_on) VALUES (%L, %L, %L, %L, %L, %L, now())',
+                                history_table, p_kind_id, p_user_ip, p_user_id, p_affected_user_id, p_affected_passfile_id, coalesce(p_more, '')));
             EXCEPTION WHEN OTHERS
             THEN
                 SELECT EXISTS(SELECT FROM information_schema.tables
@@ -133,9 +135,9 @@ class Migration(BaseMigration):
                     RAISE NOTICE 'Creating a history partition %', history_table;
 
                     EXECUTE(format('CREATE TABLE IF NOT EXISTS history.%I (LIKE history.histories_abstract INCLUDING INDEXES);' ||
-                                   'INSERT INTO history.%I (kind_id, user_id, affected_user_id, affected_passfile_id, more, written_on)' ||
-                                   'VALUES (%L, %L, %L, %L, %L, now());',
-                                    history_table, history_table, p_kind_id, p_user_id, p_affected_user_id, p_affected_passfile_id, coalesce(p_more, '')));
+                                   'INSERT INTO history.%I (kind_id, user_ip, user_id, affected_user_id, affected_passfile_id, more, written_on)' ||
+                                   'VALUES (%L, %L, %L, %L, %L, %L, now());',
+                                    history_table, history_table, p_kind_id, p_user_ip, p_user_id, p_affected_user_id, p_affected_passfile_id, coalesce(p_more, '')));
                 ELSE
                     RAISE EXCEPTION 'ERROR CODE: %. MESSAGE TEXT: %', SQLSTATE, SQLERRM;
                 END IF;

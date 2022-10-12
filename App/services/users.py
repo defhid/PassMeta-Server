@@ -1,10 +1,7 @@
-from typing import Coroutine
-
 from App.services.base import DbServiceBase
 from App.special import *
 
 from App.models.dto import SignUpDto, UserPatchDto
-from App.models.entities import RequestInfo
 from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User
@@ -39,7 +36,7 @@ class UserService(DbServiceBase):
         existing_user_id = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
         if existing_user_id is not None:
             await self.history_writer.write(HistoryKind.USER_REGISTER_FAILURE,
-                                            None, existing_user_id, None, "LOGIN")
+                                            existing_user_id, None, "LOGIN")
             if result.success:
                 raise Bad('login', ALREADY_USED_ERR)
             else:
@@ -55,22 +52,22 @@ class UserService(DbServiceBase):
 
         return user
 
-    async def edit_user(self, user_id: int, data: UserPatchDto, request: RequestInfo) -> User:
+    async def edit_user(self, user_id: int, data: UserPatchDto) -> User:
         """ Raises DATA_ERR, VAL_MISSED_ERR, ALREADY_USED_ERR.
         """
         user = await self.db.query_first(User, self._SELECT_BY_ID, {'id': user_id})
 
-        if user.id != request.user_id:
+        if user.id != self.request.user_id:
             raise Bad(None, NOT_IMPLEMENTED_ERR)
 
         if data.password_confirm is None:
             await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
-                                            request.user_id, user.id, None, "CONF MISS")
+                                            user.id, None, "CONF MISS")
             raise Bad('password_confirm', VAL_MISSED_ERR)
 
         if not CryptoUtils.check_user_password(data.password_confirm, user.pwd):
             await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
-                                            request.user_id, user.id, None, "CONF WRONG")
+                                            user.id, None, "CONF WRONG")
             raise Bad('password_confirm', WRONG_VAL_ERR)
 
         fields = ('login', 'first_name', 'last_name')
@@ -93,7 +90,7 @@ class UserService(DbServiceBase):
             await self.db.query_first(User, self._UPDATE, user)
 
             await self.history_writer.write(HistoryKind.USER_EDIT_SUCCESS,
-                                            request.user_id, user.id, None)
+                                            user.id, None)
 
         return user
 

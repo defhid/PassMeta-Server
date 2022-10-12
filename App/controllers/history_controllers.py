@@ -26,5 +26,5 @@ def register_history_controllers(app: FastAPI, inject: Deps):
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
-        page_result = await HistoryService(db).get_page(page, request)
+        page_result = await HistoryService(db, request).get_page(page)
         return request.make_response(Ok(), data=page_result)

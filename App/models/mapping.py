@@ -1,12 +1,14 @@
-from typing import Dict, Any
-
 from App.database import PassFile, User, History, PassFileVersion
 from App.settings import PASSFILES_ENCODING
 from App.translate import HISTORY_KINDS_TRANSLATE_PACK, get_package_text
 
+from typing import Dict, Any
+import ipaddress
+
 __all__ = (
     'HistoryMapping',
     'PassFileMapping',
+    'PassFileVersionMapping',
     'UserMapping',
 )
 
@@ -17,6 +19,7 @@ class HistoryMapping:
         return {
             'id': his.id,
             'kind': get_package_text(HISTORY_KINDS_TRANSLATE_PACK, his.kind_id, locale, his.kind_id),
+            'user_ip': str(ipaddress.ip_address(his.user_ip)),
             'user_id': his.user_id,
             'user_login': his.user_login,
             'affected_user_id': his.affected_user_id,

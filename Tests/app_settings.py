@@ -9,4 +9,4 @@ DB_CONNECTION = {}
 
 DEBUG = True
 
-PASSFILES_FOLDER = __os.path.join(ROOT_DIR, 'TmpData', 'PassFiles')
+PASSFILES_FOLDER = __os.path.join(ROOT_DIR, 'Data', 'TestPassFiles')

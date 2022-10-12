@@ -15,8 +15,8 @@ class ExcessVersionsFinder:
 
     def find(self, sorted_versions: List[PassFileVersion]) -> Set[PassFileVersion]:
         """
-        1) Current day: keep the oldest and the newest versions
-        2) Previous days: keep the newest versions
+        1) Current day: keep the oldest and the newest versions.
+        2) Previous days: keep the newest versions, one a day.
         :param sorted_versions: Versions sorted by ascending.
         :return: Versions to delete.
         """
@@ -43,14 +43,27 @@ class ExcessVersionsFinder:
                 if len(to_delete) < to_delete_today:
                     to_delete.add(today_versions[-1])
 
-        k = 0
-        for _, group in reversed(grouped):
-            for version in reversed(group):
-                if version in to_delete:
-                    continue
-                elif k < self.keep_versions:
-                    k += 1
-                else:
-                    to_delete.add(version)
+        less_priority = set()
+        total = 0
+
+        for _, group in grouped:
+            total += len(group)
+            for i in range(len(group) - 1):
+                less_priority.add(group[i])
+
+        for _ in range(min(len(less_priority), total - self.keep_versions)):
+            to_delete.add(less_priority.pop())
+            total -= 1
+
+        if total > self.keep_versions:
+            k = 0
+            for _, group in reversed(grouped):
+                for version in reversed(group):
+                    if version in to_delete:
+                        continue
+                    elif k < self.keep_versions:
+                        k += 1
+                    else:
+                        to_delete.add(version)
 
         return to_delete

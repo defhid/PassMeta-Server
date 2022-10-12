@@ -45,7 +45,7 @@ PASSFILES_ENCODING = "UTF-8"
 SESSION_LIFETIME_DAYS: int = 120  # how long to keep user's web session
 
 PASSFILE_KEEP_DAY_VERSIONS: int = 3  # max number of stored file versions, in scope of current day
-PASSFILE_KEEP_VERSIONS: int = 3  # max number of stored file versions, excluding scope of current day
+PASSFILE_KEEP_VERSIONS: int = 5  # max number of stored file versions, excluding scope of current day
 
 HISTORY_KEEP_MONTHS: int = 12  # how many months to store history
 

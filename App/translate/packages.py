@@ -151,6 +151,10 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         default="Failure user sign-up",
         ru="Неудачная регистрация пользователя",
     ),
+    HistoryKind.USER_AUTH_RESET: loc(
+        default="Reset auth",
+        ru="Сброс авторизации",
+    ),
     HistoryKind.USER_EDIT_SUCCESS: loc(
         default="Successful user data changing",
         ru="Успешное изменение данных пользователя",

@@ -18,6 +18,7 @@ __all__ = (
     'AppInfoDto',
     'PassFileDto',
     'PassFileFullDto',
+    'PassFileVersionDto',
     'HistoryKindDto',
     'HistoryDto',
     'HistoryPageDto'
@@ -154,6 +155,12 @@ class PassFileDto(BaseModel):
 
 class PassFileFullDto(PassFileDto):
     smth: str
+
+
+class PassFileVersionDto(BaseModel):
+    passfile_id: int
+    version: int
+    version_date: datetime
 
 
 class HistoryKindDto(BaseModel):

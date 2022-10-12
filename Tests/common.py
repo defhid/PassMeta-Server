@@ -11,5 +11,5 @@ def load_test_settings():
 load_test_settings()
 
 
-class BaseTest(unittest.TestCase):
+class BaseTest(unittest.IsolatedAsyncioTestCase):
     pass

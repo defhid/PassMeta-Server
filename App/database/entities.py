@@ -63,8 +63,7 @@ class PassFile(DbEntity):
 
         COLOR_LEN = 6
 
-        class Raw:
-            SMTH_MIN_LEN = 1
+        SMTH_RAW_LEN_MIN = 1
 
     def __repr__(self) -> str:
         return f"<PassFile #{self.id} {self.name} v{self.version}>"
@@ -86,6 +85,7 @@ class PassFileVersion(DbEntity):
 class History(DbEntity):
     id: int
     kind_id: int
+    user_ip: int
     user_id: Optional[int]
     affected_user_id: Optional[int]
     affected_passfile_id: Optional[int]

@@ -26,12 +26,12 @@ class HistoryService(DbServiceBase):
         kinds = cls.HISTORY_KINDS_CACHE.get(request.locale)
         return kinds if kinds is not None else cls.HISTORY_KINDS_CACHE.get(Locale.DEFAULT)
 
-    async def get_page(self, page: HistoryPageParamsDto, request: RequestInfo) -> Dict:
+    async def get_page(self, page: HistoryPageParamsDto) -> Dict:
         params = {
             'history_table': MakeSql(f"histories_{page.month.year}_{page.month.month:02}"),
             'offset': page.offset,
             'limit': page.limit,
-            'affected_user_id': request.user_id,
+            'affected_user_id': self.request.user_id,
             'kinds_condition': MakeSql.empty()
         }
 
@@ -52,7 +52,7 @@ class HistoryService(DbServiceBase):
             histories = []
 
         return PageFactory.create(
-            [HistoryMapping.to_dict(h, request.locale) for h in histories],
+            [HistoryMapping.to_dict(h, self.request.locale) for h in histories],
             total,
             page.offset,
             page.limit
