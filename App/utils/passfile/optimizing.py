@@ -1,6 +1,5 @@
 from datetime import date
 from itertools import groupby
-from math import ceil
 from typing import List, Set
 from App.database import PassFileVersion
 
@@ -11,10 +10,17 @@ __all__ = (
 
 class ExcessVersionsFinder:
     def __init__(self, keep_versions: int, keep_day_versions: int):
-        self.keep_versions = keep_versions
-        self.keep_day_versions = keep_day_versions
+        self.keep_versions = max(keep_versions, 0)
+        self.keep_day_versions = max(keep_day_versions, 1)
 
     def find(self, sorted_versions: List[PassFileVersion]) -> Set[PassFileVersion]:
+        """
+        1) Current day: keep the oldest and the newest versions
+        2) Previous days: keep the newest versions
+        :param sorted_versions: Versions sorted by ascending.
+        :return: Versions to delete.
+        """
+
         to_delete = set()
 
         if not sorted_versions:
@@ -23,14 +29,19 @@ class ExcessVersionsFinder:
         grouped = [(x[0], list(x[1])) for x in groupby(sorted_versions, key=lambda x: x.version_date.date())]
 
         if grouped[-1][0] == date.today():
-            today_versions = list(grouped.pop(-1)[1])
+            today_versions = grouped.pop(-1)[1]
 
             if len(today_versions) >= self.keep_day_versions:
-                k = ceil((len(today_versions) + 1) / self.keep_day_versions)
+                to_delete_today = len(today_versions) - self.keep_day_versions + 1
 
-                for i in range(len(today_versions)):
-                    if i % k != 0:
-                        to_delete.add(today_versions[i])
+                for i in range(1, min(to_delete_today + 1, len(today_versions) - 1)):
+                    to_delete.add(today_versions[i])
+
+                if len(to_delete) < to_delete_today:
+                    to_delete.add(today_versions[0])
+
+                if len(to_delete) < to_delete_today:
+                    to_delete.add(today_versions[-1])
 
         k = 0
         for _, group in reversed(grouped):
