@@ -1,10 +1,7 @@
-from typing import Coroutine
-
 from App.services.base import DbServiceBase
 from App.special import *
 
 from App.models.dto import SignUpDto, UserPatchDto
-from App.models.entities import RequestInfo
 from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User
@@ -24,7 +21,7 @@ class UserService(DbServiceBase):
     def get_user_by_login(self, user_login: str) -> Coroutine[Any, Any, Optional[User]]:
         return self.db.query_first(User, self._SELECT_BY_LOGIN, {'login': user_login.strip()})
 
-    async def create_user(self, data: SignUpDto, request: RequestInfo) -> User:
+    async def create_user(self, data: SignUpDto) -> User:
         """ Raises DATA_ERR, ALREADY_USED_ERR.
         """
         user = User()
@@ -39,7 +36,7 @@ class UserService(DbServiceBase):
         existing_user_id = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
         if existing_user_id is not None:
             await self.history_writer.write(HistoryKind.USER_REGISTER_FAILURE,
-                                            None, existing_user_id, more="LOGIN", request=request)
+                                            existing_user_id, None, "LOGIN")
             if result.success:
                 raise Bad('login', ALREADY_USED_ERR)
             else:
@@ -51,26 +48,26 @@ class UserService(DbServiceBase):
             user = await self.db.query_first(User, self._INSERT, user)
 
             await self.history_writer.write(HistoryKind.USER_REGISTER_SUCCESS,
-                                            user.id, user.id, request=request)
+                                            user.id, user.id, None)
 
         return user
 
-    async def edit_user(self, user_id: int, data: UserPatchDto, request: RequestInfo) -> User:
+    async def edit_user(self, user_id: int, data: UserPatchDto) -> User:
         """ Raises DATA_ERR, VAL_MISSED_ERR, ALREADY_USED_ERR.
         """
         user = await self.db.query_first(User, self._SELECT_BY_ID, {'id': user_id})
 
-        if user.id != request.user_id:
+        if user.id != self.request.user_id:
             raise Bad(None, NOT_IMPLEMENTED_ERR)
 
         if data.password_confirm is None:
             await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
-                                            request.user_id, user.id, more=f"passconf_miss", request=request)
+                                            user.id, None, "CONF MISS")
             raise Bad('password_confirm', VAL_MISSED_ERR)
 
         if not CryptoUtils.check_user_password(data.password_confirm, user.pwd):
             await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
-                                            request.user_id, user.id, more=f"passconf_wrong", request=request)
+                                            user.id, None, "CONF WRONG")
             raise Bad('password_confirm', WRONG_VAL_ERR)
 
         fields = ('login', 'first_name', 'last_name')
@@ -93,7 +90,7 @@ class UserService(DbServiceBase):
             await self.db.query_first(User, self._UPDATE, user)
 
             await self.history_writer.write(HistoryKind.USER_EDIT_SUCCESS,
-                                            request.user_id, user.id, request=request)
+                                            user.id, None)
 
         return user
 
@@ -124,10 +121,10 @@ class UserService(DbServiceBase):
             errors.append(Bad('last_name', TOO_LONG_ERR, MORE.max_allowed(c.LAST_NAME_LEN_MAX)))
 
         if password is not None:
-            if len(password) < c.Raw.PASSWORD_LEN_MIN:
-                errors.append(Bad('password', TOO_SHORT_ERR, MORE.min_allowed(c.Raw.PASSWORD_LEN_MIN)))
-            if len(password) > c.Raw.PASSWORD_LEN_MAX:
-                errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.Raw.PASSWORD_LEN_MAX)))
+            if len(password) < c.PASSWORD_RAW_LEN_MIN:
+                errors.append(Bad('password', TOO_SHORT_ERR, MORE.min_allowed(c.PASSWORD_RAW_LEN_MIN)))
+            if len(password) > c.PASSWORD_RAW_LEN_MAX:
+                errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.PASSWORD_RAW_LEN_MAX)))
 
             user.pwd = CryptoUtils.make_user_pwd(password)
 
@@ -138,22 +135,22 @@ class UserService(DbServiceBase):
 
     # region SQL
 
-    _SELECT_BY_ID = MakeSql("""SELECT * FROM users WHERE id = @id""")
+    _SELECT_BY_ID = MakeSql("""SELECT * FROM users WHERE id = #id""")
 
-    _SELECT_BY_LOGIN = MakeSql("""SELECT * FROM users WHERE login = @login""")
+    _SELECT_BY_LOGIN = MakeSql("""SELECT * FROM users WHERE login = #login""")
 
-    _SELECT_ID_BY_LOGIN = MakeSql("""SELECT id FROM users WHERE login = @login""")
+    _SELECT_ID_BY_LOGIN = MakeSql("""SELECT id FROM users WHERE login = #login""")
 
     _INSERT = MakeSql("""
         INSERT INTO users (login, pwd, first_name, last_name, is_active) 
-        VALUES (@login, @pwd, @first_name, @last_name, @is_active)
+        VALUES (#login, #pwd, #first_name, #last_name, #is_active)
         RETURNING *
     """)
 
     _UPDATE = MakeSql("""
         UPDATE users SET ( login,  first_name,  last_name,  pwd)
-                      = (@login, @first_name, @last_name, @pwd)
-        WHERE id = @id
+                      = (#login, #first_name, #last_name, #pwd)
+        WHERE id = #id
         RETURNING *
     """)
 

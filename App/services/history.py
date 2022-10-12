@@ -1,3 +1,4 @@
+from App.models.mapping import HistoryMapping
 from App.services.base import DbServiceBase
 from App.settings import HISTORY_KEEP_MONTHS
 from App.special import *
@@ -25,11 +26,12 @@ class HistoryService(DbServiceBase):
         kinds = cls.HISTORY_KINDS_CACHE.get(request.locale)
         return kinds if kinds is not None else cls.HISTORY_KINDS_CACHE.get(Locale.DEFAULT)
 
-    async def get_page(self, page: HistoryPageParamsDto, request: RequestInfo) -> Dict:
+    async def get_page(self, page: HistoryPageParamsDto) -> Dict:
         params = {
+            'history_table': MakeSql(f"histories_{page.month.year}_{page.month.month:02}"),
             'offset': page.offset,
             'limit': page.limit,
-            'affected_user_id': request.user_id,
+            'affected_user_id': self.request.user_id,
             'kinds_condition': MakeSql.empty()
         }
 
@@ -40,25 +42,17 @@ class HistoryService(DbServiceBase):
             except ValueError:
                 raise Bad('kind', VAL_ERR, MORE.allowed('<id:int>,...'))
 
-        total = await self.db.query_scalar(int, self._SELECT_HISTORY_COUNT, params)
-        histories = await self.db.query_list(History, self._SELECT_HISTORY, params)
+        exists = await self.db.query_scalar(bool, self._CHECK_TABLE_EXISTS, params)
 
-        timestamps = set(f"{h.timestamp.year}_{h.timestamp.month:02}" for h in histories)
-
-        more_tables = await self.db.query_values_list(str, self._SELECT_MORE_TABLES, {
-            'table_names': (("history_more_" + t) for t in timestamps)
-        })
-
-        history_ids = ','.join(str(h.id) for h in histories)
-        sql = " UNION ALL ".join(f"SELECT history_id, info FROM history.{t} WHERE history_id IN ({history_ids})"
-                                 for t in more_tables)
-
-        mores = await self.db.query_values_dict('history_id', int, Tuple[int, str], sql)
-        for history in histories:
-            history.more = mores.get(history.id, (None, None))[1]
+        if exists:
+            total = await self.db.query_scalar(int, self._SELECT_COUNT, params)
+            histories = await self.db.query_list(History, self._SELECT_LIST, params)
+        else:
+            total = 0
+            histories = []
 
         return PageFactory.create(
-            [h.to_dict(request.locale) for h in histories],
+            [HistoryMapping.to_dict(h, self.request.locale) for h in histories],
             total,
             page.offset,
             page.limit
@@ -80,40 +74,42 @@ class HistoryService(DbServiceBase):
 
     # region SQL
 
-    _SELECT_HISTORY_COUNT = MakeSql("""
-        SELECT count(*) FROM history.histories h
-        WHERE h.affected_user_id = @affected_user_id @kinds_condition
+    _CHECK_TABLE_EXISTS = MakeSql("""
+        SELECT EXISTS(
+            SELECT FROM information_schema.tables
+            WHERE table_schema = 'history' AND table_name = '#history_table')
     """)
 
-    _SELECT_HISTORY = MakeSql("""
-        SELECT h.*, u.login as user_login, NULL as affected_user_login
-        FROM history.histories h
+    _SELECT_COUNT = MakeSql("""
+        SELECT count(*) FROM history.#history_table h
+        WHERE h.affected_user_id = #affected_user_id #kinds_condition
+    """)
+
+    _SELECT_LIST = MakeSql("""
+        SELECT h.*, u.login as user_login, NULL as affected_user_login, pf.name as affected_passfile_name
+        FROM history.#history_table h
             LEFT JOIN users u ON u.id = h.user_id
-        WHERE h.affected_user_id = @affected_user_id @kinds_condition
+            LEFT JOIN passfiles pf ON pf.id = h.affected_passfile_id
+        WHERE h.affected_user_id = #affected_user_id #kinds_condition
         ORDER BY h.id DESC
-        OFFSET @offset LIMIT @limit
+        OFFSET #offset LIMIT #limit
     """)
 
-    _KINDS_CONDITION = MakeSql("""AND h.kind_id IN (@kinds)""")
-
-    _SELECT_MORE_TABLES = MakeSql("""
-        SELECT table_name FROM information_schema.tables
-        WHERE table_schema = 'history' AND table_name IN (@table_names)
-    """)
+    _KINDS_CONDITION = MakeSql("""AND h.kind_id IN (#kinds)""")
 
     _SELECT_OLD_TABLES = MakeSql("""
-        WITH history_more_tables AS (
+        WITH history_tables AS (
             SELECT table_name,
                    split_part(table_name, '_', 3)::int as year,
                    split_part(table_name, '_', 4)::int as month
             FROM information_schema.tables
             WHERE table_schema = 'history' 
-              AND table_name SIMILAR TO 'history_more_\d\d\d\d_\d\d'
+              AND table_name SIMILAR TO 'histories_\\d\\d\\d\\d_\\d\\d'
         )
         SELECT 'history.' || table_name
-        FROM history_more_tables
-        WHERE year < @year
-           OR (year = @year AND month < @month)
+        FROM history_tables
+        WHERE year < #year
+           OR (year = #year AND month < #month)
     """)
 
     # endregion

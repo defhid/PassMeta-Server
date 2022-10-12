@@ -3,8 +3,7 @@ from App.special import *
 from App.utils.logging import Logger
 from App.database.migrations import MIGRATIONS
 
-from types import GeneratorType
-from passql.defaults import SqlDefaultConverters
+from passql.defaults import SqlDefaultConverters, SqlDefaultPrmPatterns
 from passql import *
 import asyncpg
 
@@ -23,11 +22,7 @@ def _custom_sql_in(val, converter) -> str:
     return result if result else 'SELECT NULL WHERE FALSE'
 
 
-MakeSql = SqlMaker(SqlDefaultConverters.POSTGRES + SqlConverter({
-    tuple: _custom_sql_in,
-    range: _custom_sql_in,
-    GeneratorType: _custom_sql_in
-}))
+MakeSql = SqlMaker(SqlDefaultPrmPatterns.OCTOTHORPE, SqlDefaultConverters.POSTGRES)
 
 
 class DbUtils:
@@ -111,7 +106,7 @@ class Migrator:
         """)
 
         if schema_exists:
-            applied = await self.db.query_values_list(str, "SELECT name FROM migrations WHERE name = any(@names)", {
+            applied = await self.db.query_values_list(str, "SELECT name FROM migrations WHERE name = any(#names)", {
                 'names': list(migrations.keys())
             })
 

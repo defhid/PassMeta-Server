@@ -1,6 +1,7 @@
 from App.special.ok_bad.more_type import *
-from App.translate import OK_BAD_MORE_TYPES_TRANSLATE_PACK, get_package_text
 from typing import Any, Union, Dict
+
+import App.translate as translate
 
 __all__ = (
     'ResultMore',
@@ -18,8 +19,11 @@ class ResultMore:
     def to_dict(self, locale: str) -> Dict[str, Any]:
         if self.type == INFO:
             return {'info': self.value}
-        return {'text': f"{get_package_text(OK_BAD_MORE_TYPES_TRANSLATE_PACK, self.type, locale, self.type)}: "
-                        f"{self.value if type(self.value) is not list else ', '.join(map(str, self.value))}"}
+
+        header = translate.get_package_text(translate.OK_BAD_MORE_TYPES_TRANSLATE_PACK, self.type, locale, self.type)
+        value = self.value if type(self.value) is not list else ', '.join(map(str, self.value))
+
+        return {'text': f"{header}: {value}"}
 
 
 class MORE:

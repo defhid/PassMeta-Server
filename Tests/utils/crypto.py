@@ -1,10 +1,10 @@
 from Tests.common import *
-from App.utils.crypto import CryptoUtils
 
 
 class TestCryptoUtils(BaseTest):
     @classmethod
     def setUpClass(cls):
+        from App.utils.crypto import CryptoUtils
         cls.crypto_utils = CryptoUtils
 
     def test_jwt(self):
@@ -32,7 +32,7 @@ class TestCryptoUtils(BaseTest):
 
     def test_passfile_encryption(self):
         content = "test content"
-        content_bytes = content.encode(encoding='UTF-8')
+        content_bytes = content.encode(encoding=PASSFILES_ENCODING)
 
         encrypted_bytes = self.crypto_utils.encrypt_passfile_smth(content_bytes)
 
@@ -47,6 +47,6 @@ class TestCryptoUtils(BaseTest):
         self.assertTrue(decrypted_bytes != encrypted_bytes)
         self.assertTrue(decrypted_bytes == content_bytes)
 
-        decrypted = decrypted_bytes.decode(encoding="UTF-8")
+        decrypted = decrypted_bytes.decode(encoding=PASSFILES_ENCODING)
 
         self.assertTrue(decrypted == content)

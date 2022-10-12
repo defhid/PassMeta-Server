@@ -9,7 +9,6 @@ from App.special import *
 __all__ = (
     'JwtSession',
     'RequestInfo',
-    'PassFilePath',
 )
 
 
@@ -42,6 +41,11 @@ class RequestInfo:
     def session(self) -> JwtSession:
         return self._session
 
+    @session.setter
+    def session(self, value):
+        if self._session is None:
+            self._session = value
+
     @property
     def user_id(self) -> Optional[int]:
         return self._session.user_id if self._session is not None else None
@@ -53,22 +57,3 @@ class RequestInfo:
         """ Raises: AUTH_ERR """
         if self._session is None:
             raise Bad(None, AUTH_ERR)
-
-
-class PassFilePath:
-    __slots__ = ('id', 'version', 'full_path')
-
-    def __init__(self, filename: str, full_path: str):
-        parts = filename.split('v')
-
-        try:
-            self.id = int(parts[0])
-        except ValueError:
-            self.id = None
-
-        try:
-            self.version = int(parts[1].split('.')[0])
-        except ValueError:
-            self.version = -1
-
-        self.full_path = full_path

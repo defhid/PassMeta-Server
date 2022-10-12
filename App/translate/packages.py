@@ -151,6 +151,10 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         default="Failure user sign-up",
         ru="Неудачная регистрация пользователя",
     ),
+    HistoryKind.USER_AUTH_RESET: loc(
+        default="Reset auth",
+        ru="Сброс авторизации",
+    ),
     HistoryKind.USER_EDIT_SUCCESS: loc(
         default="Successful user data changing",
         ru="Успешное изменение данных пользователя",
@@ -168,8 +172,12 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         ru="Неудачное получение файла паролей",
     ),
     HistoryKind.CREATE_PASSFILE_SUCCESS: loc(
-        default="Passfile success create",
+        default="Successful passfile creation",
         ru="Успешное создание файла паролей",
+    ),
+    HistoryKind.CREATE_PASSFILE_FAILURE: loc(
+        default="Failed passfile creation",
+        ru="Неудачное создание файла паролей",
     ),
     HistoryKind.EDIT_PASSFILE_INFO_SUCCESS: loc(
         default="Successful passfile info changing",

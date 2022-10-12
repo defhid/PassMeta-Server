@@ -1,13 +1,12 @@
-from App.settings import PASSFILES_ENCODING
-from App.translate import HISTORY_KINDS_TRANSLATE_PACK, get_package_text
 from passql.models import DbEntity, register_entities
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Optional
 
 __all__ = (
     'User',
     'AuthKey',
     'PassFile',
+    'PassFileVersion',
     'History',
 )
 
@@ -20,20 +19,13 @@ class User(DbEntity):
     last_name: str
     is_active: bool
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'id': self.id,
-            'login': self.login,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'is_active': self.is_active,
-        }
-
     class Constrains:
         LOGIN_LEN_MIN = 5
         LOGIN_LEN_MAX = 150
 
         PASSWORD_LEN = 128
+        PASSWORD_RAW_LEN_MIN = 5
+        PASSWORD_RAW_LEN_MAX = 128
 
         FIRST_NAME_LEN_MIN = 1
         FIRST_NAME_LEN_MAX = 120
@@ -41,15 +33,17 @@ class User(DbEntity):
         LAST_NAME_LEN_MIN = 1
         LAST_NAME_LEN_MAX = 120
 
-        class Raw:
-            PASSWORD_LEN_MIN = 5
-            PASSWORD_LEN_MAX = 128
+    def __repr__(self) -> str:
+        return f"<User #{self.id} {self.login}>"
 
 
 class AuthKey(DbEntity):
     id: int
     user_id: int
     secret_key: str
+
+    def __repr__(self) -> str:
+        return f"<AuthKey #{self.id} {self.secret_key}>"
 
 
 class PassFile(DbEntity):
@@ -63,56 +57,53 @@ class PassFile(DbEntity):
     info_changed_on: datetime
     version_changed_on: datetime
 
-    def to_dict(self, data: bytes = None) -> Dict[str, Any]:
-        return {
-            'id': self.id,
-            'name': self.name,
-            'color': self.color,
-            'type_id': self.type_id,
-            'user_id': self.user_id,
-            'version': self.version,
-            'created_on': self.created_on.isoformat(),
-            'info_changed_on': self.info_changed_on.isoformat(),
-            'version_changed_on': self.version_changed_on.isoformat(),
-            'smth': None if data is None else data.decode(PASSFILES_ENCODING),
-        }
-
     class Constrains:
         NAME_LEN_MIN = 1
         NAME_LEN_MAX = 100
 
         COLOR_LEN = 6
 
-        class Raw:
-            SMTH_MIN_LEN = 1
+        SMTH_RAW_LEN_MIN = 1
+
+    def __repr__(self) -> str:
+        return f"<PassFile #{self.id} {self.name} v{self.version}>"
+
+
+class PassFileVersion(DbEntity):
+    passfile_id: Optional[int]
+    version: int
+    version_date: datetime
+
+    # region +
+    user_id: Optional[int]
+    # endregion
+
+    def __repr__(self) -> str:
+        return f"<PassFileVersion pf{self.passfile_id} v{self.version} {self.version_date}>"
 
 
 class History(DbEntity):
     id: int
     kind_id: int
+    user_ip: int
     user_id: Optional[int]
     affected_user_id: Optional[int]
-    timestamp: datetime
+    affected_passfile_id: Optional[int]
+    more: str
+    written_on: datetime
 
     # region +
     kind: Optional[str]
-    more: Optional[str]
     user_login: Optional[str]
     affected_user_login: Optional[str]
+    affected_passfile_name: Optional[str]
     # endregion
 
-    def to_dict(self, locale: str) -> Dict[str, Any]:
-        return {
-            'id': self.id,
-            'kind': get_package_text(HISTORY_KINDS_TRANSLATE_PACK, self.kind_id, locale, self.kind_id),
-            'user_login': self.user_login,
-            'affected_user_login': self.affected_user_login,
-            'more': self.more,
-            'timestamp': self.timestamp.isoformat(),
-        }
-
     class Constrains:
-        MORE_INFO_LEN_MAX = 160
+        MORE_LEN = 10
+
+    def __repr__(self) -> str:
+        return f"<History #{self.id} {self.kind_id} {self.more}>"
 
 
 register_entities()
