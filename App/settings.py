@@ -66,6 +66,7 @@ def load_custom_settings(custom_settings):
 
     missed = [
         'APP_VERSION',
+        'ROOT_DIR',
     ]
 
     for name in dir(custom_settings):
