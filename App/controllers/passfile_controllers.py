@@ -6,8 +6,8 @@ from passql import DbConnection
 from App.controllers.di import Deps
 from App.models.dto import (
     PassFileDto, PassFileFullDto,
-    PassfileNewDto,
-    PassfileSmthPatchDto, PassfileInfoPatchDto,
+    PassfilePostDto,
+    PassfileVersionDto, PassfileInfoDto,
     PassfileDeleteDto, PassFileVersionDto,
 )
 from App.models.entities import RequestInfo
@@ -62,7 +62,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         return request.make_response(Ok(), data=data.decode(PASSFILES_ENCODING))
 
     @app.post("/passfiles/new", response_model=PassFileDto)
-    async def ctrl(body: PassfileNewDto,
+    async def ctrl(body: PassfilePostDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
@@ -72,7 +72,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
 
     @app.patch("/passfiles/{passfile_id}/info", response_model=PassFileDto)
     async def ctrl(passfile_id: int,
-                   body: PassfileInfoPatchDto,
+                   body: PassfileInfoDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
@@ -82,12 +82,12 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
 
     @app.post("/passfiles/{passfile_id}/versions/new", response_model=PassFileDto)
     async def ctrl(passfile_id: int,
-                   body: PassfileSmthPatchDto,
+                   body: PassfileVersionDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
-        passfile = await PassFileService(db, request).edit_file_smth(passfile_id, body)
+        passfile = await PassFileService(db, request).edit_file_version(passfile_id, body)
         return request.make_response(Ok(), data=PassFileMapping.to_dict(passfile))
 
     @app.delete("/passfiles/{passfile_id}")

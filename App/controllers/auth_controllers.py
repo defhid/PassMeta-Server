@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from passql import DbConnection
 
 from App.controllers.di import Deps
-from App.models.dto import SignInDto
+from App.models.dto import SignInDto, UserDto
 from App.models.entities import RequestInfo
 from App.services import AuthService
 
@@ -11,7 +11,7 @@ __all__ = ('register_auth_controllers', )
 
 def register_auth_controllers(app: FastAPI, inject: Deps):
 
-    @app.post("/auth/sign-in")
+    @app.post("/auth/sign-in", response_model=UserDto)
     async def ctrl(body: SignInDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):

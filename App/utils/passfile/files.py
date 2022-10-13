@@ -72,8 +72,6 @@ class PassFileUtils:
     @classmethod
     def delete_file(cls, pfv: 'PassFileVersion'):
         """ Delete passfile from the file system.
-
-        :raise: Bad.
         """
         path = cls.get_filepath(pfv)
 
@@ -82,7 +80,6 @@ class PassFileUtils:
                 os.remove(path)
         except Exception as e:
             logger.critical(f"File deleting error! (path: {path})", e)
-            raise Bad(None, UNKNOWN_ERR, MORE.exception(e))
 
     @classmethod
     def ensure_folders_created(cls):

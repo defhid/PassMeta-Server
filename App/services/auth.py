@@ -64,7 +64,7 @@ class AuthService(DbServiceBase):
 
         jwt = self.make_jwt(auth_key)
 
-        await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS, user.id, None)
+        await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS, user.id, None, user_id=user.id)
 
         response = self.request.make_response(Ok(), data=UserMapping.to_dict(user))
         response.set_cookie('session', jwt, httponly=True)
@@ -76,7 +76,9 @@ class AuthService(DbServiceBase):
         auth_key.secret_key = uuid4().hex
 
         async with self.db.transaction():
-            await self.db.execute(self._UPDATE_AUTH_KEY, auth_key)
+            auth_key.secret_key = await self.db.query_scalar(str, self._UPDATE_AUTH_KEY, auth_key)
+
+            self.AUTH_KEYS_CACHE[auth_key.user_id] = auth_key
 
             await self.history_writer.write(HistoryKind.USER_AUTH_RESET, auth_key.user_id, None)
 
@@ -131,7 +133,7 @@ class AuthService(DbServiceBase):
     # region SQL
 
     _SELECT_AUTH_KEY_BY_USER_ID = MakeSql("""
-        SELECT id, user_id, secret_key::text
+        SELECT user_id, secret_key::text
         FROM auth_keys
         WHERE user_id = #user_id
     """)
@@ -145,6 +147,7 @@ class AuthService(DbServiceBase):
         UPDATE auth_keys
         SET secret_key = #secret_key::uuid
         WHERE user_id = #user_id
+        RETURNING secret_key::text
     """)
 
     # endregion

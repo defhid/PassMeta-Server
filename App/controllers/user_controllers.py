@@ -13,7 +13,7 @@ __all__ = ('register_user_controllers', )
 
 def register_user_controllers(app: FastAPI, inject: Deps):
 
-    @app.post("/users/new")
+    @app.post("/users/new", response_model=UserDto)
     async def ctrl(body: SignUpDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):

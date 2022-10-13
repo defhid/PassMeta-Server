@@ -36,13 +36,11 @@ class Migration(BaseMigration):
                 id bigserial UNIQUE PRIMARY KEY,
                 login varchar(#LOGIN_LEN_MAX) NOT NULL UNIQUE,
                 pwd char(#PASSWORD_LEN) NOT NULL,
-                first_name varchar(#FIRST_NAME_LEN_MAX) NOT NULL,
-                last_name varchar(#LAST_NAME_LEN_MAX) NOT NULL,
+                full_name varchar(#FULL_NAME_LEN_MAX) NOT NULL,
                 is_active bool NOT NULL DEFAULT TRUE,
 
                 CONSTRAINT login_min CHECK (length(login) >= #LOGIN_LEN_MIN),
-                CONSTRAINT first_name_min CHECK (length(first_name) >= #FIRST_NAME_LEN_MIN),
-                CONSTRAINT last_name_min CHECK (length(last_name) >= #LAST_NAME_LEN_MIN)
+                CONSTRAINT full_name_min CHECK (length(full_name) >= #FULL_NAME_LEN_MIN)
             );
             CREATE UNIQUE INDEX users_id_uix ON public.users(id);
             CREATE UNIQUE INDEX users_login_ix ON public.users(login);
@@ -51,7 +49,6 @@ class Migration(BaseMigration):
     async def create_auth_keys_table(self):
         await self.db.execute("""
             CREATE TABLE public.auth_keys (
-                id serial PRIMARY KEY,
                 user_id int NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
                 secret_key uuid NOT NULL
             );
@@ -93,20 +90,19 @@ class Migration(BaseMigration):
 
     async def create_histories_table(self):
         await self.db.execute("""
+            CREATE SEQUENCE history.histories_id_seq AS bigint;
+
             CREATE TABLE history.histories_abstract (
-                id bigserial PRIMARY KEY,
+                id bigint PRIMARY KEY DEFAULT nextval('history.histories_id_seq'),
                 kind_id smallint NOT NULL,
-                user_ip bigint NOT NULL,
+                user_ip bigint NULL,
                 user_id bigint NULL,
                 affected_user_id bigint NULL,
                 affected_passfile_id bigint NULL,
                 more char(16) NOT NULL,
                 written_on timestamp NOT NULL
             );
-
             CREATE INDEX histories_abstract_affected_user_id_ix ON history.histories_abstract(affected_user_id);
-
-            DROP FUNCTION IF EXISTS history.add_history(smallint, bigint, bigint, bigint, char(#MORE_LEN));
 
             CREATE FUNCTION history.add_history(
                 p_kind_id smallint,
@@ -134,7 +130,7 @@ class Migration(BaseMigration):
                 IF NOT created THEN
                     RAISE NOTICE 'Creating a history partition %', history_table;
 
-                    EXECUTE(format('CREATE TABLE IF NOT EXISTS history.%I (LIKE history.histories_abstract INCLUDING INDEXES);' ||
+                    EXECUTE(format('CREATE TABLE IF NOT EXISTS history.%I (LIKE history.histories_abstract INCLUDING INDEXES INCLUDING DEFAULTS);' ||
                                    'INSERT INTO history.%I (kind_id, user_ip, user_id, affected_user_id, affected_passfile_id, more, written_on)' ||
                                    'VALUES (%L, %L, %L, %L, %L, %L, now());',
                                     history_table, history_table, p_kind_id, p_user_ip, p_user_id, p_affected_user_id, p_affected_passfile_id, coalesce(p_more, '')));

@@ -44,7 +44,8 @@ class DbUtils:
     async def dispose(self):
         """ Closes the connection pool.
         """
-        await self._connection_pool.close()
+        # .close() is infinitely long :(
+        self._connection_pool.terminate()
 
     async def connection_maker(self) -> Generator[DbConnection, None, None]:
         """ Resolves a connection and yields it.

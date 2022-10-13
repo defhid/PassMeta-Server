@@ -64,7 +64,6 @@ class UserMapping:
         return {
             'id': usr.id,
             'login': usr.login,
-            'first_name': usr.first_name,
-            'last_name': usr.last_name,
+            'full_name': usr.full_name,
             'is_active': usr.is_active,
         }

@@ -3,7 +3,7 @@ from App.services import UserService
 from App.special import *
 from App.settings import PASSFILE_KEEP_DAY_VERSIONS, PASSFILE_KEEP_VERSIONS, PASSFILES_ENCODING
 
-from App.models.dto import PassfileNewDto, PassfileInfoPatchDto, PassfileSmthPatchDto
+from App.models.dto import PassfilePostDto, PassfileInfoDto, PassfileVersionDto
 from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User, PassFile, PassFileVersion
@@ -68,7 +68,7 @@ class PassFileService(DbServiceBase):
 
         return await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {'passfile_id': passfile.id})
 
-    async def add_file(self, data: PassfileNewDto) -> PassFile:
+    async def add_file(self, data: PassfilePostDto) -> PassFile:
         """ Raises: Bad.
         """
         self._validate_post_data(data)
@@ -92,10 +92,7 @@ class PassFileService(DbServiceBase):
         except Exception:
             await transaction.rollback()
             if passfile_version:
-                try:
-                    PassFileUtils.delete_file(passfile_version)
-                finally:
-                    pass
+                PassFileUtils.delete_file(passfile_version)
             await self.history_writer.write(HistoryKind.CREATE_PASSFILE_FAILURE,
                                             self.request.user_id, None, "EXCEPTION")
             raise
@@ -104,7 +101,7 @@ class PassFileService(DbServiceBase):
 
         return passfile
 
-    async def edit_file_info(self, passfile_id: int, data: PassfileInfoPatchDto) -> PassFile:
+    async def edit_file_info(self, passfile_id: int, data: PassfileInfoDto) -> PassFile:
         """ Raises: Bad.
         """
         self._validate_info(data)
@@ -132,7 +129,7 @@ class PassFileService(DbServiceBase):
 
         return passfile
 
-    async def edit_file_smth(self, passfile_id: int, data: PassfileSmthPatchDto) -> PassFile:
+    async def edit_file_version(self, passfile_id: int, data: PassfileVersionDto) -> PassFile:
         """ Raises: Bad.
         """
         self._validate_smth(data)
@@ -157,10 +154,7 @@ class PassFileService(DbServiceBase):
         except Exception:
             await transaction.rollback()
             if passfile_version:
-                try:
-                    PassFileUtils.delete_file(passfile_version)
-                finally:
-                    pass
+                PassFileUtils.delete_file(passfile_version)
             await self.history_writer.write(HistoryKind.CREATE_PASSFILE_FAILURE,
                                             self.request.user_id, None, "EXCEPTION")
             raise
@@ -250,7 +244,7 @@ class PassFileService(DbServiceBase):
         return new_version
 
     @classmethod
-    def _validate_post_data(cls, data: PassfileNewDto):
+    def _validate_post_data(cls, data: PassfilePostDto):
         cls._validate_info(data)
         cls._validate_smth(data)
 

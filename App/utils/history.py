@@ -21,26 +21,17 @@ class HistoryWriter:
                     kind_id: int,
                     affected_user_id: Optional[int],
                     affected_passfile_id: Optional[int],
-                    more: str = None) -> History:
-        """ Write history.
-
-        :param kind_id: History kind identifier.
-        :param affected_user_id: Affected user id.
-        :param affected_passfile_id: Affected passfile id.
-        :param more: Additional text information.
-        :return: Created history object.
-        """
-
+                    more: str = None,
+                    user_id: int = None):
         h = History()
         h.kind_id = kind_id
         h.user_ip = int(ipaddress.ip_address(self.request.request.client.host))
-        h.user_id = self.request.user_id
+        h.user_id = self.request.user_id if user_id is None else user_id
         h.affected_user_id = affected_user_id
         h.affected_passfile_id = affected_passfile_id
         h.more = more
 
-        h.id = await self.db.query_scalar(int, self._ADD_HISTORY, h)
-        return h
+        await self.db.execute(self._ADD_HISTORY, h)
 
     # region SQL
 
