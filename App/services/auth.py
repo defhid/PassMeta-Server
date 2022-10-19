@@ -80,7 +80,7 @@ class AuthService(DbServiceBase):
 
             self.AUTH_KEYS_CACHE[auth_key.user_id] = auth_key
 
-            await self.history_writer.write(HistoryKind.USER_AUTH_RESET, auth_key.user_id, None)
+            await self.history_writer.write(HistoryKind.USER_SESSIONS_RESET, auth_key.user_id, None)
 
         jwt = self.make_jwt(auth_key) if keep_current else ""
 

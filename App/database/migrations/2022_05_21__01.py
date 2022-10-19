@@ -26,7 +26,7 @@ class Migration(BaseMigration):
         await self.db.execute("""
             CREATE TABLE public.migrations (
                 name char(12) UNIQUE PRIMARY KEY,
-                timestamp timestamp NOT NULL DEFAULT now()
+                timestamp timestamp NOT NULL DEFAULT timezone('utc', now())
             );
         """)
 
@@ -118,9 +118,9 @@ class Migration(BaseMigration):
                 history_table char(17);
                 created BOOLEAN;
             BEGIN
-                history_table = 'histories_' || to_char(now(), 'YYYY_MM');
+                history_table = 'histories_' || to_char(timezone('utc', now()), 'YYYY_MM');
 
-                EXECUTE(format('INSERT INTO history.%I (kind_id, user_ip, user_id, affected_user_id, affected_passfile_id, more, written_on) VALUES (%L, %L, %L, %L, %L, %L, now())',
+                EXECUTE(format('INSERT INTO history.%I (kind_id, user_ip, user_id, affected_user_id, affected_passfile_id, more, written_on) VALUES (%L, %L, %L, %L, %L, %L, timezone(''utc'', now()))',
                                 history_table, p_kind_id, p_user_ip, p_user_id, p_affected_user_id, p_affected_passfile_id, coalesce(p_more, '')));
             EXCEPTION WHEN OTHERS
             THEN
@@ -132,7 +132,7 @@ class Migration(BaseMigration):
 
                     EXECUTE(format('CREATE TABLE IF NOT EXISTS history.%I (LIKE history.histories_abstract INCLUDING INDEXES INCLUDING DEFAULTS);' ||
                                    'INSERT INTO history.%I (kind_id, user_ip, user_id, affected_user_id, affected_passfile_id, more, written_on)' ||
-                                   'VALUES (%L, %L, %L, %L, %L, %L, now());',
+                                   'VALUES (%L, %L, %L, %L, %L, %L, timezone(''utc'', now()));',
                                     history_table, history_table, p_kind_id, p_user_ip, p_user_id, p_affected_user_id, p_affected_passfile_id, coalesce(p_more, '')));
                 ELSE
                     RAISE EXCEPTION 'ERROR CODE: %. MESSAGE TEXT: %', SQLSTATE, SQLERRM;

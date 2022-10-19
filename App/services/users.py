@@ -34,7 +34,7 @@ class UserService(DbServiceBase):
 
         existing_user_id = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
         if existing_user_id is not None:
-            await self.history_writer.write(HistoryKind.USER_REGISTER_FAILURE,
+            await self.history_writer.write(HistoryKind.USER_SIGN_UP_FAILURE,
                                             existing_user_id, None, "LOGIN")
             if result.success:
                 raise Bad('login', ALREADY_USED_ERR)
@@ -46,8 +46,8 @@ class UserService(DbServiceBase):
         async with self.db.transaction():
             user = await self.db.query_first(User, self._INSERT, user)
 
-            await self.history_writer.write(HistoryKind.USER_REGISTER_SUCCESS,
-                                            user.id, user.id, None)
+            await self.history_writer.write(HistoryKind.USER_SIGN_UP_SUCCESS,
+                                            user.id, None)
 
         return user
 

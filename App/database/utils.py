@@ -17,11 +17,6 @@ __all__ = (
 logger = Logger(__file__)
 
 
-def _custom_sql_in(val, converter) -> str:
-    result = ','.join(converter(v) for v in val)
-    return result if result else 'SELECT NULL WHERE FALSE'
-
-
 MakeSql = SqlMaker(SqlDefaultPrmPatterns.OCTOTHORPE, SqlDefaultConverters.POSTGRES)
 
 

@@ -136,71 +136,71 @@ OK_BAD_MORE_TYPES_TRANSLATE_PACK = {
 
 HISTORY_KINDS_TRANSLATE_PACK = {
     HistoryKind.USER_SIGN_IN_SUCCESS: loc(
-        default="Successful user authorization",
-        ru="Успешная авторизация пользователя",
+        default="User: authorization",
+        ru="Пользователь: авторизация",
     ),
     HistoryKind.USER_SIGN_IN_FAILURE: loc(
-        default="Failure user authorization",
-        ru="Неудачная авторизация пользователя",
+        default="User: failed authorization",
+        ru="Пользователь: неудачная авторизация",
     ),
-    HistoryKind.USER_REGISTER_SUCCESS: loc(
-        default="Successful user sign-up",
-        ru="Успешная регистрация пользователя",
+    HistoryKind.USER_SIGN_UP_SUCCESS: loc(
+        default="User: sign-up",
+        ru="Пользователь: регистрация",
     ),
-    HistoryKind.USER_REGISTER_FAILURE: loc(
-        default="Failure user sign-up",
-        ru="Неудачная регистрация пользователя",
+    HistoryKind.USER_SIGN_UP_FAILURE: loc(
+        default="User: failed sign-up",
+        ru="Пользователь: неудачная регистрация",
     ),
-    HistoryKind.USER_AUTH_RESET: loc(
-        default="Reset auth",
-        ru="Сброс авторизации",
+    HistoryKind.USER_SESSIONS_RESET: loc(
+        default="User: reset auth",
+        ru="Пользователь: сброс авторизации",
     ),
     HistoryKind.USER_EDIT_SUCCESS: loc(
-        default="Successful user data changing",
-        ru="Успешное изменение данных пользователя",
+        default="User: account changing",
+        ru="Пользователь: изменение учётной записи",
     ),
     HistoryKind.USER_EDIT_FAILURE: loc(
-        default="Failure user data changing",
-        ru="Неудачная изменение данных пользователя",
+        default="User: failed account changing",
+        ru="Пользователь: неудачное изменение учётной записи",
     ),
     HistoryKind.GET_PASSFILE_SUCCESS: loc(
-        default="Successful passfile get",
-        ru="Успешное получение файла паролей",
+        default="Passfile: getting",
+        ru="Пакет: получение",
     ),
     HistoryKind.GET_PASSFILE_FAILURE: loc(
-        default="Failure passfile getting",
-        ru="Неудачное получение файла паролей",
+        default="Passfile: failure getting",
+        ru="Пакет: неудачное получение",
     ),
     HistoryKind.CREATE_PASSFILE_SUCCESS: loc(
-        default="Successful passfile creation",
-        ru="Успешное создание файла паролей",
+        default="Passfile: creation",
+        ru="Пакет: создание",
     ),
     HistoryKind.CREATE_PASSFILE_FAILURE: loc(
-        default="Failed passfile creation",
-        ru="Неудачное создание файла паролей",
+        default="Passfile: failed creation",
+        ru="Пакет: неудачное создание",
     ),
     HistoryKind.EDIT_PASSFILE_INFO_SUCCESS: loc(
-        default="Successful passfile info changing",
-        ru="Успешное изменение информации о файле паролей",
+        default="Passfile: info changing",
+        ru="Пакет: изменение информации",
     ),
     HistoryKind.EDIT_PASSFILE_INFO_FAILURE: loc(
-        default="Failed passfile info changing",
-        ru="Неудачное изменение информации о файле паролей",
+        default="Passfile: failed info changing",
+        ru="Пакет: неудачное изменение информации",
     ),
     HistoryKind.EDIT_PASSFILE_SMTH_SUCCESS: loc(
-        default="Successful passfile changing",
-        ru="Успешное изменение файла паролей",
+        default="Passfile: content changing",
+        ru="Пакет: изменение содержимого",
     ),
     HistoryKind.EDIT_PASSFILE_SMTH_FAILURE: loc(
-        default="Failed passfile changing",
-        ru="Неудачное изменение файла паролей",
+        default="Passfile: failed content changing",
+        ru="Пакет: неудачное изменение содержимого",
     ),
     HistoryKind.DELETE_PASSFILE_SUCCESS: loc(
-        default="Successful passfile deletion",
-        ru="Успешное удаление файла паролей",
+        default="Passfile: deletion",
+        ru="Пакет: удаление",
     ),
     HistoryKind.DELETE_PASSFILE_FAILURE: loc(
-        default="Failure passfile deletion",
-        ru="Неудачное удаление файла паролей",
+        default="Passfile: failure deletion",
+        ru="Пакет: неудачное удаление",
     ),
 }

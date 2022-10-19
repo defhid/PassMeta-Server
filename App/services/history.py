@@ -37,7 +37,7 @@ class HistoryService(DbServiceBase):
 
         if page.kind:
             try:
-                params['kinds'] = tuple(int(k) for k in page.kind.split(','))
+                params['kinds'] = (int(k) for k in page.kind.split(','))
                 params['kinds_condition'] = self._KINDS_CONDITION
             except ValueError:
                 raise Bad('kind', VAL_ERR, MORE.allowed('<id:int>,...'))

@@ -27,7 +27,7 @@ class HistoryMapping:
             'affected_passfile_id': his.affected_passfile_id,
             'affected_passfile_name': his.affected_passfile_name,
             'more': his.more.strip(),
-            'timestamp': his.written_on.isoformat(),
+            'written_on': his.written_on.isoformat(),
         }
 
 
