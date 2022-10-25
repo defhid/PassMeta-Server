@@ -1,6 +1,6 @@
 import datetime
 
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 from fastapi import Request
 
 from App.translate import Locale
@@ -52,6 +52,10 @@ class RequestInfo:
 
     def make_response(self, result: Result, data: Any = None) -> JSONResponse:
         return JSONResponse(result.as_dict(self.locale, data), status_code=result.code.response_status_code)
+
+    @classmethod
+    def make_bytes_response(cls, data: bytes) -> StreamingResponse:
+        return StreamingResponse(data)
 
     def ensure_user_is_authorized(self):
         """ Raises: AUTH_ERR """

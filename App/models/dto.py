@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, constr, conint
+from pydantic import BaseModel, conint
 from datetime import datetime
 
 __all__ = (
@@ -7,17 +7,15 @@ __all__ = (
     'SignUpDto',
     'UserPatchDto',
     'PassfilePostDto',
-    'PassfileInfoDto',
-    'PassfileVersionDto',
+    'PassfilePatchDto',
     'PassfileDeleteDto',
     'HistoryPageParamsDto',
 
     'PageDto',
     'UserDto',
     'AppInfoDto',
-    'PassFileDto',
-    'PassFileFullDto',
-    'PassFileVersionDto',
+    'PassfileDto',
+    'PassfileVersionDto',
     'HistoryKindDto',
     'HistoryDto',
     'HistoryPageDto'
@@ -58,22 +56,14 @@ class PassfilePostDto(BaseModel):
     color: Optional[str]
     type_id: conint(ge=1, le=32767)
     created_on: datetime
-    smth: constr(min_length=1, max_length=10_485_760)
 
     class Config:
         extra = "forbid"
 
 
-class PassfileInfoDto(BaseModel):
+class PassfilePatchDto(BaseModel):
     name: str
     color: Optional[str]
-
-    class Config:
-        extra = "forbid"
-
-
-class PassfileVersionDto(BaseModel):
-    smth: constr(min_length=1, max_length=2_097_152)
 
     class Config:
         extra = "forbid"
@@ -123,7 +113,7 @@ class AppInfoDto(BaseModel):
     user: UserDto
 
 
-class PassFileDto(BaseModel):
+class PassfileDto(BaseModel):
     id: int
     name: str
     color: Optional[str]
@@ -134,11 +124,7 @@ class PassFileDto(BaseModel):
     version_changed_on: datetime
 
 
-class PassFileFullDto(PassFileDto):
-    smth: str
-
-
-class PassFileVersionDto(BaseModel):
+class PassfileVersionDto(BaseModel):
     passfile_id: int
     version: int
     version_date: datetime

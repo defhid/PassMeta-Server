@@ -1,6 +1,6 @@
 from App.settings import DB_CONNECTION, DB_CONNECTION_POOL_MIN_SIZE
 from App.special import *
-from App.utils.logging import Logger
+from App.utils.logging import LoggerFactory
 from App.database.migrations import MIGRATIONS
 
 from passql.defaults import SqlDefaultConverters, SqlDefaultPrmPatterns
@@ -12,10 +12,6 @@ __all__ = (
     'MakeSql',
     'Migrator',
 )
-
-
-logger = Logger(__file__)
-
 
 MakeSql = SqlMaker(SqlDefaultPrmPatterns.OCTOTHORPE, SqlDefaultConverters.POSTGRES)
 
@@ -83,11 +79,13 @@ class ContextConnectionResolver:
 
 
 class Migrator:
+    logger = LoggerFactory.get_named("MIGRATOR")
+
     def __init__(self, db: DbConnection):
         self.db = db
 
     async def run(self):
-        logger.info("Searching new migrations...")
+        self.logger.info("Searching new migrations...")
 
         migrations = {
             m.name: m
@@ -110,16 +108,16 @@ class Migrator:
                 migrations.pop(name, None)
 
         if migrations:
-            logger.info(f"{len(migrations)} new migration(s) found")
+            self.logger.info("{0} new migration(s) found", len(migrations))
 
             for migration in migrations.values():
-                logger.info(f"Executing migration {migration.name}...")
+                self.logger.info("Executing migration {0}...", migration.name)
                 try:
                     await migration.execute(self.db)
                 except Exception as e:
-                    logger.info(f"Migration {migration.name} error!")
-                    logger.error(f"Migration {migration.name} error", e)
+                    self.logger.info("Migration {0} error!", migration.name)
+                    self.logger.error("Migration {0} error", migration.name, ex=e)
                     raise
-                logger.info(f"Executing migration {migration.name} finished!")
+                self.logger.info("Executing migration {0} finished!", migration.name)
         else:
-            logger.info("No new migrations found")
+            self.logger.info("No new migrations found")

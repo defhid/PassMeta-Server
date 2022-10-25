@@ -1,5 +1,4 @@
 from App.database import PassFile, User, History, PassFileVersion
-from App.settings import PASSFILES_ENCODING
 from App.translate import HISTORY_KINDS_TRANSLATE_PACK, get_package_text
 
 from typing import Dict, Any
@@ -33,7 +32,7 @@ class HistoryMapping:
 
 class PassFileMapping:
     @classmethod
-    def to_dict(cls, pf: PassFile, smth: bytes = None) -> Dict[str, Any]:
+    def to_dict(cls, pf: PassFile) -> Dict[str, Any]:
         return {
             'id': pf.id,
             'name': pf.name,
@@ -44,7 +43,6 @@ class PassFileMapping:
             'created_on': pf.created_on.isoformat(),
             'info_changed_on': pf.info_changed_on.isoformat(),
             'version_changed_on': pf.version_changed_on.isoformat(),
-            'smth': None if smth is None else smth.decode(PASSFILES_ENCODING),
         }
 
 

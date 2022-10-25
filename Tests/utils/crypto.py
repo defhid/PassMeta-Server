@@ -32,7 +32,7 @@ class TestCryptoUtils(BaseTest):
 
     def test_passfile_encryption(self):
         content = "test content"
-        content_bytes = content.encode(encoding=PASSFILES_ENCODING)
+        content_bytes = content.encode(encoding="utf-8")
 
         encrypted_bytes = self.crypto_utils.encrypt_passfile_smth(content_bytes)
 
@@ -47,6 +47,6 @@ class TestCryptoUtils(BaseTest):
         self.assertTrue(decrypted_bytes != encrypted_bytes)
         self.assertTrue(decrypted_bytes == content_bytes)
 
-        decrypted = decrypted_bytes.decode(encoding=PASSFILES_ENCODING)
+        decrypted = decrypted_bytes.decode(encoding="utf-8")
 
         self.assertTrue(decrypted == content)

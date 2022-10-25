@@ -1,6 +1,6 @@
 from App.settings import SECRET_KEY_BYTES
 from App.special import *
-from App.utils.logging import Logger
+from App.utils.logging import LoggerFactory
 
 from cryptography.fernet import Fernet
 import hashlib
@@ -11,11 +11,10 @@ __all__ = (
 )
 
 
-logger = Logger(__file__)
-
-
 class CryptoUtils:
     JWT_SECRET_KEY = SECRET_KEY_BYTES.decode('ascii')
+
+    logger = LoggerFactory.get_named("CRYPTO UTILS")
 
     @classmethod
     def make_jwt(cls, value: Dict[str, Any]) -> str:
@@ -26,7 +25,7 @@ class CryptoUtils:
         try:
             return jwt.decode(value, cls.JWT_SECRET_KEY, algorithms=['HS256'])
         except Exception as e:
-            logger.error("JWT decoding error", e)
+            cls.logger.error("JWT decoding error", e)
             return None
 
     @classmethod
@@ -42,14 +41,14 @@ class CryptoUtils:
         try:
             return Fernet(SECRET_KEY_BYTES).encrypt(content)
         except Exception as e:
-            logger.error("Passfile encryption error!", e)
-            raise Bad(None, UNKNOWN_ERR, MORE.text("Server-side encryption failed"))
+            cls.logger.error("Passfile encryption error!", e)
+            raise Bad(None, SERVER_ERR, MORE.text("Server-side encryption failed"))
 
     @classmethod
     def decrypt_passfile_smth(cls, content: bytes) -> bytes:
         try:
             return Fernet(SECRET_KEY_BYTES).decrypt(content)
         except Exception as e:
-            logger.error("Passfile decryption error!", e)
-            raise Bad(None, UNKNOWN_ERR, MORE.text("Server-side decryption failed"))
+            cls.logger.error("Passfile decryption error!", e)
+            raise Bad(None, SERVER_ERR, MORE.text("Server-side decryption failed"))
 

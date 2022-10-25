@@ -1,9 +1,9 @@
 from App.services.base import DbServiceBase
 from App.services import UserService
 from App.special import *
-from App.settings import PASSFILE_KEEP_DAY_VERSIONS, PASSFILE_KEEP_VERSIONS, PASSFILES_ENCODING
+from App.settings import PASSFILE_KEEP_DAY_VERSIONS, PASSFILE_KEEP_VERSIONS
 
-from App.models.dto import PassfilePostDto, PassfileInfoDto, PassfileVersionDto
+from App.models.dto import PassfilePostDto, PassfilePatchDto
 from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User, PassFile, PassFileVersion
@@ -24,59 +24,92 @@ class PassFileService(DbServiceBase):
     EXCESS_VERSIONS_FINDER = ExcessVersionsFinder(PASSFILE_KEEP_VERSIONS, PASSFILE_KEEP_DAY_VERSIONS)
 
     async def get_user_passfiles(self, user: User, type_id: Optional[int]) -> List[PassFile]:
-        return await self.db.query_list(PassFile, self._SELECT_LIST_BY_USER_ID, {
-            'user_id': user.id,
-            'type_id': type_id if type_id is not None else MakeSql('type_id')
-        })
-
-    async def get_file(self, passfile_id: int, version: Optional[int]) -> (PassFile, bytes):
         """ Raises: Bad.
         """
-        passfile = await self._get_passfile_or_raise(passfile_id)
+        async with self.history_writer.operation(
+                HistoryKind.GET_PASSFILE_LIST_SUCCESS,
+                HistoryKind.GET_PASSFILE_LIST_FAILURE,
+                affected_user_id=user.id,
+        ):
+            return await self.db.query_list(PassFile, self._SELECT_LIST_BY_USER_ID, {
+                'user_id': user.id,
+                'type_id': type_id if type_id is not None else MakeSql('type_id')
+            })
 
-        if passfile.user_id != self.request.user_id:
-            await self.history_writer.write(HistoryKind.GET_PASSFILE_FAILURE,
-                                            passfile.user_id, passfile.id, "ACCESS")
-            raise Bad('passfile_id', ACCESS_ERR)
-
-        try:
-            passfile_version = await self._get_passfile_version_or_raise(
-                passfile.id,
-                version if version is not None else passfile.version
-            )
-
-            smth = await PassFileUtils.read_file(passfile_version)
-        except Exception:
-            await self.history_writer.write(HistoryKind.GET_PASSFILE_FAILURE,
-                                            passfile.user_id, passfile.id, "EXCEPTION")
-            raise
-        else:
-            await self.history_writer.write(HistoryKind.GET_PASSFILE_SUCCESS,
-                                            passfile.user_id, passfile.id)
-
-        return passfile, smth
-
-    async def get_file_versions(self, passfile_id: int) -> List[PassFileVersion]:
+    async def get_passfile(self, passfile_id: int) -> PassFile:
         """ Raises: Bad.
         """
-        passfile = await self._get_passfile_or_raise(passfile_id)
+        async with self.history_writer.operation(
+                HistoryKind.GET_PASSFILE_INFO_SUCCESS,
+                HistoryKind.GET_PASSFILE_INFO_FAILURE,
+                affected_passfile_id=passfile_id,
+        ) as history_operation:
+            passfile = await self._get_passfile_or_raise(passfile_id)
 
-        if passfile.user_id != self.request.user_id:
-            await self.history_writer.write(HistoryKind.GET_PASSFILE_FAILURE,
-                                            passfile.user_id, passfile.id, "ACCESS")
-            raise Bad('passfile_id', ACCESS_ERR)
+            history_operation.with_affected_user(passfile.user_id)
+    
+            if passfile.user_id != self.request.user_id:
+                raise Bad('passfile_id', ACCESS_ERR)
 
-        return await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {'passfile_id': passfile.id})
+            return passfile
 
-    async def add_file(self, data: PassfilePostDto) -> PassFile:
+    async def get_passfile_smth(self, passfile_id: int, version: Optional[int]) -> bytes:
         """ Raises: Bad.
         """
-        self._validate_post_data(data)
+        async with self.history_writer.operation(
+                HistoryKind.GET_PASSFILE_SMTH_SUCCESS,
+                HistoryKind.GET_PASSFILE_SMTH_FAILURE,
+                affected_passfile_id=passfile_id,
+        ) as history_operation:
+            passfile_version = await self.db.query_first(PassFileVersion, self._SELECT_VERSION, {
+                'passfile_id': passfile_id,
+                'version': version,
+            })
 
-        passfile_version = None
-        transaction = self.db.transaction()
-        try:
-            await transaction.start()
+            if passfile_version is None:
+                if version is None:
+                    return bytes()
+                raise Bad('version', NOT_EXIST_ERR)
+
+            history_operation.with_affected_user(passfile_version.user_id)
+    
+            if passfile_version.user_id != self.request.user_id:
+                raise Bad('passfile_id', ACCESS_ERR)
+
+            return await PassFileUtils.read_file(passfile_version)
+
+    async def get_passfile_versions(self, passfile_id: int) -> List[PassFileVersion]:
+        """ Raises: Bad.
+        """
+        async with self.history_writer.operation(
+                HistoryKind.GET_PASSFILE_INFO_SUCCESS,
+                HistoryKind.GET_PASSFILE_INFO_FAILURE,
+                affected_passfile_id=passfile_id,
+        ) as history_operation:
+            passfile = await self._get_passfile_or_raise(passfile_id)
+
+            history_operation.with_affected_user(passfile.user_id)
+    
+            if passfile.user_id != self.request.user_id:
+                raise Bad('passfile_id', ACCESS_ERR)
+    
+            versions = await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {
+                'passfile_id': passfile.id
+            })
+
+        return versions
+
+    async def add_passfile(self, data: PassfilePostDto) -> PassFile:
+        """ Raises: Bad.
+        """
+        async with self.history_writer.operation(
+                HistoryKind.CREATE_PASSFILE_SUCCESS,
+                HistoryKind.CREATE_PASSFILE_FAILURE,
+                affected_user_id=self.request.user_id,
+        ) as history_operation:
+            self._validate_post_data(data)
+
+            await history_operation.start_db_transaction()
 
             passfile = await self.db.query_first(PassFile, self._INSERT, {
                 'user_id': self.request.user_id,
@@ -87,100 +120,87 @@ class PassFileService(DbServiceBase):
                 'info_changed_on': datetime.datetime.utcnow(),
                 'version_changed_on': datetime.datetime.utcnow(),
             })
-            passfile_version = await self._save_new_version(passfile, data.smth)
 
-            await self.history_writer.write(HistoryKind.CREATE_PASSFILE_SUCCESS,
-                                            passfile.user_id, passfile.id)
-        except Exception:
-            await transaction.rollback()
-            if passfile_version:
-                PassFileUtils.delete_file(passfile_version)
-            await self.history_writer.write(HistoryKind.CREATE_PASSFILE_FAILURE,
-                                            self.request.user_id, None, "EXCEPTION")
-            raise
-        else:
-            await transaction.commit()
+            history_operation.with_affected_passfile(passfile.id)
 
         return passfile
 
-    async def edit_file_info(self, passfile_id: int, data: PassfileInfoDto) -> PassFile:
+    async def edit_passfile_info(self, passfile_id: int, data: PassfilePatchDto) -> PassFile:
         """ Raises: Bad.
         """
-        self._validate_info(data)
+        async with self.history_writer.operation(
+                HistoryKind.EDIT_PASSFILE_INFO_SUCCESS,
+                HistoryKind.EDIT_PASSFILE_INFO_FAILURE,
+                affected_passfile_id=passfile_id,
+        ) as history_operation:
+            passfile = await self._get_passfile_or_raise(passfile_id)
+            
+            history_operation.with_affected_user(passfile.user_id)
+            
+            if passfile.user_id != self.request.user_id:
+                raise Bad(None, ACCESS_ERR)
 
-        passfile = await self._get_passfile_or_raise(passfile_id)
+            self._validate_info(data)
 
-        if passfile.user_id != self.request.user_id:
-            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_INFO_FAILURE,
-                                            passfile.user_id, passfile.id, "ACCESS")
-            raise Bad(None, ACCESS_ERR)
+            await history_operation.start_db_transaction()
 
-        try:
             passfile.name = data.name
             passfile.color = data.color
             passfile.info_changed_on = datetime.datetime.utcnow()
-
-            async with self.db.transaction():
-                passfile = await self.db.query_first(PassFile, self._UPDATE_INFO, passfile)
-
-                await self.history_writer.write(HistoryKind.EDIT_PASSFILE_INFO_SUCCESS,
-                                                passfile.user_id, passfile.id)
-        except Exception:
-            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_INFO_FAILURE,
-                                            passfile.user_id, passfile.id, "EXCEPTION")
-            raise
+            passfile = await self.db.query_first(PassFile, self._UPDATE_INFO, passfile)
 
         return passfile
 
-    async def edit_file_version(self, passfile_id: int, data: PassfileVersionDto) -> PassFile:
+    async def edit_passfile_smth(self, passfile_id: int, data: bytes) -> PassFile:
         """ Raises: Bad.
         """
-        self._validate_smth(data)
-
-        passfile = await self._get_passfile_or_raise(passfile_id)
-
-        if passfile.user_id != self.request.user_id:
-            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_SMTH_FAILURE,
-                                            passfile.user_id, passfile.id, "ACCESS")
-            raise Bad(None, ACCESS_ERR)
-
-        passfile.version_changed_on = datetime.datetime.utcnow()
-
         passfile_version = None
-        transaction = self.db.transaction()
         try:
-            await transaction.start()
+            async with self.history_writer.operation(
+                    HistoryKind.EDIT_PASSFILE_SMTH_SUCCESS,
+                    HistoryKind.EDIT_PASSFILE_SMTH_FAILURE,
+                    affected_passfile_id=passfile_id,
+            ) as history_operation:
+                passfile = await self._get_passfile_or_raise(passfile_id)
 
-            passfile = await self.db.query_first(PassFile, self._UPDATE_SMTH, passfile)
-            passfile_version = await self._save_new_version(passfile, data.smth)
+                history_operation.with_affected_user(passfile.user_id)
 
-            await self.history_writer.write(HistoryKind.EDIT_PASSFILE_SMTH_SUCCESS,
-                                            passfile.user_id, passfile.id)
+                if passfile.user_id != self.request.user_id:
+                    raise Bad(None, ACCESS_ERR)
+
+                await history_operation.start_db_transaction()
+
+                passfile.version_changed_on = datetime.datetime.utcnow()
+                passfile = await self.db.query_first(PassFile, self._UPDATE_SMTH, passfile)
+
+                passfile_version = await self._save_new_version(passfile, data)
         except Exception:
-            await transaction.rollback()
-            if passfile_version:
+            if passfile_version is not None:
                 PassFileUtils.delete_file(passfile_version)
-            await self.history_writer.write(HistoryKind.CREATE_PASSFILE_FAILURE,
-                                            self.request.user_id, None, "EXCEPTION")
             raise
         else:
-            await transaction.commit()
+            return passfile
 
-        return passfile
-
-    async def delete_file(self, passfile_id: int, check_password: str):
+    async def delete_passfile(self, passfile_id: int, check_password: str):
         """ Raises: Bad.
         """
-        passfile = await self._get_passfile_or_raise(passfile_id)
+        async with self.history_writer.operation(
+                HistoryKind.DELETE_PASSFILE_SUCCESS,
+                HistoryKind.DELETE_PASSFILE_FAILURE,
+                affected_passfile_id=passfile_id,
+        ) as history_operation:
+            passfile = await self._get_passfile_or_raise(passfile_id)
 
-        user = await UserService(self.db, self.request).get_user_by_id(self.request.user_id)
+            history_operation.with_affected_user(passfile.user_id)
 
-        if not CryptoUtils.check_user_password(check_password, user.pwd):
-            await self.history_writer.write(HistoryKind.DELETE_PASSFILE_FAILURE,
-                                            passfile.user_id, passfile.id, "ACCESS")
-            raise Bad("check_password", WRONG_VAL_ERR)
+            if passfile.user_id != self.request.user_id:
+                raise Bad('passfile_id', ACCESS_ERR)
 
-        try:
+            user = await UserService(self.db, self.request).get_user_by_id(self.request.user_id)
+
+            if not CryptoUtils.check_user_password(check_password, user.pwd):
+                raise Bad("check_password", ACCESS_ERR)
+
             passfile_versions = await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {
                 'passfile_id': passfile.id,
             })
@@ -189,15 +209,8 @@ class PassFileService(DbServiceBase):
                 PassFileUtils.delete_file(passfile_version)
                 await self.db.execute(self._DELETE_VERSION, passfile_version)
 
-            async with self.db.transaction():
-                await self.db.execute(self._DELETE, passfile)
-
-                await self.history_writer.write(HistoryKind.DELETE_PASSFILE_SUCCESS,
-                                                passfile.user_id, passfile.id)
-        except Exception:
-            await self.history_writer.write(HistoryKind.DELETE_PASSFILE_FAILURE,
-                                            passfile.user_id, passfile.id, "EXCEPTION")
-            raise
+            await history_operation.start_db_transaction()
+            await self.db.execute(self._DELETE, passfile)
 
     async def _get_passfile_or_raise(self, passfile_id: int) -> PassFile:
         passfile = await self.db.query_first(PassFile, self._SELECT_BY_ID, {'id': passfile_id})
@@ -206,18 +219,7 @@ class PassFileService(DbServiceBase):
 
         return passfile
 
-    async def _get_passfile_version_or_raise(self, passfile_id: int, version: int) -> PassFileVersion:
-        passfile_version = await self.db.query_first(PassFileVersion, self._SELECT_VERSION, {
-            'passfile_id': passfile_id,
-            'version': version,
-        })
-
-        if passfile_version is None:
-            raise Bad('version', NOT_EXIST_ERR)
-
-        return passfile_version
-
-    async def _save_new_version(self, passfile: PassFile, smth: str) -> PassFileVersion:
+    async def _save_new_version(self, passfile: PassFile, smth: bytes) -> PassFileVersion:
         versions = await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {'passfile_id': passfile.id})
 
         to_delete = self.EXCESS_VERSIONS_FINDER.find(versions)
@@ -245,13 +247,12 @@ class PassFileService(DbServiceBase):
 
         new_version.user_id = passfile.user_id
 
-        await PassFileUtils.write_file(new_version, smth.encode(PASSFILES_ENCODING))
+        await PassFileUtils.write_file(new_version, smth)
         return new_version
 
     @classmethod
     def _validate_post_data(cls, data: PassfilePostDto):
         cls._validate_info(data)
-        cls._validate_smth(data)
 
         if data.created_on.timestamp() > datetime.datetime.now().timestamp():
             raise Bad('created_on', TOO_MUCH_ERR, MORE.max_allowed(f"UTC {datetime.datetime.utcnow()}"))
@@ -279,11 +280,6 @@ class PassFileService(DbServiceBase):
 
         if errors:
             raise Bad(None, DATA_ERR, sub=errors)
-
-    @staticmethod
-    def _validate_smth(data):
-        if len(data.smth) < PassFile.Constrains.SMTH_RAW_LEN_MIN:
-            raise Bad('smth', VAL_MISSED_ERR)
 
     # region SQL
 
@@ -317,7 +313,10 @@ class PassFileService(DbServiceBase):
         SELECT pfv.*, pf.user_id
         FROM passfile_versions pfv
             JOIN passfiles pf ON pf.id = pfv.passfile_id
-        WHERE pfv.passfile_id = #passfile_id AND pfv.version = #version
+        WHERE pfv.passfile_id = #passfile_id
+          AND pfv.version = coalesce(#version, pfv.version)
+        ORDER BY pfv.version DESC
+        LIMIT 1
     """)
 
     _SELECT_VERSION_LIST = MakeSql("""

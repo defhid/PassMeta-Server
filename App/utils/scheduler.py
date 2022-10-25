@@ -1,5 +1,5 @@
 from App.database import DbUtils
-from App.utils.logging import Logger
+from App.utils.logging import LoggerFactory
 from threading import Thread, Event
 from datetime import datetime, timedelta
 from typing import Any, Optional, Callable, Dict, Coroutine
@@ -9,8 +9,6 @@ __all__ = (
     'Scheduler',
     'SchedulerTask',
 )
-
-logger = Logger(__file__)
 
 
 class SchedulerThread(Thread):
@@ -60,6 +58,8 @@ class SchedulerTask:
         'next_time',
     )
 
+    logger = LoggerFactory.get_named("SCHEDULER TASK")
+
     def __init__(self, name: str, active: bool, single: bool, interval_minutes: int,
                  start_now: bool, func: Callable[['SchedulerTask.Context'], Any]):
         self.name: str = name
@@ -81,13 +81,13 @@ class SchedulerTask:
     async def run(self, db: 'SchedulerTask.Context'):
         try:
             result = await self.func(db)
-        except Exception as e:
-            self._log_critical(f"{self.name} failed", e)
+        except Exception as ex:
+            self.logger.critical("{0} failed", self.name, ex=ex)
         else:
             if result is None:
-                self._log_info(f"{self.name} successfully completed")
+                self.logger.info("{0} successfully completed", self.name)
             else:
-                self._log_info(f"{self.name} successfully completed ({result})")
+                self.logger.info("{0} successfully completed ({1})", self.name, result)
 
         if self.is_single:
             self.is_active = False
@@ -101,14 +101,6 @@ class SchedulerTask:
     def inactivate(self):
         self.is_active = False
         self.next_time = None
-
-    @staticmethod
-    def _log_info(text: str):
-        logger.info("[SCHEDULER TASK] " + text)
-
-    @staticmethod
-    def _log_critical(text: str, ex: Exception):
-        logger.critical("[SCHEDULER TASK] " + text, ex)
 
     class Context:
         __slots__ = ('db_utils', )

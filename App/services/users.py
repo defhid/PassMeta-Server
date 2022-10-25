@@ -22,77 +22,81 @@ class UserService(DbServiceBase):
         return self.db.query_first(User, self._SELECT_BY_LOGIN, {'login': user_login.strip()})
 
     async def create_user(self, data: SignUpDto) -> User:
-        """ Raises DATA_ERR, ALREADY_USED_ERR.
+        """ Raises Bad.
         """
-        user = User()
+        async with self.history_writer.operation(
+                HistoryKind.USER_SIGN_UP_SUCCESS,
+                HistoryKind.USER_SIGN_UP_FAILURE,
+        ) as history_operation:
+            user = User()
 
-        user.login = data.login
-        user.full_name = data.full_name
-        user.is_active = True
+            user.login = data.login
+            user.full_name = data.full_name
+            user.is_active = True
 
-        result = self._validate_and_prepare_user_to_save(user, data.password)
+            result = self._validate_and_prepare_user_to_save(user, data.password)
 
-        existing_user_id = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
-        if existing_user_id is not None:
-            await self.history_writer.write(HistoryKind.USER_SIGN_UP_FAILURE,
-                                            existing_user_id, None, "LOGIN")
-            if result.success:
-                raise Bad('login', ALREADY_USED_ERR)
-            else:
-                result.sub.append(Bad('login', ALREADY_USED_ERR))
+            existing_user_id = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
+            if existing_user_id is not None:
+                history_operation.with_affected_user(existing_user_id)
+                if result.success:
+                    raise Bad('login', ALREADY_USED_ERR)
+                else:
+                    result.sub.append(Bad('login', ALREADY_USED_ERR))
 
-        result.raise_if_failure()
+            result.raise_if_failure()
 
-        async with self.db.transaction():
+            await history_operation.start_db_transaction()
+
             user = await self.db.query_first(User, self._INSERT, user)
-
-            await self.history_writer.write(HistoryKind.USER_SIGN_UP_SUCCESS,
-                                            user.id, None)
+            history_operation.with_affected_user(user.id)
 
         return user
 
     async def edit_user(self, user_id: int, data: UserPatchDto) -> User:
-        """ Raises DATA_ERR, VAL_MISSED_ERR, ALREADY_USED_ERR.
+        """ Raises Bad.
         """
-        user = await self.db.query_first(User, self._SELECT_BY_ID, {'id': user_id})
+        async with self.history_writer.operation(
+                HistoryKind.USER_EDIT_SUCCESS,
+                HistoryKind.USER_EDIT_FAILURE,
+        ) as history_operation:
+            user = await self.db.query_first(User, self._SELECT_BY_ID, {'id': user_id})
 
-        if user.id != self.request.user_id:
-            raise Bad(None, NOT_IMPLEMENTED_ERR)
+            history_operation.with_affected_user(user.id)
 
-        password_confirm_required = data.login is not None or data.password is not None
+            if user.id != self.request.user_id:
+                raise Bad('user_id', ACCESS_ERR)
 
-        if password_confirm_required:
-            if data.password_confirm is None:
-                await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
-                                                user.id, None, "CONF MISS")
-                raise Bad('password_confirm', VAL_MISSED_ERR)
+            password_confirm_required = data.login is not None or data.password is not None
 
-            if not CryptoUtils.check_user_password(data.password_confirm, user.pwd):
-                await self.history_writer.write(HistoryKind.USER_EDIT_FAILURE,
-                                                user.id, None, "CONF WRONG")
-                raise Bad('password_confirm', WRONG_VAL_ERR)
+            if password_confirm_required:
+                if data.password_confirm is None:
+                    await history_operation.raise_bad(
+                        Bad('password_confirm', VAL_MISSED_ERR), "CONF MISS")
 
-        fields = ('login', 'full_name')
-        for field in fields:
-            val = getattr(data, field)
-            if val is not None:
-                setattr(user, field, val)
+                if not CryptoUtils.check_user_password(data.password_confirm, user.pwd):
+                    await history_operation.raise_bad(
+                        Bad('password_confirm', WRONG_VAL_ERR), "CONF WRONG")
 
-        result = self._validate_and_prepare_user_to_save(user, data.password)
+            fields = ('login', 'full_name')
+            for field in fields:
+                val = getattr(data, field)
+                if val is not None:
+                    setattr(user, field, val)
 
-        user_id_by_login = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
-        if user_id_by_login is not None and user_id_by_login != user.id:
-            if result.success:
-                result = Bad('login', ALREADY_USED_ERR)
-            else:
-                result.sub.append(Bad('login', ALREADY_USED_ERR))
+            result = self._validate_and_prepare_user_to_save(user, data.password)
 
-        result.raise_if_failure()
+            user_id_by_login = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
+            if user_id_by_login is not None and user_id_by_login != user.id:
+                if result.success:
+                    result = Bad('login', ALREADY_USED_ERR)
+                else:
+                    result.sub.append(Bad('login', ALREADY_USED_ERR))
 
-        async with self.db.transaction():
+            result.raise_if_failure()
+
+            await history_operation.start_db_transaction()
             await self.db.query_first(User, self._UPDATE, user)
-
-            await self.history_writer.write(HistoryKind.USER_EDIT_SUCCESS, user.id, None)
 
         return user
 

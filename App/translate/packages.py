@@ -91,10 +91,6 @@ OK_BAD_MESSAGES_TRANSLATE_PACK = {
         default="too simple",
         ru="слишком просто",
     ),
-    result.UNKNOWN_ERR: loc(
-        default="unknown error",
-        ru="неизвестная ошибка",
-    ),
     result.VAL_ERR: loc(
         default="incorrect value",
         ru="некорректное значение",
@@ -163,13 +159,29 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         default="User: failed account changing",
         ru="Пользователь: неудачное изменение учётной записи",
     ),
-    HistoryKind.GET_PASSFILE_SUCCESS: loc(
-        default="Passfile: getting",
-        ru="Пакет: получение",
+    HistoryKind.GET_PASSFILE_LIST_SUCCESS: loc(
+        default="Passfile: info list getting",
+        ru="Пакет: получение списка информации",
     ),
-    HistoryKind.GET_PASSFILE_FAILURE: loc(
-        default="Passfile: failure getting",
-        ru="Пакет: неудачное получение",
+    HistoryKind.GET_PASSFILE_LIST_FAILURE: loc(
+        default="Passfile: failed info list getting",
+        ru="Пакет: неудачное получение списка информации",
+    ),
+    HistoryKind.GET_PASSFILE_INFO_SUCCESS: loc(
+        default="Passfile: info getting",
+        ru="Пакет: получение информации",
+    ),
+    HistoryKind.GET_PASSFILE_INFO_FAILURE: loc(
+        default="Passfile: failed info getting",
+        ru="Пакет: неудачное получение информации",
+    ),
+    HistoryKind.GET_PASSFILE_SMTH_SUCCESS: loc(
+        default="Passfile: content getting",
+        ru="Пакет: получение содержимого",
+    ),
+    HistoryKind.GET_PASSFILE_SMTH_FAILURE: loc(
+        default="Passfile: failed content getting",
+        ru="Пакет: неудачное получение содержимого",
     ),
     HistoryKind.CREATE_PASSFILE_SUCCESS: loc(
         default="Passfile: creation",
@@ -200,7 +212,7 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         ru="Пакет: удаление",
     ),
     HistoryKind.DELETE_PASSFILE_FAILURE: loc(
-        default="Passfile: failure deletion",
+        default="Passfile: failed deletion",
         ru="Пакет: неудачное удаление",
     ),
 }

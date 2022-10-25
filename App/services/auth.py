@@ -60,14 +60,18 @@ class AuthService(DbServiceBase):
         return JwtSession(user_id, secret_key, expires_on)
 
     async def authorize(self, user: User) -> JSONResponse:
-        auth_key = await self.get_or_create_auth_key(user.id, self.db)
+        try:
+            auth_key = await self.get_or_create_auth_key(user.id, self.db)
 
-        jwt = self.make_jwt(auth_key)
+            jwt = self.make_jwt(auth_key)
+
+            response = self.request.make_response(Ok(), data=UserMapping.to_dict(user))
+            response.set_cookie('session', jwt, httponly=True)
+        except Exception:
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, user_id=user.id)
+            raise
 
         await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS, user.id, None, user_id=user.id)
-
-        response = self.request.make_response(Ok(), data=UserMapping.to_dict(user))
-        response.set_cookie('session', jwt, httponly=True)
 
         return response
 

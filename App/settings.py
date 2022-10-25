@@ -10,7 +10,7 @@ import os as __os
 
 # region Common
 
-APP_VERSION = "1.0.5"
+APP_VERSION = "1.0.6"
 APP_ID: str  # [REQUIRED]: Unique PassMeta server identifier
 
 SECRET_KEY_BYTES: bytes  # [REQUIRED]: Generated key from Fernet.generate_key()
@@ -34,8 +34,6 @@ DB_CONNECTION_POOL_MAX_SIZE: int = 30
 ROOT_DIR: str = __os.path.join(*__os.path.split(__os.path.dirname(__os.path.abspath(__file__)))[:-1])
 
 PASSFILES_FOLDER: str = __os.path.join(ROOT_DIR, 'Data', 'PassFiles')
-
-PASSFILES_ENCODING = "UTF-8"
 
 # endregion
 
