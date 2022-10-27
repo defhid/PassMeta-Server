@@ -1,17 +1,18 @@
-from App.settings import DB_CONNECTION, DB_CONNECTION_POOL_MIN_SIZE
-from App.special import *
-from App.utils.logging import LoggerFactory
-from App.database.migrations import MIGRATIONS
-
-from passql.defaults import SqlDefaultConverters, SqlDefaultPrmPatterns
-from passql import *
-import asyncpg
-
 __all__ = (
     'DbUtils',
     'MakeSql',
     'Migrator',
 )
+
+from App.settings import DB_CONNECTION, DB_CONNECTION_POOL_MIN_SIZE
+from App.utils.logging import LoggerFactory
+from App.database.migrations import MIGRATIONS
+
+from typing import Generator
+from passql.defaults import SqlDefaultConverters, SqlDefaultPrmPatterns
+from passql import *
+import asyncpg
+
 
 MakeSql = SqlMaker(SqlDefaultPrmPatterns.OCTOTHORPE, SqlDefaultConverters.POSTGRES)
 

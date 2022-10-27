@@ -1,9 +1,9 @@
+from typing import Any, Coroutine
+
+from App.models.okbad import *
 from App.services.base import DbServiceBase
-from App.special import *
-
-from App.models.dto import SignUpDto, UserPatchDto
+from App.models.dto.requests import SignUpDto, UserPatchDto
 from App.models.enums import HistoryKind
-
 from App.database import MakeSql, User
 from App.utils.crypto import CryptoUtils
 
@@ -15,10 +15,10 @@ __all__ = (
 class UserService(DbServiceBase):
     __slots__ = ()
 
-    def get_user_by_id(self, user_id: int) -> Coroutine[Any, Any, Optional[User]]:
+    def get_user_by_id(self, user_id: int) -> Coroutine[Any, Any, User | None]:
         return self.db.query_first(User, self._SELECT_BY_ID, {'id': user_id})
 
-    def get_user_by_login(self, user_login: str) -> Coroutine[Any, Any, Optional[User]]:
+    def get_user_by_login(self, user_login: str) -> Coroutine[Any, Any, User | None]:
         return self.db.query_first(User, self._SELECT_BY_LOGIN, {'login': user_login.strip()})
 
     async def create_user(self, data: SignUpDto) -> User:
@@ -101,7 +101,7 @@ class UserService(DbServiceBase):
         return user
 
     @staticmethod
-    def _validate_and_prepare_user_to_save(user: User, password: Optional[str]) -> Result:
+    def _validate_and_prepare_user_to_save(user: User, password: str | None) -> Result:
         errors = []
         c = User.Constrains
 

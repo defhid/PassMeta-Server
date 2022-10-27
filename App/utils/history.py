@@ -1,15 +1,12 @@
+__all__ = ('HistoryWriter', )
+
 from App.database import MakeSql, History
 from App.models.entities import RequestInfo
+from App.models.okbad import *
 from App.utils.logging import LoggerFactory
-from App.special import *
 
 from passql import DbConnection
-from typing import Optional
 import ipaddress
-
-__all__ = (
-    'HistoryWriter',
-)
 
 
 class HistoryWriter:
@@ -23,8 +20,8 @@ class HistoryWriter:
 
     async def write(self,
                     kind_id: int,
-                    affected_user_id: Optional[int],
-                    affected_passfile_id: Optional[int],
+                    affected_user_id: int | None,
+                    affected_passfile_id: int | None,
                     more: str = None,
                     user_id: int = None):
         h = History()
@@ -113,11 +110,11 @@ class HistoryOperation:
 
         self._executed = True
 
-    def with_affected_passfile(self, passfile_id: Optional[int]) -> 'HistoryOperation':
+    def with_affected_passfile(self, passfile_id: int | None) -> 'HistoryOperation':
         self.affected_passfile_id = passfile_id
         return self
 
-    def with_affected_user(self, user_id: Optional[int]) -> 'HistoryOperation':
+    def with_affected_user(self, user_id: int | None) -> 'HistoryOperation':
         self.affected_user_id = user_id
         return self
 

@@ -1,5 +1,7 @@
+__all__ = ('PassFileUtils', )
+
+from App.models.okbad import *
 from App.settings import PASSFILES_FOLDER
-from App.special import *
 from App.database import PassFileVersion
 from App.utils.crypto import CryptoUtils
 from App.utils.logging import LoggerFactory
@@ -7,10 +9,6 @@ from App.utils.logging import LoggerFactory
 import aiofiles
 import os
 import re
-
-__all__ = (
-    'PassFileUtils',
-)
 
 
 class PassFileUtils:
@@ -48,7 +46,7 @@ class PassFileUtils:
                 await f.write(bytes_content)
         except Exception as ex:
             cls.logger.critical("File writing error! (path: {0})", path, ex=ex)
-            raise Bad(None, SERVER_ERR, MORE.exception(ex))
+            raise Bad(None, SERVER_ERR)
 
     @classmethod
     async def read_file(cls, pfv: 'PassFileVersion') -> bytes:
@@ -90,7 +88,7 @@ class PassFileUtils:
 
     # @classmethod
     # async def collect_garbage(cls, get_user_passfiles: Callable[[int, int], Coroutine[None, None, Set[int]]]) \
-    #         -> List[str]:
+    #         -> list[str]:
     #     removed = []
     #
     #     def remove_file(path):

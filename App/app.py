@@ -14,7 +14,7 @@ from App.utils.scheduler import Scheduler, SchedulerTask
 
 from App.settings import *
 from App.services import HistoryService
-from App.special import Bad, BAD_REQUEST_ERR, SERVER_ERR, MORE, Result
+from App.models.okbad import *
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.routing import APIRoute

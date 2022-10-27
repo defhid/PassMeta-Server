@@ -1,14 +1,13 @@
+__all__ = ('CryptoUtils', )
+
+from App.models.okbad import *
 from App.settings import SECRET_KEY_BYTES
-from App.special import *
 from App.utils.logging import LoggerFactory
 
+from typing import Any
 from cryptography.fernet import Fernet
 import hashlib
 import jwt
-
-__all__ = (
-    'CryptoUtils',
-)
 
 
 class CryptoUtils:
@@ -17,11 +16,11 @@ class CryptoUtils:
     logger = LoggerFactory.get_named("CRYPTO UTILS")
 
     @classmethod
-    def make_jwt(cls, value: Dict[str, Any]) -> str:
+    def make_jwt(cls, value: dict[str, Any]) -> str:
         return jwt.encode(value, cls.JWT_SECRET_KEY, algorithm='HS256')
 
     @classmethod
-    def read_jwt(cls, value: str) -> Optional[Dict[str, Any]]:
+    def read_jwt(cls, value: str) -> dict[str, Any] | None:
         try:
             return jwt.decode(value, cls.JWT_SECRET_KEY, algorithms=['HS256'])
         except Exception as e:

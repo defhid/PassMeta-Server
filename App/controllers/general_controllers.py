@@ -1,21 +1,20 @@
+__all__ = ('register_general_controllers', )
+
 from fastapi import FastAPI
 from passql import DbConnection
 
 from App.controllers.di import Deps
-from App.models.dto import AppInfoDto
+from App.models.dto.responses import PureResultDto, ResultDto, AppInfoDto, ERROR_RESPONSES
 from App.models.entities import RequestInfo
-from App.models.mapping import UserMapping
+from App.models.okbad import Ok
+from App.models.dto.mapping import UserMapping
 from App.services import UserService
-
-__all__ = ('register_general_controllers', )
-
 from App.settings import APP_VERSION, APP_ID
-from App.special import Ok
 
 
 def register_general_controllers(app: FastAPI, inject: Deps):
 
-    @app.get("/info", response_model=AppInfoDto)
+    @app.get("/info", response_model=AppinfoResultDto, responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
@@ -30,7 +29,11 @@ def register_general_controllers(app: FastAPI, inject: Deps):
             'user': UserMapping.to_dict(user) if user else None,
         })
 
-    @app.get("/check")
+    @app.get("/check", response_model=PureResultDto)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO_WS):
 
         return request.make_response(Ok())
+
+
+class AppinfoResultDto(ResultDto):
+    data: AppInfoDto

@@ -1,11 +1,8 @@
+__all__ = ('LoggerFactory', 'init_logging', )
+
 from App.settings import DEBUG
 from typing import Callable
 import logging
-
-__all__ = (
-    'LoggerFactory',
-    'init_logging',
-)
 
 
 class Logger:

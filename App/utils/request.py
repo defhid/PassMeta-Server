@@ -1,12 +1,10 @@
+__all__ = ('RequestUtils', )
+
 from App.database import DbUtils
 from App.models.entities import RequestInfo
 from App.services import AuthService
 
 from starlette.requests import Request
-
-__all__ = (
-    'RequestUtils',
-)
 
 
 class RequestUtils:

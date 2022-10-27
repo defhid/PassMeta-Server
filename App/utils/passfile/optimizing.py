@@ -1,11 +1,8 @@
+__all__ = ('ExcessVersionsFinder', )
+
 from datetime import date
 from itertools import groupby
-from typing import List, Set
 from App.database import PassFileVersion
-
-__all__ = (
-    'ExcessVersionsFinder',
-)
 
 
 class ExcessVersionsFinder:
@@ -13,7 +10,7 @@ class ExcessVersionsFinder:
         self.keep_versions = max(keep_versions, 0)
         self.keep_day_versions = max(keep_day_versions, 1)
 
-    def find(self, sorted_versions: List[PassFileVersion]) -> Set[PassFileVersion]:
+    def find(self, sorted_versions: list[PassFileVersion]) -> set[PassFileVersion]:
         """
         1) Current day: keep the oldest and the newest versions.
         2) Previous days: keep the newest versions, one a day.

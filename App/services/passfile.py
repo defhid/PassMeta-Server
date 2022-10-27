@@ -1,9 +1,9 @@
+from App.models.okbad import *
 from App.services.base import DbServiceBase
 from App.services import UserService
-from App.special import *
 from App.settings import PASSFILE_KEEP_DAY_VERSIONS, PASSFILE_KEEP_VERSIONS
 
-from App.models.dto import PassfilePostDto, PassfilePatchDto
+from App.models.dto.requests import PassfilePostDto, PassfilePatchDto
 from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User, PassFile, PassFileVersion
@@ -23,7 +23,7 @@ class PassFileService(DbServiceBase):
 
     EXCESS_VERSIONS_FINDER = ExcessVersionsFinder(PASSFILE_KEEP_VERSIONS, PASSFILE_KEEP_DAY_VERSIONS)
 
-    async def get_user_passfiles(self, user: User, type_id: Optional[int]) -> List[PassFile]:
+    async def get_user_passfiles(self, user: User, type_id: int | None) -> list[PassFile]:
         """ Raises: Bad.
         """
         async with self.history_writer.operation(
@@ -53,7 +53,7 @@ class PassFileService(DbServiceBase):
 
             return passfile
 
-    async def get_passfile_smth(self, passfile_id: int, version: Optional[int]) -> bytes:
+    async def get_passfile_smth(self, passfile_id: int, version: int | None) -> bytes:
         """ Raises: Bad.
         """
         async with self.history_writer.operation(
@@ -78,7 +78,7 @@ class PassFileService(DbServiceBase):
 
             return await PassFileUtils.read_file(passfile_version)
 
-    async def get_passfile_versions(self, passfile_id: int) -> List[PassFileVersion]:
+    async def get_passfile_versions(self, passfile_id: int) -> list[PassFileVersion]:
         """ Raises: Bad.
         """
         async with self.history_writer.operation(

@@ -1,14 +1,11 @@
+__all__ = ('Scheduler', 'SchedulerTask', )
+
 from App.database import DbUtils
 from App.utils.logging import LoggerFactory
 from threading import Thread, Event
 from datetime import datetime, timedelta
-from typing import Any, Optional, Callable, Dict, Coroutine
+from typing import Any, Callable, Coroutine
 import asyncio
-
-__all__ = (
-    'Scheduler',
-    'SchedulerTask',
-)
 
 
 class SchedulerThread(Thread):
@@ -67,7 +64,7 @@ class SchedulerTask:
         self.is_single: bool = single
         self.interval_s: int = interval_minutes * 60
         self.func: Callable[['SchedulerTask.Context'], Coroutine] = func
-        self.next_time: Optional[datetime] = None
+        self.next_time: datetime | None = None
 
         if self.is_active:
             self.set_next_time(start_now)
@@ -113,8 +110,8 @@ class Scheduler:
     __slots__ = ('tasks', 'thread', 'period_s')
 
     def __init__(self, period_minutes: int):
-        self.tasks: Dict[str, SchedulerTask] = dict()
-        self.thread: Optional[SchedulerThread] = None
+        self.tasks: dict[str, SchedulerTask] = dict()
+        self.thread: SchedulerThread | None = None
         self.period_s = period_minutes * 60
 
     def add(self, task: SchedulerTask):
