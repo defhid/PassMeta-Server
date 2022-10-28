@@ -11,7 +11,7 @@ from App.models.entities import RequestInfo, JwtSession
 from App.models.dto.mapping import UserMapping
 
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import Response
 from passql import DbConnection
 from typing import Callable, Coroutine, Any
 from uuid import uuid4
@@ -59,13 +59,13 @@ class AuthService(DbServiceBase):
 
         return JwtSession(user_id, secret_key, expires_on)
 
-    async def authorize(self, user: User) -> JSONResponse:
+    async def authorize(self, user: User) -> Response:
         try:
             auth_key = await self.get_or_create_auth_key(user.id, self.db)
 
             jwt = self.make_jwt(auth_key)
 
-            response = self.request.make_response(Ok(), data=UserMapping.to_dict(user))
+            response = self.request.make_response(Ok(), data=UserMapping.to_dto(user))
             response.set_cookie('session', jwt, httponly=True)
         except Exception:
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, user_id=user.id)
@@ -75,7 +75,7 @@ class AuthService(DbServiceBase):
 
         return response
 
-    async def reset(self, request_info: RequestInfo, keep_current: bool) -> JSONResponse:
+    async def reset(self, request_info: RequestInfo, keep_current: bool) -> Response:
         auth_key = await self.get_or_create_auth_key(request_info.user_id, self.db)
         auth_key.secret_key = uuid4().hex
 

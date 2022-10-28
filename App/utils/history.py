@@ -34,14 +34,22 @@ class HistoryWriter:
 
         await self.db.execute(self._ADD_HISTORY, h)
 
+    def readonly_operation(self,
+                           success_kind_id: int,
+                           failure_kind_id: int,
+                           affected_user_id: int = None,
+                           affected_passfile_id: int = None) -> 'HistoryOperation':
+        operation = HistoryOperation(self, success_kind_id, failure_kind_id,
+                                     affected_user_id, affected_passfile_id, True)
+        return operation
+
     def operation(self,
                   success_kind_id: int,
                   failure_kind_id: int,
                   affected_user_id: int = None,
                   affected_passfile_id: int = None) -> 'HistoryOperation':
-        operation = HistoryOperation(self, success_kind_id, failure_kind_id)
-        operation.affected_user_id = affected_user_id
-        operation.affected_passfile_id = affected_passfile_id
+        operation = HistoryOperation(self, success_kind_id, failure_kind_id,
+                                     affected_user_id, affected_passfile_id, False)
         return operation
 
     # region SQL
@@ -57,22 +65,33 @@ class HistoryWriter:
 
 class HistoryOperation:
     __slots__ = (
-        '_executed',
         '_history_writer',
+        '_executed',
+        '_transaction',
+        '_readonly',
         '_success_kind_id',
         '_failure_kind_id',
         'affected_user_id',
         'affected_passfile_id',
-        'transaction',
     )
 
     logger = LoggerFactory.get_named("HISTORY OPERATION")
 
-    def __init__(self, history_writer: 'HistoryWriter', success_kind_id: int, failure_kind_id: int):
+    def __init__(self,
+                 history_writer: 'HistoryWriter',
+                 success_kind_id: int,
+                 failure_kind_id: int,
+                 affected_user_id: int | None,
+                 affected_passfile_id: int | None,
+                 readonly: bool):
         self._history_writer = history_writer
         self._success_kind_id = success_kind_id
         self._failure_kind_id = failure_kind_id
         self._executed = False
+        self._transaction = None
+        self.affected_user_id = affected_user_id
+        self.affected_passfile_id = affected_passfile_id
+        self._readonly = readonly
 
     async def __aenter__(self) -> 'HistoryOperation':
         return self
@@ -82,7 +101,7 @@ class HistoryOperation:
             return
 
         if exc_val is None:
-            if self.transaction is None:
+            if self._transaction is None and not self._readonly:
                 self.logger.critical("Transaction is not started before writing scoped history!")
                 await self.start_db_transaction()
             try:
@@ -92,13 +111,15 @@ class HistoryOperation:
                     self.affected_passfile_id,
                     None
                 )
-                await self.transaction.commit()
+                if self._transaction is not None:
+                    await self._transaction.commit()
             except Exception:
-                await self.transaction.rollback()
+                if self._transaction is not None:
+                    await self._transaction.rollback()
                 raise
         else:
-            if self.transaction is not None:
-                await self.transaction.rollback()
+            if self._transaction is not None:
+                await self._transaction.rollback()
             await self._history_writer.write(
                 self._failure_kind_id,
                 self.affected_user_id,
@@ -119,12 +140,12 @@ class HistoryOperation:
         return self
 
     async def start_db_transaction(self):
-        self.transaction = self._history_writer.db.transaction()
-        await self.transaction.start()
+        self._transaction = self._history_writer.db.transaction()
+        await self._transaction.start()
 
     async def raise_bad(self, bad: Bad, history_more: str = None):
-        if self.transaction is not None:
-            await self.transaction.rollback()
+        if self._transaction is not None:
+            await self._transaction.rollback()
 
         await self._history_writer.write(
             self._failure_kind_id,

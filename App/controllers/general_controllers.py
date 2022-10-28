@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from passql import DbConnection
 
 from App.controllers.di import Deps
-from App.models.dto.responses import PureResultDto, ResultDto, AppInfoDto, ERROR_RESPONSES
+from App.models.dto.responses import ResultDto, AppInfoDto, ERROR_RESPONSES
 from App.models.entities import RequestInfo
 from App.models.okbad import Ok
 from App.models.dto.mapping import UserMapping
@@ -14,7 +14,7 @@ from App.settings import APP_VERSION, APP_ID
 
 def register_general_controllers(app: FastAPI, inject: Deps):
 
-    @app.get("/info", response_model=AppinfoResultDto, responses=ERROR_RESPONSES)
+    @app.get("/info", response_model=AppInfoResultDto, responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
@@ -23,17 +23,17 @@ def register_general_controllers(app: FastAPI, inject: Deps):
         else:
             user = None
 
-        return request.make_response(Ok(), data={
-            'app_id': APP_ID,
-            'app_version': APP_VERSION,
-            'user': UserMapping.to_dict(user) if user else None,
-        })
+        return request.make_response(Ok(), data=AppInfoResultDto.construct(
+            app_id=APP_ID,
+            app_version=APP_VERSION,
+            user=UserMapping.to_dto(user) if user else None,
+        ))
 
-    @app.get("/check", response_model=PureResultDto)
+    @app.get("/check", response_model=ResultDto)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO_WS):
 
         return request.make_response(Ok())
 
 
-class AppinfoResultDto(ResultDto):
+class AppInfoResultDto(ResultDto):
     data: AppInfoDto

@@ -1,6 +1,7 @@
 __all__ = (
-    'PureResultDto',
     'ResultDto',
+    'FullResultDto',
+
     'PageDto',
     'UserDto',
     'AppInfoDto',
@@ -25,18 +26,18 @@ class MoreDto(BaseModel):
     sub: list[dict] | None  # List of ResultDto
 
 
-class PureResultDto(BaseModel):
+class ResultDto(BaseModel):
     code: int
     msg: str
 
 
-class BadResultDto(PureResultDto):
+class BadResultDto(ResultDto):
     more: MoreDto | None
 
 
-class ResultDto(PureResultDto):
-    more: dict | None  # MoreDto
-    data: Any | None
+class FullResultDto(ResultDto):
+    more: MoreDto | None
+    data: Any
 
 
 class PageDto(BaseModel):
@@ -101,8 +102,8 @@ class HistoryPageDto(PageDto):
 
 
 ERROR_RESPONSES = {
-    400: {'model': BadResultDto},
-    401: {'model': BadResultDto},
-    422: {'model': BadResultDto},
-    500: {'model': BadResultDto},
+    422: {
+        'model': BadResultDto,
+        'description': "Error Response. All supported status codes: 400, 401, 403, 404, 422, 500, 501.",
+    },
 }

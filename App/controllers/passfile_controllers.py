@@ -42,7 +42,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
 
         request.ensure_user_is_authorized()
         versions = await PassFileService(db, request).get_passfile_versions(passfile_id)
-        return request.make_response(Ok(), data=[PassFileVersionMapping.to_dict(pfv) for pfv in versions])
+        return request.make_response(Ok(), data=[PassFileVersionMapping.to_dto(pfv) for pfv in versions])
 
     @app.get("/passfiles/{passfile_id}/versions/{version}", response_model=bytes, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,

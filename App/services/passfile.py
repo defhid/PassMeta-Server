@@ -26,7 +26,7 @@ class PassFileService(DbServiceBase):
     async def get_user_passfiles(self, user: User, type_id: int | None) -> list[PassFile]:
         """ Raises: Bad.
         """
-        async with self.history_writer.operation(
+        async with self.history_writer.readonly_operation(
                 HistoryKind.GET_PASSFILE_LIST_SUCCESS,
                 HistoryKind.GET_PASSFILE_LIST_FAILURE,
                 affected_user_id=user.id,
@@ -39,7 +39,7 @@ class PassFileService(DbServiceBase):
     async def get_passfile(self, passfile_id: int) -> PassFile:
         """ Raises: Bad.
         """
-        async with self.history_writer.operation(
+        async with self.history_writer.readonly_operation(
                 HistoryKind.GET_PASSFILE_INFO_SUCCESS,
                 HistoryKind.GET_PASSFILE_INFO_FAILURE,
                 affected_passfile_id=passfile_id,
@@ -56,7 +56,7 @@ class PassFileService(DbServiceBase):
     async def get_passfile_smth(self, passfile_id: int, version: int | None) -> bytes:
         """ Raises: Bad.
         """
-        async with self.history_writer.operation(
+        async with self.history_writer.readonly_operation(
                 HistoryKind.GET_PASSFILE_SMTH_SUCCESS,
                 HistoryKind.GET_PASSFILE_SMTH_FAILURE,
                 affected_passfile_id=passfile_id,
@@ -81,7 +81,7 @@ class PassFileService(DbServiceBase):
     async def get_passfile_versions(self, passfile_id: int) -> list[PassFileVersion]:
         """ Raises: Bad.
         """
-        async with self.history_writer.operation(
+        async with self.history_writer.readonly_operation(
                 HistoryKind.GET_PASSFILE_INFO_SUCCESS,
                 HistoryKind.GET_PASSFILE_INFO_FAILURE,
                 affected_passfile_id=passfile_id,

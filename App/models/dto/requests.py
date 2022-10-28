@@ -9,7 +9,7 @@ __all__ = (
 )
 
 from pydantic import BaseModel, conint
-from datetime import datetime
+from datetime import datetime, date
 
 
 class SignInDto(BaseModel):
@@ -73,5 +73,5 @@ class PageParamsDto(BaseModel):
 
 
 class HistoryPageParamsDto(PageParamsDto):
-    month: datetime
+    month: date
     kind: str = None

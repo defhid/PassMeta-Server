@@ -2,6 +2,7 @@ __all__ = ('Result', 'Ok', 'Bad', )
 
 from App.models.okbad.result_code import ResultCode, OK
 from App.models.okbad.more import *
+from typing import Self
 
 
 class Result(Exception):
@@ -10,8 +11,8 @@ class Result(Exception):
     def __init__(self,
                  what: str | None,
                  code: ResultCode,
-                 more: 'ResultMore' = None,
-                 sub: 'Result' | list['Result'] = None):
+                 more: ResultMore = None,
+                 sub: Self | list[Self] = None):
         super().__init__()
 
         self.what = what
@@ -51,8 +52,8 @@ class Bad(Result):
     def __init__(self,
                  what: str | None,
                  code: ResultCode,
-                 more: 'ResultMore' = None,
-                 sub: 'Result' | list['Result'] = None):
+                 more: ResultMore = None,
+                 sub: Self | list[Self] = None):
         super().__init__(what, code, more, sub)
 
 

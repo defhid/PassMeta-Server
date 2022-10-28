@@ -17,7 +17,7 @@ import ipaddress
 
 class ResultMapping:
     @classmethod
-    def to_dto(cls, res: Result, locale: str, data: Any = None) -> ResultDto:
+    def to_dto(cls, res: Result, locale: str, data: Any = None) -> FullResultDto:
         d = {
             'code': res.code.code,
             'msg': get_package_text(OK_BAD_MESSAGES_TRANSLATE_PACK,
@@ -40,7 +40,7 @@ class ResultMapping:
                 d['more'] = {}
             d['more']['sub'] = [cls.to_dto(s, locale) for s in res.sub]
 
-        return ResultDto.construct(**d)
+        return FullResultDto.construct(**d)
 
 
 class HistoryMapping:
@@ -79,20 +79,20 @@ class PassFileMapping:
 
 class PassFileVersionMapping:
     @classmethod
-    def to_dict(cls, pfv: PassFileVersion) -> dict[str, Any]:
-        return {
-            'passfile_id': pfv.passfile_id,
-            'version': pfv.version,
-            'version_date': pfv.version_date.isoformat(),
-        }
+    def to_dto(cls, pfv: PassFileVersion) -> PassfileVersionDto:
+        return PassfileVersionDto.construct(
+            passfile_id=pfv.passfile_id,
+            version=pfv.version,
+            version_date=pfv.version_date.isoformat(),
+        )
 
 
 class UserMapping:
     @classmethod
-    def to_dict(cls, usr: User) -> dict[str, Any]:
-        return {
-            'id': usr.id,
-            'login': usr.login,
-            'full_name': usr.full_name,
-            'is_active': usr.is_active,
-        }
+    def to_dto(cls, usr: User) -> UserDto:
+        return UserDto.construct(
+            id=usr.id,
+            login=usr.login,
+            full_name=usr.full_name,
+            is_active=usr.is_active,
+        )

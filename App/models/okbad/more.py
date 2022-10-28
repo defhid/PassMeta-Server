@@ -30,8 +30,8 @@ class MORE:
         return ResultMore(TEXT, val)
 
     @staticmethod
-    def info(values: dict[str, Any]):
-        return ResultMore(INFO, list(values))
+    def info(val: dict[str, Any]):
+        return ResultMore(INFO, val)
 
     @staticmethod
     def required(*values: Any) -> ResultMore:

@@ -28,7 +28,7 @@ def register_user_controllers(app: FastAPI, inject: Deps):
 
         request.ensure_user_is_authorized()
         user = await UserService(db, request).get_user_by_id(request.user_id)
-        return request.make_response(Ok(), data=UserMapping.to_dict(user))
+        return request.make_response(Ok(), data=UserMapping.to_dto(user))
 
     @app.patch("/users/me", response_model=UserResultDto, responses=ERROR_RESPONSES)
     async def ctrl(body: UserPatchDto,
@@ -37,7 +37,7 @@ def register_user_controllers(app: FastAPI, inject: Deps):
 
         request.ensure_user_is_authorized()
         user = await UserService(db, request).edit_user(request.user_id, body)
-        return request.make_response(Ok(), data=UserMapping.to_dict(user))
+        return request.make_response(Ok(), data=UserMapping.to_dto(user))
 
 
 class UserResultDto(ResultDto):
