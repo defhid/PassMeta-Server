@@ -80,7 +80,7 @@ class AuthService(DbServiceBase):
         auth_key.secret_key = uuid4().hex
 
         async with self.db.transaction():
-            auth_key.secret_key = await self.db.query_scalar(str, self._UPDATE_AUTH_KEY, auth_key)
+            await self.db.query_scalar(str, self._UPDATE_AUTH_KEY, auth_key)
 
             self.AUTH_KEYS_CACHE[auth_key.user_id] = auth_key
 
@@ -151,7 +151,6 @@ class AuthService(DbServiceBase):
         UPDATE auth_keys
         SET secret_key = #secret_key::uuid
         WHERE user_id = #user_id
-        RETURNING secret_key::text
     """)
 
     # endregion
