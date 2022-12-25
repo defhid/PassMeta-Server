@@ -65,7 +65,7 @@ class PassfileDeleteDto(BaseModel):
 
 
 class PageParamsDto(BaseModel):
-    page_num: conint(ge=0)
+    page_index: conint(ge=0)
     page_size: conint(ge=0, le=100)
 
     class Config:

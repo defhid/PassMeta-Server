@@ -29,7 +29,7 @@ class HistoryService(DbServiceBase):
     async def get_page(self, page: HistoryPageParamsDto) -> HistoryPageDto:
         params = {
             'history_table': MakeSql(f"histories_{page.month.year}_{page.month.month:02}"),
-            'offset': page.page_size * page.page_num,
+            'offset': page.page_size * page.page_index,
             'limit': page.page_size,
             'affected_user_id': self.request.user_id,
             'kinds_condition': MakeSql.empty()
@@ -37,7 +37,7 @@ class HistoryService(DbServiceBase):
 
         if page.kind:
             try:
-                params['kinds'] = (int(k) for k in page.kind.split(','))
+                params['kinds'] = [int(k) for k in page.kind.split(',')]
                 params['kinds_condition'] = self._KINDS_CONDITION
             except ValueError:
                 raise Bad('kind', VAL_ERR, MORE.allowed('<id:int>,...'))
@@ -55,7 +55,7 @@ class HistoryService(DbServiceBase):
             list=[HistoryMapping.to_dto(h, self.request.locale) for h in histories],
             total=total,
             page_size=page.page_size,
-            page_num=page.page_num
+            page_index=page.page_index
         )
 
     @classmethod
@@ -95,7 +95,7 @@ class HistoryService(DbServiceBase):
         OFFSET #offset LIMIT #limit
     """)
 
-    _KINDS_CONDITION = MakeSql("""AND h.kind_id IN (#kinds)""")
+    _KINDS_CONDITION = MakeSql("""AND h.kind_id = any(#kinds)""")
 
     _SELECT_OLD_TABLES = MakeSql("""
         WITH history_tables AS (

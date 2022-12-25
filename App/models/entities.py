@@ -3,7 +3,7 @@ __all__ = (
     'RequestInfo',
 )
 
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import Response
 from pydantic import BaseModel
 from fastapi import Request
 from datetime import datetime
@@ -60,7 +60,7 @@ class RequestInfo:
 
     @classmethod
     def make_bytes_response(cls, data: bytes) -> Response:
-        return StreamingResponse(data)
+        return Response(data)
 
     def ensure_user_is_authorized(self):
         """ Raises: AUTH_ERR """
@@ -76,7 +76,7 @@ class PydanticJsonResponse(Response):
 
     if DEBUG:
         def render(self, content: BaseModel) -> bytes:
-            return content.json(indent=4, exclude_unset=True).encode("utf-8")
+            return content.json(indent=4, exclude_unset=True, ensure_ascii=False).encode("utf-8")
     else:
         def render(self, content: BaseModel) -> bytes:
-            return content.json(indent=None, exclude_unset=True).encode("utf-8")
+            return content.json(indent=None, exclude_unset=True, ensure_ascii=False).encode("utf-8")

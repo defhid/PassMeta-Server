@@ -44,7 +44,7 @@ class PageDto(BaseModel):
     list: list[dict]
     total: int
     page_size: int
-    page_num: int
+    page_index: int
 
 
 class UserDto(BaseModel):
