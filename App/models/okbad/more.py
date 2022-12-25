@@ -1,12 +1,9 @@
-from App.special.ok_bad.more_type import *
-from typing import Any, Union, Dict
+__all__ = ('ResultMore', 'MORE', )
+
+from App.models.okbad.more_type import *
+from typing import Any
 
 import App.translate as translate
-
-__all__ = (
-    'ResultMore',
-    'MORE',
-)
 
 
 class ResultMore:
@@ -16,7 +13,7 @@ class ResultMore:
         self.type = _type
         self.value = _value
 
-    def to_dict(self, locale: str) -> Dict[str, Any]:
+    def to_dict(self, locale: str) -> dict[str, Any]:
         if self.type == INFO:
             return {'info': self.value}
 
@@ -33,8 +30,8 @@ class MORE:
         return ResultMore(TEXT, val)
 
     @staticmethod
-    def info(*values: Dict[str, Any]):
-        return ResultMore(INFO, list(values))
+    def info(val: dict[str, Any]):
+        return ResultMore(INFO, val)
 
     @staticmethod
     def required(*values: Any) -> ResultMore:
@@ -49,13 +46,9 @@ class MORE:
         return ResultMore(DISALLOWED, list(values))
 
     @staticmethod
-    def min_allowed(val: Union[int, float, str]) -> ResultMore:
+    def min_allowed(val: int | float | str) -> ResultMore:
         return ResultMore(MIN_ALLOWED, val)
 
     @staticmethod
-    def max_allowed(val: Union[int, float, str]) -> ResultMore:
+    def max_allowed(val: int | float | str) -> ResultMore:
         return ResultMore(MAX_ALLOWED, val)
-
-    @staticmethod
-    def exception(ex: BaseException) -> ResultMore:
-        return ResultMore(TEXT, str(ex))

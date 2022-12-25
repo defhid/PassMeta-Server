@@ -1,6 +1,6 @@
-from typing import Any
-
 __all__ = ('Deps', )
+
+from typing import Any
 
 
 class Deps:

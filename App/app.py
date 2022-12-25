@@ -7,21 +7,19 @@ from App.controllers.user_controllers import register_user_controllers
 
 from App.database import DbUtils, Migrator
 
-from App.utils.logging import Logger
+from App.utils.logging import LoggerFactory, init_logging
 from App.utils.passfile import PassFileUtils
 from App.utils.request import RequestUtils
 from App.utils.scheduler import Scheduler, SchedulerTask
 
 from App.settings import *
 from App.services import HistoryService
-from App.special import Bad, BAD_REQUEST_ERR, SERVER_ERR, MORE, Result
+from App.models.okbad import *
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.routing import APIRoute
 from fastapi.exceptions import RequestValidationError
 
-
-logger = Logger(__file__)
 
 db_utils = DbUtils(DB_CONNECTION_POOL_MAX_SIZE)
 request_utils = RequestUtils(db_utils)
@@ -34,6 +32,8 @@ app = FastAPI(debug=DEBUG)
 # region Exceptions handling
 
 class RouteWithErrorsLogging(APIRoute):
+    logger = LoggerFactory.get_named("ROOT")
+
     def get_route_handler(self):
         original_route_handler = super().get_route_handler()
 
@@ -48,7 +48,7 @@ class RouteWithErrorsLogging(APIRoute):
                     Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})))
 
             except Exception as ex:
-                logger.error("Request error", ex, False, url=request.url.path)
+                self.logger.error("Request error, url={0}", request.url.path, ex=ex)
                 return request_utils.build_request_info_without_session(request).make_response(
                     Bad(None, SERVER_ERR, MORE.text(str(ex)) if ex.args else None))
 
@@ -64,7 +64,7 @@ app.router.route_class = RouteWithErrorsLogging
 
 @app.on_event("startup")
 async def on_startup():
-    Logger.init('uvicorn.error' if __name__ == '__main__' else 'gunicorn.error')
+    init_logging('uvicorn.error' if __name__ == '__main__' else 'gunicorn.error')
 
     await db_utils.init()
 

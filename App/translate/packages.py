@@ -1,13 +1,13 @@
-from App.translate.helpers import loc
-from App.models.enums import HistoryKind
-import App.special.ok_bad.more_type as more
-import App.special.ok_bad.result_code as result
-
 __all__ = (
     'OK_BAD_MESSAGES_TRANSLATE_PACK',
     'OK_BAD_MORE_TYPES_TRANSLATE_PACK',
     'HISTORY_KINDS_TRANSLATE_PACK',
 )
+
+from App.translate.helpers import loc
+from App.models.enums import HistoryKind
+import App.models.okbad.more_type as more
+import App.models.okbad.result_code as result
 
 
 OK_BAD_MESSAGES_TRANSLATE_PACK = {
@@ -39,14 +39,6 @@ OK_BAD_MESSAGES_TRANSLATE_PACK = {
         default="frozen (not active)",
         ru="заблокирован (не активен)"
     ),
-    result.INVALID_OPERATION_ERR: loc(
-        default="invalid operation",
-        ru="недопустимая операция"
-    ),
-    result.NOT_AVAILABLE: loc(
-        default="not available",
-        ru="недоступно",
-    ),
     result.NOT_EXIST_ERR: loc(
         default="existence error",
         ru="не существует",
@@ -67,10 +59,6 @@ OK_BAD_MESSAGES_TRANSLATE_PACK = {
         default="server error",
         ru="ошибка сервера",
     ),
-    result.SIZE_ERR: loc(
-        default="size error",
-        ru="ошибка размера",
-    ),
     result.TOO_FEW_ERR: loc(
         default="too few",
         ru="слишком мало",
@@ -86,14 +74,6 @@ OK_BAD_MESSAGES_TRANSLATE_PACK = {
     result.TOO_SHORT_ERR: loc(
         default="too short",
         ru="слишком короткое значение",
-    ),
-    result.TOO_SIMPLE_ERR: loc(
-        default="too simple",
-        ru="слишком просто",
-    ),
-    result.UNKNOWN_ERR: loc(
-        default="unknown error",
-        ru="неизвестная ошибка",
     ),
     result.VAL_ERR: loc(
         default="incorrect value",
@@ -163,13 +143,29 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         default="User: failed account changing",
         ru="Пользователь: неудачное изменение учётной записи",
     ),
-    HistoryKind.GET_PASSFILE_SUCCESS: loc(
-        default="Passfile: getting",
-        ru="Пакет: получение",
+    HistoryKind.GET_PASSFILE_LIST_SUCCESS: loc(
+        default="Passfile: info list getting",
+        ru="Пакет: получение списка информации",
     ),
-    HistoryKind.GET_PASSFILE_FAILURE: loc(
-        default="Passfile: failure getting",
-        ru="Пакет: неудачное получение",
+    HistoryKind.GET_PASSFILE_LIST_FAILURE: loc(
+        default="Passfile: failed info list getting",
+        ru="Пакет: неудачное получение списка информации",
+    ),
+    HistoryKind.GET_PASSFILE_INFO_SUCCESS: loc(
+        default="Passfile: info getting",
+        ru="Пакет: получение информации",
+    ),
+    HistoryKind.GET_PASSFILE_INFO_FAILURE: loc(
+        default="Passfile: failed info getting",
+        ru="Пакет: неудачное получение информации",
+    ),
+    HistoryKind.GET_PASSFILE_SMTH_SUCCESS: loc(
+        default="Passfile: content getting",
+        ru="Пакет: получение содержимого",
+    ),
+    HistoryKind.GET_PASSFILE_SMTH_FAILURE: loc(
+        default="Passfile: failed content getting",
+        ru="Пакет: неудачное получение содержимого",
     ),
     HistoryKind.CREATE_PASSFILE_SUCCESS: loc(
         default="Passfile: creation",
@@ -200,7 +196,7 @@ HISTORY_KINDS_TRANSLATE_PACK = {
         ru="Пакет: удаление",
     ),
     HistoryKind.DELETE_PASSFILE_FAILURE: loc(
-        default="Passfile: failure deletion",
+        default="Passfile: failed deletion",
         ru="Пакет: неудачное удаление",
     ),
 }

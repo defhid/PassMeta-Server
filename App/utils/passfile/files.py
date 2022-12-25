@@ -1,22 +1,20 @@
+__all__ = ('PassFileUtils', )
+
+from App.models.okbad import *
 from App.settings import PASSFILES_FOLDER
-from App.special import *
 from App.database import PassFileVersion
 from App.utils.crypto import CryptoUtils
-from App.utils.logging import Logger
+from App.utils.logging import LoggerFactory
 
 import aiofiles
 import os
 import re
 
-__all__ = (
-    'PassFileUtils',
-)
-
-logger = Logger(__file__)
-
 
 class PassFileUtils:
     FILENAME_PATTERN = re.compile(r'^\d*v\d*_\d*.pf$')  # <passfile_id>v<version>.pf
+
+    logger = LoggerFactory.get_named("PASSFILE UTILS")
 
     @classmethod
     def get_filepath(cls, pfv: 'PassFileVersion') -> str:
@@ -46,9 +44,9 @@ class PassFileUtils:
 
             async with aiofiles.open(path, 'wb') as f:
                 await f.write(bytes_content)
-        except Exception as e:
-            logger.critical(f"File writing error! (path: {path})", e)
-            raise Bad(None, UNKNOWN_ERR, MORE.exception(e))
+        except Exception as ex:
+            cls.logger.critical("File writing error! (path: {0})", path, ex=ex)
+            raise Bad(None, SERVER_ERR)
 
     @classmethod
     async def read_file(cls, pfv: 'PassFileVersion') -> bytes:
@@ -63,9 +61,9 @@ class PassFileUtils:
         try:
             async with aiofiles.open(path, 'rb') as f:
                 content = await f.read()
-        except Exception as e:
-            logger.critical(f"File reading error! (path: {path})", e)
-            raise Bad(None, UNKNOWN_ERR)
+        except Exception as ex:
+            cls.logger.critical("File reading error! (path: {0})", path, ex=ex)
+            raise Bad(None, SERVER_ERR)
         else:
             return CryptoUtils.decrypt_passfile_smth(content)
 
@@ -78,8 +76,8 @@ class PassFileUtils:
         try:
             if os.path.exists(path):
                 os.remove(path)
-        except Exception as e:
-            logger.critical(f"File deleting error! (path: {path})", e)
+        except Exception as ex:
+            cls.logger.critical("File deleting error! (path: {0})", path, ex=ex)
 
     @classmethod
     def ensure_folders_created(cls):
@@ -90,7 +88,7 @@ class PassFileUtils:
 
     # @classmethod
     # async def collect_garbage(cls, get_user_passfiles: Callable[[int, int], Coroutine[None, None, Set[int]]]) \
-    #         -> List[str]:
+    #         -> list[str]:
     #     removed = []
     #
     #     def remove_file(path):
@@ -138,7 +136,7 @@ class PassFileUtils:
     #                         continue
     #
     #                 remove_file(item_path)
-    #         except Exception as e:
-    #             logger.error(f"Garbage removing error! (path items: {item}, {sub_item})", e)
+    #         except Exception as ex:
+    #             logger.error("Garbage removing error! (path items: {0}, {1})", item, sub_item, ex=ex)
     #
     #     return removed

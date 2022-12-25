@@ -1,24 +1,25 @@
-from App.translate.locales import Locale
-from typing import Dict, Any, Callable, TypeVar, List
-
 __all__ = (
     'loc',
     'get_package_text',
     'reverse_translate_package',
 )
 
+from App.translate.locales import Locale
+from typing import Any, Callable, TypeVar
+
+
 TSource = TypeVar('TSource')
 TEntity = TypeVar('TEntity')
 
 
-def loc(default: str, ru: str) -> Dict[str, str]:
+def loc(default: str, ru: str) -> dict[str, str]:
     return {
         Locale.DEFAULT: default,
         Locale.RU: ru,
     }
 
 
-def get_package_text(package: Dict[Any, Dict[str, str]],
+def get_package_text(package: dict[Any, dict[str, str]],
                      section: Any,
                      locale: str,
                      default: Any) -> str:
@@ -35,8 +36,8 @@ def get_package_text(package: Dict[Any, Dict[str, str]],
     return message
 
 
-def reverse_translate_package(package: Dict[TSource, Dict[str, str]],
-                              item_creator: Callable[[TSource, str], TEntity]) -> Dict[str, List[TEntity]]:
+def reverse_translate_package(package: dict[TSource, dict[str, str]],
+                              item_creator: Callable[[TSource, str], TEntity]) -> dict[str, list[TEntity]]:
     d = {
         Locale.DEFAULT: [],
         Locale.RU: [],

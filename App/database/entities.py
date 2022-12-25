@@ -1,7 +1,3 @@
-from passql.models import DbEntity, register_entities
-from datetime import datetime
-from typing import Optional
-
 __all__ = (
     'User',
     'AuthKey',
@@ -9,6 +5,9 @@ __all__ = (
     'PassFileVersion',
     'History',
 )
+
+from passql.models import DbEntity, register_entities
+from datetime import datetime
 
 
 class User(DbEntity):
@@ -76,7 +75,7 @@ class PassFile(DbEntity):
     name: str
 
     """ color in hex format """
-    color: Optional[str]
+    color: str | None
 
     """ data version """
     version: int
@@ -107,7 +106,7 @@ class PassFileVersion(DbEntity):
     """
 
     """ passfile identifier """
-    passfile_id: Optional[int]
+    passfile_id: int | None
 
     """ data version """
     version: int
@@ -118,7 +117,7 @@ class PassFileVersion(DbEntity):
     # region JOIN
 
     """ user identifier of the passfile owner """
-    user_id: Optional[int]
+    user_id: int | None
 
     # endregion
 
@@ -137,16 +136,16 @@ class History(DbEntity):
     kind_id: int
 
     """ user-subject IP address """
-    user_ip: Optional[int]
+    user_ip: int | None
 
     """ user-subject identifier """
-    user_id: Optional[int]
+    user_id: int | None
 
     """ user-object identifier """
-    affected_user_id: Optional[int]
+    affected_user_id: int | None
 
     """ passfile-object identifier """
-    affected_passfile_id: Optional[int]
+    affected_passfile_id: int | None
 
     """ additional short information """
     more: str
@@ -157,16 +156,16 @@ class History(DbEntity):
     # region JOIN
 
     """ history kind name """
-    kind: Optional[str]
+    kind: str | None
 
     """ user-subject login """
-    user_login: Optional[str]
+    user_login: str | None
 
     """ user-object login """
-    affected_user_login: Optional[str]
+    affected_user_login: str | None
 
     """ passfile-object name """
-    affected_passfile_name: Optional[str]
+    affected_passfile_name: str | None
 
     # endregion
 

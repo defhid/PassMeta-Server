@@ -1,19 +1,19 @@
+from App.models.okbad import *
 from App.services.base import DbServiceBase
 from App.services import UserService
 from App.settings import SESSION_LIFETIME_DAYS
-from App.special import *
 from App.utils.crypto import CryptoUtils
 
 from App.database import User, AuthKey, MakeSql
 from App.models.enums import HistoryKind
-from App.models.dto import SignInDto
+from App.models.dto.requests import SignInDto
 from App.models.entities import RequestInfo, JwtSession
-from App.models.mapping import UserMapping
+from App.models.dto.mapping import UserMapping
 
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import Response
 from passql import DbConnection
-from typing import Callable, Coroutine
+from typing import Callable, Coroutine, Any
 from uuid import uuid4
 import datetime
 
@@ -25,12 +25,12 @@ __all__ = (
 class AuthService(DbServiceBase):
     __slots__ = ()
 
-    AUTH_KEYS_CACHE: Dict[int, AuthKey] = dict()
+    AUTH_KEYS_CACHE: dict[int, AuthKey] = dict()
 
     @classmethod
     async def get_session(cls,
                           request: Request,
-                          db_resolver: Callable[[], Coroutine[Any, Any, DbConnection]]) -> Optional[JwtSession]:
+                          db_resolver: Callable[[], Coroutine[Any, Any, DbConnection]]) -> JwtSession | None:
         token = request.cookies.get('session')
         if not token:
             return None
@@ -59,24 +59,28 @@ class AuthService(DbServiceBase):
 
         return JwtSession(user_id, secret_key, expires_on)
 
-    async def authorize(self, user: User) -> JSONResponse:
-        auth_key = await self.get_or_create_auth_key(user.id, self.db)
+    async def authorize(self, user: User) -> Response:
+        try:
+            auth_key = await self.get_or_create_auth_key(user.id, self.db)
 
-        jwt = self.make_jwt(auth_key)
+            jwt = self.make_jwt(auth_key)
+
+            response = self.request.make_response(Ok(), data=UserMapping.to_dto(user))
+            response.set_cookie('session', jwt, httponly=True)
+        except Exception:
+            await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, user_id=user.id)
+            raise
 
         await self.history_writer.write(HistoryKind.USER_SIGN_IN_SUCCESS, user.id, None, user_id=user.id)
 
-        response = self.request.make_response(Ok(), data=UserMapping.to_dict(user))
-        response.set_cookie('session', jwt, httponly=True)
-
         return response
 
-    async def reset(self, request_info: RequestInfo, keep_current: bool) -> JSONResponse:
+    async def reset(self, request_info: RequestInfo, keep_current: bool) -> Response:
         auth_key = await self.get_or_create_auth_key(request_info.user_id, self.db)
         auth_key.secret_key = uuid4().hex
 
         async with self.db.transaction():
-            auth_key.secret_key = await self.db.query_scalar(str, self._UPDATE_AUTH_KEY, auth_key)
+            await self.db.query_scalar(str, self._UPDATE_AUTH_KEY, auth_key)
 
             self.AUTH_KEYS_CACHE[auth_key.user_id] = auth_key
 
@@ -147,7 +151,6 @@ class AuthService(DbServiceBase):
         UPDATE auth_keys
         SET secret_key = #secret_key::uuid
         WHERE user_id = #user_id
-        RETURNING secret_key::text
     """)
 
     # endregion

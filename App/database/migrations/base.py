@@ -1,5 +1,6 @@
+__all__ = ('BaseMigration', )
+
 from datetime import datetime
-from typing import Optional
 from passql import DbConnection
 import re
 
@@ -22,7 +23,7 @@ class BaseMigration:
                      str(self.date.day).rjust(2, '0') +
                      str(self.ordering).rjust(4, '0'))
 
-        self.db: Optional[DbConnection] = None
+        self.db: DbConnection | None = None
 
     async def apply(self):
         ...

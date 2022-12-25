@@ -1,50 +1,42 @@
-from os import sep as os_sep
-import traceback
-import logging
-
-__all__ = (
-    'Logger',
-)
+__all__ = ('LoggerFactory', 'init_logging', )
 
 from App.settings import DEBUG
+from typing import Callable
+import logging
 
 
 class Logger:
-    __slots__ = ('location', )
+    __slots__ = ('_logger_prefix', )
 
-    _logger: logging.Logger
+    _log_info: Callable
+    _log_error: Callable
+    _log_critical: Callable
 
-    def __init__(self, location):
-        self.location = os_sep.join(location.split(os_sep)[-2:])
+    def __init__(self, logger_prefix: str):
+        self._logger_prefix = logger_prefix + " "
 
-    def _complex_message(self, text: str, ex: BaseException, params: dict, need_trace=True) -> str:
-        trace = ""
-        if need_trace:
-            for t in reversed(traceback.extract_stack()):
-                if t.filename.endswith(self.location):
-                    trace = f", ln{t.lineno}"
-                    break
-        if params:
-            data = ", " + ", ".join(f"{k}={v}" for k, v in params.items())
-        else:
-            data = ""
-        if ex is None:
-            return f"{text} ~{self.location}{trace}{data}"
-        return f"{text}: {ex} ~{self.location}{trace}{data}"
+    def info(self, message: str, *format_args):
+        self._log_info(self._logger_prefix + message.format(format_args))
 
-    def error(self, _text: str, _ex: BaseException = None, _need_trace: bool = True, **kwargs):
-        self._logger.error(self._complex_message(_text, _ex, kwargs, _need_trace))
+    def error(self, message: str, *format_args, ex: BaseException = None, include_stack: bool = True):
+        self._log_error(self._logger_prefix + message.format(format_args), exc_info=ex, stack_info=include_stack)
 
-    def critical(self, _text: str, _ex: BaseException = None, _need_trace: bool = True, **kwargs):
-        self._logger.critical(self._complex_message(_text, _ex, kwargs, _need_trace))
+    def critical(self, message: str, *format_args, ex: BaseException = None, include_stack: bool = True):
+        self._log_critical(self._logger_prefix + message.format(format_args), exc_info=ex, stack_info=include_stack)
 
-    def info(self, _text: str, **kwargs):
-        if kwargs:
-            self._log_info(f"{_text} ({', '.join(f'{k}={v}' for k, v in kwargs.items())})")
-        else:
-            self._log_info(f"{_text}")
+
+class LoggerFactory:
+    _registered = dict()
 
     @classmethod
-    def init(cls, logger_name: str):
-        cls._logger = logging.getLogger(logger_name)
-        cls._log_info = cls._logger.error if DEBUG else cls._logger.info
+    def get_named(cls, logger_name: str) -> 'Logger':
+        if logger_name not in cls._registered:
+            cls._registered[logger_name] = Logger(f"[{logger_name}]")
+        return cls._registered[logger_name]
+
+
+def init_logging(logger_name: str):
+    logger = logging.getLogger(logger_name)
+    Logger._log_info = logger.error if DEBUG else logger.info
+    Logger._log_error = logger.error
+    Logger._log_critical = logger.critical

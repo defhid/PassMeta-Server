@@ -1,10 +1,10 @@
-from App.models.mapping import HistoryMapping
+from App.models.dto.mapping import HistoryMapping
+from App.models.dto.responses import HistoryPageDto, HistoryKindDto
+from App.models.okbad import *
 from App.services.base import DbServiceBase
 from App.settings import HISTORY_KEEP_MONTHS
-from App.special import *
 from App.models.entities import RequestInfo
-from App.models.dto import HistoryPageParamsDto
-from App.models.factory import PageFactory
+from App.models.dto.requests import HistoryPageParamsDto
 from App.database import MakeSql, History
 from App.translate import HISTORY_KINDS_TRANSLATE_PACK, Locale, reverse_translate_package
 from App.utils.scheduler import SchedulerTask
@@ -19,25 +19,25 @@ class HistoryService(DbServiceBase):
     __slots__ = ()
 
     HISTORY_KINDS_CACHE = reverse_translate_package(HISTORY_KINDS_TRANSLATE_PACK,
-                                                    lambda kind, name: {'id': kind, 'name': name})
+                                                    lambda kind, name: HistoryKindDto.construct(id=kind, name=name))
 
     @classmethod
-    def get_history_kinds(cls, request: RequestInfo) -> List[dict]:
+    def get_history_kinds(cls, request: RequestInfo) -> list[HistoryKindDto]:
         kinds = cls.HISTORY_KINDS_CACHE.get(request.locale)
         return kinds if kinds is not None else cls.HISTORY_KINDS_CACHE.get(Locale.DEFAULT)
 
-    async def get_page(self, page: HistoryPageParamsDto) -> Dict:
+    async def get_page(self, page: HistoryPageParamsDto) -> HistoryPageDto:
         params = {
             'history_table': MakeSql(f"histories_{page.month.year}_{page.month.month:02}"),
-            'offset': page.offset,
-            'limit': page.limit,
+            'offset': page.page_size * page.page_index,
+            'limit': page.page_size,
             'affected_user_id': self.request.user_id,
             'kinds_condition': MakeSql.empty()
         }
 
         if page.kind:
             try:
-                params['kinds'] = (int(k) for k in page.kind.split(','))
+                params['kinds'] = [int(k) for k in page.kind.split(',')]
                 params['kinds_condition'] = self._KINDS_CONDITION
             except ValueError:
                 raise Bad('kind', VAL_ERR, MORE.allowed('<id:int>,...'))
@@ -51,11 +51,11 @@ class HistoryService(DbServiceBase):
             total = 0
             histories = []
 
-        return PageFactory.create(
-            [HistoryMapping.to_dict(h, self.request.locale) for h in histories],
-            total,
-            page.offset,
-            page.limit
+        return HistoryPageDto.construct(
+            list=[HistoryMapping.to_dto(h, self.request.locale) for h in histories],
+            total=total,
+            page_size=page.page_size,
+            page_index=page.page_index
         )
 
     @classmethod
@@ -95,7 +95,7 @@ class HistoryService(DbServiceBase):
         OFFSET #offset LIMIT #limit
     """)
 
-    _KINDS_CONDITION = MakeSql("""AND h.kind_id IN (#kinds)""")
+    _KINDS_CONDITION = MakeSql("""AND h.kind_id = any(#kinds)""")
 
     _SELECT_OLD_TABLES = MakeSql("""
         WITH history_tables AS (
