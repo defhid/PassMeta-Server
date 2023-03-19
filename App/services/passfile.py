@@ -67,7 +67,7 @@ class PassFileService(DbServiceBase):
             })
 
             if passfile_version is None:
-                if version is None:
+                if version is None or version == 0:
                     return bytes()
                 raise Bad('version', NOT_EXIST_ERR)
 
@@ -181,7 +181,7 @@ class PassFileService(DbServiceBase):
         else:
             return passfile
 
-    async def delete_passfile(self, passfile_id: int, check_password: str):
+    async def delete_passfile(self, passfile_id: int):
         """ Raises: Bad.
         """
         async with self.history_writer.operation(
@@ -195,11 +195,6 @@ class PassFileService(DbServiceBase):
 
             if passfile.user_id != self.request.user_id:
                 raise Bad('passfile_id', ACCESS_ERR)
-
-            user = await UserService(self.db, self.request).get_user_by_id(self.request.user_id)
-
-            if not CryptoUtils.check_user_password(check_password, user.pwd):
-                raise Bad("check_password", ACCESS_ERR)
 
             passfile_versions = await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {
                 'passfile_id': passfile.id,

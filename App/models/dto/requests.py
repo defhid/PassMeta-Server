@@ -4,7 +4,6 @@ __all__ = (
     'UserPatchDto',
     'PassfilePostDto',
     'PassfilePatchDto',
-    'PassfileDeleteDto',
     'HistoryPageParamsDto',
 )
 
@@ -52,13 +51,6 @@ class PassfilePostDto(BaseModel):
 class PassfilePatchDto(BaseModel):
     name: str
     color: str | None
-
-    class Config:
-        extra = "forbid"
-
-
-class PassfileDeleteDto(BaseModel):
-    check_password: str
 
     class Config:
         extra = "forbid"
