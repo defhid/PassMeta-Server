@@ -122,6 +122,8 @@ class AuthService(DbServiceBase):
             auth_key.secret_key = uuid4().hex
             await db.execute(cls._INSERT_AUTH_KEY, auth_key)
 
+        auth_key.secret_key = auth_key.secret_key.replace('-', '')
+
         cls.AUTH_KEYS_CACHE[user_id] = auth_key
 
         return auth_key
