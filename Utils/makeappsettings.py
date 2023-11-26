@@ -17,7 +17,7 @@ def main():
             print("Canceled!")
             return
 
-    app_id = uuid4()
+    app_id = uuid4().hex
     key_phrase = Fernet.generate_key()
 
     username = input("Input PostgreSQL username: ").strip()
