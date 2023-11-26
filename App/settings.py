@@ -10,7 +10,7 @@ import os as __os
 
 # region Common
 
-APP_VERSION = "1.0.6"
+APP_VERSION = "2.0.0"
 APP_ID: str  # [REQUIRED]: Unique PassMeta server identifier
 
 SECRET_KEY_BYTES: bytes  # [REQUIRED]: Generated key from Fernet.generate_key()

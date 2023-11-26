@@ -4,7 +4,7 @@ from fastapi import FastAPI, File
 from passql import DbConnection
 
 from App.controllers.di import Deps
-from App.models.dto.requests import PassfilePostDto, PassfilePatchDto, PassfileDeleteDto
+from App.models.dto.requests import PassfilePostDto, PassfilePatchDto
 from App.models.dto.responses import ResultDto, PassfileDto, PassfileVersionDto, ERROR_RESPONSES
 from App.models.entities import RequestInfo
 from App.models.dto.mapping import PassFileMapping, PassFileVersionMapping
@@ -85,12 +85,11 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
 
     @app.delete("/passfiles/{passfile_id}", response_model=ResultDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
-                   body: PassfileDeleteDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
-        await PassFileService(db, request).delete_passfile(passfile_id, body.check_password)
+        await PassFileService(db, request).delete_passfile(passfile_id)
         return request.make_response(Ok())
 
 

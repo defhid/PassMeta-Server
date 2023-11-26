@@ -37,18 +37,25 @@ class RouteWithErrorsLogging(APIRoute):
     def get_route_handler(self):
         original_route_handler = super().get_route_handler()
 
+        def log_error(path: str, exception: Exception):
+            self.logger.error("Request error, url={0}", path, ex=exception)
+
         async def custom_route_handler(request: Request):
             try:
                 return await original_route_handler(request)
             except Result as ex:
+                if DEBUG:
+                    log_error(request.url.path, ex)
                 return request_utils.build_request_info_without_session(request).make_response(ex)
 
             except RequestValidationError as ex:
+                if DEBUG:
+                    log_error(request.url.path, ex)
                 return request_utils.build_request_info_without_session(request).make_response(
                     Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})))
 
             except Exception as ex:
-                self.logger.error("Request error, url={0}", request.url.path, ex=ex)
+                log_error(request.url.path, ex)
                 return request_utils.build_request_info_without_session(request).make_response(
                     Bad(None, SERVER_ERR, MORE.text(str(ex)) if ex.args else None))
 

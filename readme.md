@@ -1,13 +1,13 @@
 # PassMeta Server — *your passwords SAFE*
-#### © 2022 Vladislav Mironov
+#### © 2023 Vladislav Mironov
 
 
 ### About the project
 PassMeta Server is a part of PassMeta System, which provides reliable
 <br>
 distributed password storage and password management tools.
-<br>
 
+**Desktop** application is [here](https://github.com/defhid/PassMeta-DesktopApp).
 
 ### Technologies
 *Python 3.11, FastAPI, asyncpg + passql, PostgreSQL.*
