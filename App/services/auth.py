@@ -75,7 +75,13 @@ class AuthService(DbServiceBase):
 
         return response
 
-    async def reset(self, request_info: RequestInfo, keep_current: bool) -> Response:
+    @staticmethod
+    def reset(request_info: RequestInfo) -> Response:
+        response = request_info.make_response(Ok())
+        response.set_cookie('session', "", httponly=True)
+        return response
+
+    async def reset_all(self, request_info: RequestInfo, keep_current: bool) -> Response:
         auth_key = await self.get_or_create_auth_key(request_info.user_id, self.db)
         auth_key.secret_key = uuid4().hex
 

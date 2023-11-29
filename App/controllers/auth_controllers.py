@@ -21,19 +21,24 @@ def register_auth_controllers(app: FastAPI, inject: Deps):
         user = await service.authenticate(body)
         return await service.authorize(user)
 
+    @app.post("/auth/reset/me", response_model=ResultDto, responses=ERROR_RESPONSES)
+    async def ctrl(request: RequestInfo = inject.REQUEST_INFO):
+
+        return AuthService.reset(request)
+
     @app.post("/auth/reset/all", response_model=ResultDto, responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
-        return await AuthService(db, request).reset(request, False)
+        return await AuthService(db, request).reset_all(request, False)
 
     @app.post("/auth/reset/all-except-me", response_model=ResultDto, responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
-        return await AuthService(db, request).reset(request, True)
+        return await AuthService(db, request).reset_all(request, True)
 
 
 class UserResultDto(ResultDto):
