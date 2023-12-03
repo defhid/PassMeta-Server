@@ -40,24 +40,27 @@ class RouteWithErrorsLogging(APIRoute):
         def log_error(path: str, exception: Exception):
             self.logger.error("Request error, url={0}", path, ex=exception)
 
+        def log_warn(path: str, exception: Result):
+            self.logger.info("Request error, url={0}, code={1}, more={2}", path, exception.code.name, exception.more)
+
         async def custom_route_handler(request: Request):
             try:
                 return await original_route_handler(request)
             except Result as ex:
                 if DEBUG:
-                    log_error(request.url.path, ex)
-                return request_utils.build_request_info_without_session(request).make_response(ex)
+                    log_warn(request.url.path, ex)
+                return request_utils.build_request_info_without_session(request).make_result_response(ex)
 
             except RequestValidationError as ex:
                 if DEBUG:
                     log_error(request.url.path, ex)
-                return request_utils.build_request_info_without_session(request).make_response(
-                    Bad(None, BAD_REQUEST_ERR, MORE.info({"validation error": ex.errors()})))
+                return request_utils.build_request_info_without_session(request).make_result_response(
+                    Bad(VALIDATION_ERR, MORE.info("schema: " + str(ex.errors()))))
 
             except Exception as ex:
                 log_error(request.url.path, ex)
-                return request_utils.build_request_info_without_session(request).make_response(
-                    Bad(None, SERVER_ERR, MORE.text(str(ex)) if ex.args else None))
+                return request_utils.build_request_info_without_session(request).make_result_response(
+                    Bad(SERVER_ERR, MORE.info(str(ex)) if ex.args else None))
 
         return custom_route_handler
 

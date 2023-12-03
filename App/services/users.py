@@ -39,10 +39,11 @@ class UserService(DbServiceBase):
             existing_user_id = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
             if existing_user_id is not None:
                 history_operation.with_affected_user(existing_user_id)
-                if result.success:
-                    raise Bad('login', ALREADY_USED_ERR)
+                if result:
+                    raise Bad(VALIDATION_ERR, MORE.value_already_used(WHAT.USER.login))
                 else:
-                    result.sub.append(Bad('login', ALREADY_USED_ERR))
+                    result.more = [] if result.more is None else result.more
+                    result.more.append(MORE.value_already_used(WHAT.USER.login))
 
             result.raise_if_failure()
 
@@ -65,18 +66,18 @@ class UserService(DbServiceBase):
             history_operation.with_affected_user(user.id)
 
             if user.id != self.request.user_id:
-                raise Bad('user_id', ACCESS_ERR)
+                raise Bad(ACCESS_ERR, MORE.value_wrong(WHAT.USER.user_id))
 
             password_confirm_required = data.login is not None or data.password is not None
 
             if password_confirm_required:
                 if data.password_confirm is None:
                     await history_operation.raise_bad(
-                        Bad('password_confirm', VAL_MISSED_ERR), "CONF MISS")
+                        Bad(VALIDATION_ERR, MORE.value_wrong(WHAT.USER.password_confirm)), "CONF MISS")
 
                 if not CryptoUtils.check_user_password(data.password_confirm, user.pwd):
                     await history_operation.raise_bad(
-                        Bad('password_confirm', WRONG_VAL_ERR), "CONF WRONG")
+                        Bad(VALIDATION_ERR, MORE.value_wrong(WHAT.USER.password_confirm)), "CONF WRONG")
 
             fields = ('login', 'full_name')
             for field in fields:
@@ -88,10 +89,11 @@ class UserService(DbServiceBase):
 
             user_id_by_login = await self.db.query_scalar(int, self._SELECT_ID_BY_LOGIN, user)
             if user_id_by_login is not None and user_id_by_login != user.id:
-                if result.success:
-                    result = Bad('login', ALREADY_USED_ERR)
+                if result:
+                    result = Bad(VALIDATION_ERR, MORE.value_already_used(WHAT.USER.login))
                 else:
-                    result.sub.append(Bad('login', ALREADY_USED_ERR))
+                    result.more = [] if result.more is None else result.more
+                    result.more.append(MORE.value_already_used(WHAT.USER.login))
 
             result.raise_if_failure()
 
@@ -108,29 +110,29 @@ class UserService(DbServiceBase):
         user.login = user.login.strip()
 
         if len(user.login) < c.LOGIN_LEN_MIN:
-            errors.append(Bad('login', TOO_SHORT_ERR, MORE.min_allowed(c.LOGIN_LEN_MIN)))
+            errors.append(MORE.value_short(WHAT.USER.login, c.LOGIN_LEN_MIN))
         if len(user.login) > c.LOGIN_LEN_MAX:
-            errors.append(Bad('login', TOO_LONG_ERR, MORE.max_allowed(c.LOGIN_LEN_MAX)))
+            errors.append(MORE.value_long(WHAT.USER.login, c.LOGIN_LEN_MAX))
 
         user.full_name = user.full_name.strip()
 
         if len(user.full_name) < c.FULL_NAME_LEN_MIN:
-            errors.append(Bad('full_name', TOO_SHORT_ERR, MORE.min_allowed(c.FULL_NAME_LEN_MIN)))
+            errors.append(MORE.value_short(WHAT.USER.full_name, c.FULL_NAME_LEN_MIN))
         if len(user.full_name) > c.FULL_NAME_LEN_MAX:
-            errors.append(Bad('full_name', TOO_LONG_ERR, MORE.max_allowed(c.FULL_NAME_LEN_MAX)))
+            errors.append(MORE.value_long(WHAT.USER.full_name, c.FULL_NAME_LEN_MAX))
 
         if password is not None:
             if len(password) < c.PASSWORD_RAW_LEN_MIN:
-                errors.append(Bad('password', TOO_SHORT_ERR, MORE.min_allowed(c.PASSWORD_RAW_LEN_MIN)))
+                errors.append(MORE.value_short(WHAT.USER.password, c.PASSWORD_RAW_LEN_MIN))
             if len(password) > c.PASSWORD_RAW_LEN_MAX:
-                errors.append(Bad('password', TOO_LONG_ERR, MORE.max_allowed(c.PASSWORD_RAW_LEN_MAX)))
+                errors.append(MORE.value_long(WHAT.USER.password, c.PASSWORD_RAW_LEN_MAX))
 
             user.pwd = CryptoUtils.make_user_pwd(password)
 
         elif not user.id:
-            errors.append(Bad('password', VAL_MISSED_ERR))
+            errors.append(MORE.value_missed(WHAT.USER.password))
 
-        return Bad(None, DATA_ERR, sub=errors) if errors else Ok()
+        return Bad(VALIDATION_ERR, errors) if errors else Ok()
 
     # region SQL
 

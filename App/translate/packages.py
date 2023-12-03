@@ -1,116 +1,136 @@
 __all__ = (
-    'OK_BAD_MESSAGES_TRANSLATE_PACK',
-    'OK_BAD_MORE_TYPES_TRANSLATE_PACK',
+    'OK_BAD_TRANSLATE_PACK',
+    'OK_BAD_MORE_TRANSLATE_PACK',
+    'OK_BAD_MORE_WHAT_TRANSLATE_PACK',
     'HISTORY_KINDS_TRANSLATE_PACK',
 )
 
 from App.translate.helpers import loc
 from App.models.enums import HistoryKind
-import App.models.okbad.more_type as more
+from App.models.okbad.result_more_what import WHAT
+import App.models.okbad.result_more_code as more
 import App.models.okbad.result_code as result
 
 
-OK_BAD_MESSAGES_TRANSLATE_PACK = {
+OK_BAD_TRANSLATE_PACK = {
     result.ACCESS_ERR: loc(
         default="access error",
         ru="ошибка доступа",
-    ),
-    result.ALREADY_USED_ERR: loc(
-        default="already used",
-        ru="уже используется",
     ),
     result.AUTH_ERR: loc(
         default="authorization error",
         ru="ошибка авторизации",
     ),
-    result.BAD_REQUEST_ERR: loc(
-        default="bad request",
-        ru="некорректный запрос",
-    ),
-    result.DATA_ERR: loc(
+    result.VALIDATION_ERR: loc(
         default="incorrect data",
         ru="некорректные данные",
-    ),
-    result.FORMAT_ERR: loc(
-        default="incorrect format",
-        ru="некорректный формат",
-    ),
-    result.FROZEN_ERR: loc(
-        default="frozen (not active)",
-        ru="заблокирован (не активен)"
-    ),
-    result.NOT_EXIST_ERR: loc(
-        default="existence error",
-        ru="не существует",
-    ),
-    result.NOT_IMPLEMENTED_ERR: loc(
-        default="functionality is not implemented",
-        ru="функционал не реализован",
     ),
     result.OK: loc(
         default="ok",
         ru="ок",
     ),
-    result.PROHIBITED_ERR: loc(
-        default="prohibited",
-        ru="запрещено",
-    ),
     result.SERVER_ERR: loc(
         default="server error",
         ru="ошибка сервера",
     ),
-    result.TOO_FEW_ERR: loc(
-        default="too few",
-        ru="слишком мало",
+}
+
+
+OK_BAD_MORE_TRANSLATE_PACK = {
+    more.VALUE_FEW: loc(
+        default="too few, minimum is {0}",
+        ru="слишком мало, минимум {0}",
     ),
-    result.TOO_LONG_ERR: loc(
-        default="too long",
-        ru="слишком длинное значение",
+    more.VALUE_MUCH: loc(
+        default="too much, maximum is {0}",
+        ru="слишком много, максимум {0",
     ),
-    result.TOO_MUCH_ERR: loc(
-        default="too much",
-        ru="слишком много",
+    more.VALUE_SHORT: loc(
+        default="too short, minimum is {0}",
+        ru="слишком короткое значение, минимум {0}",
     ),
-    result.TOO_SHORT_ERR: loc(
-        default="too short",
-        ru="слишком короткое значение",
+    more.VALUE_LONG: loc(
+        default="too long, maximum is {0}",
+        ru="слишком длинное значение, максимум {0}",
     ),
-    result.VAL_ERR: loc(
-        default="incorrect value",
-        ru="некорректное значение",
+    more.VALUE_MISSED: loc(
+        default="missed value",
+        ru="значение пропущено",
     ),
-    result.VAL_MISSED_ERR: loc(
-        default="value missed",
-        ru="пропущено значение",
-    ),
-    result.WRONG_VAL_ERR: loc(
+    more.VALUE_WRONG: loc(
         default="wrong value",
-        ru="неверное значение",
+        ru="значение неверное",
+    ),
+    more.VALUE_ALREADY_USED: loc(
+        default="value is already used",
+        ru="значение уже используется",
+    ),
+    more.FORMAT_WRONG: loc(
+        default="wrong format, required '{0}'",
+        ru="неверный формат, требуется '{0}'",
+    ),
+    more.FROZEN: loc(
+        default="frozen (not active)",
+        ru="заблокирован (не активен)"
+    ),
+    more.NOT_FOUND: loc(
+        default="not found",
+        ru="не найден",
     ),
 }
 
 
-OK_BAD_MORE_TYPES_TRANSLATE_PACK = {
-    more.REQUIRED: loc(
-        default="Required",
-        ru="Требуется",
+OK_BAD_MORE_WHAT_TRANSLATE_PACK = {
+    WHAT.USER.user_id: loc(
+        default="user id",
+        ru="id пользователя",
     ),
-    more.ALLOWED: loc(
-        default="Allowed",
-        ru="Разрешено",
+    WHAT.USER.user: loc(
+        default="user",
+        ru="пользователь",
     ),
-    more.DISALLOWED: loc(
-        default="Disallowed",
-        ru="Запрещено",
+    WHAT.USER.login: loc(
+        default="login",
+        ru="логин",
     ),
-    more.MIN_ALLOWED: loc(
-        default="Min allowed",
-        ru="Разрешено (мин.)",
+    WHAT.USER.full_name: loc(
+        default="name",
+        ru="Имя",
     ),
-    more.MAX_ALLOWED: loc(
-        default="Max allowed",
-        ru="Разрешено (макс.)",
-    )
+    WHAT.USER.password: loc(
+        default="password",
+        ru="пароль",
+    ),
+    WHAT.USER.password_confirm: loc(
+        default="password confirmation",
+        ru="подтверждение пароля",
+    ),
+
+    WHAT.PASSFILE.passfile_id: loc(
+        default="passfile id",
+        ru="id пакета паролей",
+    ),
+    WHAT.PASSFILE.version: loc(
+        default="version",
+        ru="версия",
+    ),
+    WHAT.PASSFILE.name: loc(
+        default="name",
+        ru="название",
+    ),
+    WHAT.PASSFILE.color: loc(
+        default="color",
+        ru="цвет",
+    ),
+    WHAT.PASSFILE.created_on: loc(
+        default="creation date",
+        ru="дата создания",
+    ),
+
+    WHAT.HISTORY.kind: loc(
+        default="kind",
+        ru="вид",
+    ),
 }
 
 

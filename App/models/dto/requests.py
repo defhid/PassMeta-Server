@@ -66,4 +66,4 @@ class PageParamsDto(BaseModel):
 
 class HistoryPageParamsDto(PageParamsDto):
     month: date
-    kind: str = None
+    kind: str | None = None

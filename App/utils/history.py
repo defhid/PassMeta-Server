@@ -3,6 +3,7 @@ __all__ = ('HistoryWriter', )
 from App.database import MakeSql, History
 from App.models.entities import RequestInfo
 from App.models.okbad import *
+from App.models.okbad.result_more_code import NOT_FOUND
 from App.utils.logging import LoggerFactory
 
 from passql import DbConnection
@@ -161,8 +162,8 @@ class HistoryOperation:
 def get_more_from_bad(bad: Bad):
     if bad.code is ACCESS_ERR:
         return "ACCESS"
-    if bad.code is NOT_EXIST_ERR:
-        return "NOT EXIST"
     if bad.code is SERVER_ERR:
         return "SERVER ERR"
+    if any(filter(lambda x: x.code is NOT_FOUND, bad.more)):
+        return "NOT EXIST"
     return "BAD" + str(bad.code.code)

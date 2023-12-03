@@ -41,7 +41,7 @@ class CryptoUtils:
             return Fernet(SECRET_KEY_BYTES).encrypt(content)
         except Exception as e:
             cls.logger.error("Passfile encryption error!", e)
-            raise Bad(None, SERVER_ERR, MORE.text("Server-side encryption failed"))
+            raise Bad(SERVER_ERR, MORE.info("Server-side encryption failed"))
 
     @classmethod
     def decrypt_passfile_smth(cls, content: bytes) -> bytes:
@@ -49,5 +49,5 @@ class CryptoUtils:
             return Fernet(SECRET_KEY_BYTES).decrypt(content)
         except Exception as e:
             cls.logger.error("Passfile decryption error!", e)
-            raise Bad(None, SERVER_ERR, MORE.text("Server-side decryption failed"))
+            raise Bad(SERVER_ERR, MORE.info("Server-side decryption failed"))
 

@@ -65,7 +65,7 @@ class AuthService(DbServiceBase):
 
             jwt = self.make_jwt(auth_key)
 
-            response = self.request.make_response(Ok(), data=UserMapping.to_dto(user))
+            response = self.request.make_response(UserMapping.to_dto(user))
             response.set_cookie('session', jwt, httponly=True)
         except Exception:
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, user_id=user.id)
@@ -77,7 +77,7 @@ class AuthService(DbServiceBase):
 
     @staticmethod
     def reset(request_info: RequestInfo) -> Response:
-        response = request_info.make_response(Ok())
+        response = request_info.make_response()
         response.set_cookie('session', "", httponly=True)
         return response
 
@@ -94,7 +94,7 @@ class AuthService(DbServiceBase):
 
         jwt = self.make_jwt(auth_key) if keep_current else ""
 
-        response = request_info.make_response(Ok())
+        response = request_info.make_response()
         response.set_cookie('session', jwt, httponly=True)
 
         return response
@@ -106,15 +106,15 @@ class AuthService(DbServiceBase):
 
         if user is None:
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, None, None, None)
-            raise Bad('user', NOT_EXIST_ERR)
+            raise Bad(VALIDATION_ERR, MORE.not_found(WHAT.USER.user))
 
         if not CryptoUtils.check_user_password(data.password, user.pwd):
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, "PWD")
-            raise Bad('user', NOT_EXIST_ERR)
+            raise Bad(VALIDATION_ERR, MORE.not_found(WHAT.USER.user))
 
         if not user.is_active:
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, "INACTIVE")
-            raise Bad('user', FROZEN_ERR)
+            raise Bad(AUTH_ERR, MORE.frozen(WHAT.USER.user))
 
         return user
 

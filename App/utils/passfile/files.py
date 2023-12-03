@@ -46,7 +46,7 @@ class PassFileUtils:
                 await f.write(bytes_content)
         except Exception as ex:
             cls.logger.critical("File writing error! (path: {0})", path, ex=ex)
-            raise Bad(None, SERVER_ERR)
+            raise Bad(SERVER_ERR)
 
     @classmethod
     async def read_file(cls, pfv: 'PassFileVersion') -> bytes:
@@ -63,7 +63,7 @@ class PassFileUtils:
                 content = await f.read()
         except Exception as ex:
             cls.logger.critical("File reading error! (path: {0})", path, ex=ex)
-            raise Bad(None, SERVER_ERR)
+            raise Bad(SERVER_ERR)
         else:
             return CryptoUtils.decrypt_passfile_smth(content)
 

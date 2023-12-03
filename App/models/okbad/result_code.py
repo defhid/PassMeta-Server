@@ -20,40 +20,8 @@ class ResultCode:
         raise TypeError(f"{type(self).__name__} object is immutable!")
 
 
-ACCESS_ERR = ResultCode(1, 403, "ACCESS ERROR")
-
-ALREADY_USED_ERR = ResultCode(2, 400, "ALREADY USED")
-
-AUTH_ERR = ResultCode(3, 401, "AUTH ERROR")
-
-BAD_REQUEST_ERR = ResultCode(4, 400, "BAD REQUEST")
-
-DATA_ERR = ResultCode(5, 422, "INVALID DATA")
-
-FORMAT_ERR = ResultCode(6, 400, "INCORRECT FORMAT")
-
-FROZEN_ERR = ResultCode(7, 400, "FROZEN")
-
-NOT_EXIST_ERR = ResultCode(8, 404, "NOT EXIST")
-
-NOT_IMPLEMENTED_ERR = ResultCode(9, 501, "NOT IMPLEMENTED")
-
 OK = ResultCode(0, 200, "OK")
-
-PROHIBITED_ERR = ResultCode(10, 400, "PROHIBITED")
-
-SERVER_ERR = ResultCode(11, 500, "SERVER ERROR")
-
-TOO_FEW_ERR = ResultCode(12, 422, "TOO FEW")
-
-TOO_LONG_ERR = ResultCode(13, 422, "TOO LONG")
-
-TOO_MUCH_ERR = ResultCode(14, 422, "TOO MUCH")
-
-TOO_SHORT_ERR = ResultCode(15, 422, "TOO SHORT")
-
-VAL_ERR = ResultCode(16, 422, "INCORRECT VALUE")
-
-VAL_MISSED_ERR = ResultCode(17, 422, "VALUE MISSED")
-
-WRONG_VAL_ERR = ResultCode(18, 422, "WRONG VALUE")
+ACCESS_ERR = ResultCode(1, 403, "ACCESS ERROR")
+AUTH_ERR = ResultCode(2, 401, "AUTH ERROR")
+VALIDATION_ERR = ResultCode(3, 400, "INVALID DATA")
+SERVER_ERR = ResultCode(4, 500, "SERVER ERROR")

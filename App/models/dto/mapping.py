@@ -9,44 +9,25 @@ __all__ = (
 from App.database import PassFile, User, History, PassFileVersion
 from App.models.dto.responses import *
 from App.models.okbad import Result
-from App.translate import HISTORY_KINDS_TRANSLATE_PACK, OK_BAD_MESSAGES_TRANSLATE_PACK, get_package_text
+from App.translate import HISTORY_KINDS_TRANSLATE_PACK, OK_BAD_TRANSLATE_PACK, get_package_text
 
-from typing import Any
 import ipaddress
 
 
 class ResultMapping:
     @classmethod
-    def to_dto(cls, res: Result, locale: str, data: Any = None) -> FullResultDto:
-        d = {
-            'code': res.code.code,
-            'msg': get_package_text(OK_BAD_MESSAGES_TRANSLATE_PACK,
-                                    res.code, locale, res.code.name)
-        }
-
-        if data is not None:
-            d['data'] = data
-
-        if res.more:
-            d['more'] = res.more.to_dict(locale)
-
-        if res.what:
-            if 'more' not in d:
-                d['more'] = {}
-            d['more']['what'] = res.what
-
-        if res.sub:
-            if 'more' not in d:
-                d['more'] = {}
-            d['more']['sub'] = [cls.to_dto(s, locale) for s in res.sub]
-
-        return FullResultDto.construct(**d)
+    def to_dto(cls, res: Result, locale: str) -> FullResultDto:
+        return FullResultDto.model_construct(
+            code=res.code.code,
+            msg=get_package_text(OK_BAD_TRANSLATE_PACK, res.code, locale, res.code.name),
+            more=list(map(lambda x: x.to_message(locale), res.more)) if res.more else None,
+        )
 
 
 class HistoryMapping:
     @classmethod
     def to_dto(cls, his: History, locale: str) -> HistoryDto:
-        return HistoryDto.construct(
+        return HistoryDto.model_construct(
             id=his.id,
             kind=get_package_text(HISTORY_KINDS_TRANSLATE_PACK, his.kind_id, locale, his.kind_id),
             user_ip=str(ipaddress.ip_address(his.user_ip)),
@@ -57,40 +38,40 @@ class HistoryMapping:
             affected_passfile_id=his.affected_passfile_id,
             affected_passfile_name=his.affected_passfile_name,
             more=his.more.strip(),
-            written_on=his.written_on.isoformat(),
+            written_on=his.written_on,
         )
 
 
 class PassFileMapping:
     @classmethod
     def to_dto(cls, pf: PassFile) -> PassfileDto:
-        return PassfileDto.construct(
+        return PassfileDto.model_construct(
             id=pf.id,
             name=pf.name,
             color=pf.color,
             type_id=pf.type_id,
             user_id=pf.user_id,
             version=pf.version,
-            created_on=pf.created_on.isoformat(),
-            info_changed_on=pf.info_changed_on.isoformat(),
-            version_changed_on=pf.version_changed_on.isoformat(),
+            created_on=pf.created_on,
+            info_changed_on=pf.info_changed_on,
+            version_changed_on=pf.version_changed_on,
         )
 
 
 class PassFileVersionMapping:
     @classmethod
     def to_dto(cls, pfv: PassFileVersion) -> PassfileVersionDto:
-        return PassfileVersionDto.construct(
+        return PassfileVersionDto.model_construct(
             passfile_id=pfv.passfile_id,
             version=pfv.version,
-            version_date=pfv.version_date.isoformat(),
+            version_date=pfv.version_date,
         )
 
 
 class UserMapping:
     @classmethod
     def to_dto(cls, usr: User) -> UserDto:
-        return UserDto.construct(
+        return UserDto.model_construct(
             id=usr.id,
             login=usr.login,
             full_name=usr.full_name,

@@ -1,13 +1,11 @@
 from App.models.okbad import *
 from App.services.base import DbServiceBase
-from App.services import UserService
 from App.settings import PASSFILE_KEEP_DAY_VERSIONS, PASSFILE_KEEP_VERSIONS
 
 from App.models.dto.requests import PassfilePostDto, PassfilePatchDto
 from App.models.enums import HistoryKind
 
 from App.database import MakeSql, User, PassFile, PassFileVersion
-from App.utils.crypto import CryptoUtils
 from App.utils.passfile import PassFileUtils, ExcessVersionsFinder
 
 import re
@@ -49,7 +47,7 @@ class PassFileService(DbServiceBase):
             history_operation.with_affected_user(passfile.user_id)
     
             if passfile.user_id != self.request.user_id:
-                raise Bad('passfile_id', ACCESS_ERR)
+                raise Bad(ACCESS_ERR, MORE.value_wrong(WHAT.PASSFILE.passfile_id))
 
             return passfile
 
@@ -69,12 +67,12 @@ class PassFileService(DbServiceBase):
             if passfile_version is None:
                 if version is None or version == 0:
                     return bytes()
-                raise Bad('version', NOT_EXIST_ERR)
+                raise Bad(VALIDATION_ERR, MORE.not_found(WHAT.PASSFILE.version))
 
             history_operation.with_affected_user(passfile_version.user_id)
     
             if passfile_version.user_id != self.request.user_id:
-                raise Bad('passfile_id', ACCESS_ERR)
+                raise Bad(ACCESS_ERR, MORE.value_wrong(WHAT.PASSFILE.passfile_id))
 
             return await PassFileUtils.read_file(passfile_version)
 
@@ -91,7 +89,7 @@ class PassFileService(DbServiceBase):
             history_operation.with_affected_user(passfile.user_id)
     
             if passfile.user_id != self.request.user_id:
-                raise Bad('passfile_id', ACCESS_ERR)
+                raise Bad(ACCESS_ERR, MORE.value_wrong(WHAT.PASSFILE.passfile_id))
     
             versions = await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {
                 'passfile_id': passfile.id
@@ -138,7 +136,7 @@ class PassFileService(DbServiceBase):
             history_operation.with_affected_user(passfile.user_id)
             
             if passfile.user_id != self.request.user_id:
-                raise Bad(None, ACCESS_ERR)
+                raise Bad(ACCESS_ERR)
 
             self._validate_info(data)
 
@@ -166,7 +164,7 @@ class PassFileService(DbServiceBase):
                 history_operation.with_affected_user(passfile.user_id)
 
                 if passfile.user_id != self.request.user_id:
-                    raise Bad(None, ACCESS_ERR)
+                    raise Bad(ACCESS_ERR)
 
                 await history_operation.start_db_transaction()
 
@@ -194,7 +192,7 @@ class PassFileService(DbServiceBase):
             history_operation.with_affected_user(passfile.user_id)
 
             if passfile.user_id != self.request.user_id:
-                raise Bad('passfile_id', ACCESS_ERR)
+                raise Bad(ACCESS_ERR, MORE.value_wrong(WHAT.PASSFILE.passfile_id))
 
             passfile_versions = await self.db.query_list(PassFileVersion, self._SELECT_VERSION_LIST, {
                 'passfile_id': passfile.id,
@@ -210,7 +208,7 @@ class PassFileService(DbServiceBase):
     async def _get_passfile_or_raise(self, passfile_id: int) -> PassFile:
         passfile = await self.db.query_first(PassFile, self._SELECT_BY_ID, {'id': passfile_id})
         if passfile is None:
-            raise Bad('passfile_id', NOT_EXIST_ERR)
+            raise Bad(VALIDATION_ERR, MORE.not_found(WHAT.PASSFILE.passfile_id))
 
         return passfile
 
@@ -250,7 +248,7 @@ class PassFileService(DbServiceBase):
         cls._validate_info(data)
 
         if data.created_on.timestamp() > datetime.datetime.now().timestamp():
-            raise Bad('created_on', TOO_MUCH_ERR, MORE.max_allowed(f"UTC {datetime.datetime.utcnow()}"))
+            raise Bad(VALIDATION_ERR, MORE.value_much(WHAT.PASSFILE.created_on, f"UTC {datetime.datetime.utcnow()}"))
 
     @staticmethod
     def _validate_info(data):
@@ -258,23 +256,23 @@ class PassFileService(DbServiceBase):
         c = PassFile.Constrains
 
         if not data.name:
-            errors.append(Bad('name', VAL_MISSED_ERR))
+            errors.append(MORE.value_missed(WHAT.PASSFILE.name))
 
         data.name = data.name.strip()
         if len(data.name) < c.NAME_LEN_MIN:
-            errors.append(Bad('name', TOO_SHORT_ERR, MORE.min_allowed(c.NAME_LEN_MIN)))
+            errors.append(MORE.value_short(WHAT.PASSFILE.name, c.NAME_LEN_MIN))
         elif len(data.name) > c.NAME_LEN_MAX:
-            errors.append(Bad('name', TOO_LONG_ERR, MORE.max_allowed(c.NAME_LEN_MAX)))
+            errors.append(MORE.value_long(WHAT.PASSFILE.name, c.NAME_LEN_MAX))
 
         if not data.color:
             data.color = None
         else:
             data.color = data.color.lstrip("#").upper()
             if not re.fullmatch(re.compile(r'^[\dA-F]{6}$'), data.color):
-                errors.append(Bad('color', VAL_ERR, MORE.allowed("HEX")))
+                errors.append(MORE.format_wrong(WHAT.PASSFILE.color, "HEX"))
 
         if errors:
-            raise Bad(None, DATA_ERR, sub=errors)
+            raise Bad(VALIDATION_ERR, errors)
 
     # region SQL
 

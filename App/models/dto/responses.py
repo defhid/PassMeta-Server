@@ -5,25 +5,22 @@ __all__ = (
     'PageDto',
     'UserDto',
     'AppInfoDto',
+
     'PassfileDto',
+    'PassfileListDto',
     'PassfileVersionDto',
-    'HistoryKindDto',
+    'PassfileVersionListDto',
+
     'HistoryDto',
     'HistoryPageDto',
+    'HistoryKindDto',
+    'HistoryKindListDto',
 
     'ERROR_RESPONSES',
 )
 
-from typing import Any
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from datetime import datetime
-
-
-class MoreDto(BaseModel):
-    what: str | None
-    text: str | None
-    info: dict | None
-    sub: list[dict] | None  # List of ResultDto
 
 
 class ResultDto(BaseModel):
@@ -31,13 +28,8 @@ class ResultDto(BaseModel):
     msg: str
 
 
-class BadResultDto(ResultDto):
-    more: MoreDto | None
-
-
 class FullResultDto(ResultDto):
-    more: MoreDto | None
-    data: Any
+    more: list[str] | None
 
 
 class PageDto(BaseModel):
@@ -71,16 +63,25 @@ class PassfileDto(BaseModel):
     info_changed_on: datetime
     version_changed_on: datetime
 
+class PassfileListDto(BaseModel):
+    list: list[PassfileDto]
+
 
 class PassfileVersionDto(BaseModel):
     passfile_id: int
     version: int
     version_date: datetime
 
+class PassfileVersionListDto(BaseModel):
+    list: list[PassfileVersionDto]
+
 
 class HistoryKindDto(BaseModel):
     id: int
     name: str
+
+class HistoryKindListDto(BaseModel):
+    list: list[HistoryKindDto]
 
 
 class HistoryDto(BaseModel):
@@ -102,8 +103,8 @@ class HistoryPageDto(PageDto):
 
 
 ERROR_RESPONSES = {
-    422: {
-        'model': BadResultDto,
-        'description': "Error Response. All supported status codes: 400, 401, 403, 404, 422, 500, 501.",
+    400: {
+        'model': ResultDto,
+        'description': "Error Response. All supported status codes: 400, 401, 403, 404, 500.",
     },
 }

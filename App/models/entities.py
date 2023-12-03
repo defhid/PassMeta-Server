@@ -52,20 +52,25 @@ class RequestInfo:
     def user_id(self) -> int | None:
         return self._session.user_id if self._session is not None else None
 
-    def make_response(self, result: Result, data: BaseModel | list[BaseModel] = None) -> Response:
-        return PydanticJsonResponse(
-            ResultMapping.to_dto(result, self.locale, data),
-            result.code.response_status_code
-        )
+    @staticmethod
+    def make_response(data: BaseModel = None) -> Response:
+        return PydanticJsonResponse(data, OK.response_status_code) if data is not None \
+            else Response(status_code=OK.response_status_code)
 
-    @classmethod
-    def make_bytes_response(cls, data: bytes) -> Response:
+    @staticmethod
+    def make_bytes_response(data: bytes) -> Response:
         return Response(data)
+
+    def make_result_response(self, data: Result) -> Response:
+        return PydanticJsonResponse(
+            ResultMapping.to_dto(data, self.locale),
+            data.code.response_status_code
+        )
 
     def ensure_user_is_authorized(self):
         """ Raises: AUTH_ERR """
         if self._session is None:
-            raise Bad(None, AUTH_ERR)
+            raise Bad(AUTH_ERR)
 
 
 class PydanticJsonResponse(Response):
@@ -76,7 +81,7 @@ class PydanticJsonResponse(Response):
 
     if DEBUG:
         def render(self, content: BaseModel) -> bytes:
-            return content.json(indent=4, exclude_unset=True, ensure_ascii=False).encode("utf-8")
+            return content.model_dump_json(indent=4, exclude_unset=True).encode("utf-8")
     else:
         def render(self, content: BaseModel) -> bytes:
-            return content.json(indent=None, exclude_unset=True, ensure_ascii=False).encode("utf-8")
+            return content.model_dump_json(indent=None, exclude_unset=True).encode("utf-8")

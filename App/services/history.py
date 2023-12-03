@@ -19,7 +19,7 @@ class HistoryService(DbServiceBase):
     __slots__ = ()
 
     HISTORY_KINDS_CACHE = reverse_translate_package(HISTORY_KINDS_TRANSLATE_PACK,
-                                                    lambda kind, name: HistoryKindDto.construct(id=kind, name=name))
+                                                    lambda kind, name: HistoryKindDto.model_construct(id=kind, name=name))
 
     @classmethod
     def get_history_kinds(cls, request: RequestInfo) -> list[HistoryKindDto]:
@@ -40,7 +40,7 @@ class HistoryService(DbServiceBase):
                 params['kinds'] = [int(k) for k in page.kind.split(',')]
                 params['kinds_condition'] = self._KINDS_CONDITION
             except ValueError:
-                raise Bad('kind', VAL_ERR, MORE.allowed('<id:int>,...'))
+                raise Bad(VALIDATION_ERR, MORE.format_wrong(WHAT.HISTORY.kind, '<id:int>,...'))
 
         exists = await self.db.query_scalar(bool, self._CHECK_TABLE_EXISTS, params)
 
@@ -51,7 +51,7 @@ class HistoryService(DbServiceBase):
             total = 0
             histories = []
 
-        return HistoryPageDto.construct(
+        return HistoryPageDto.model_construct(
             list=[HistoryMapping.to_dto(h, self.request.locale) for h in histories],
             total=total,
             page_size=page.page_size,
