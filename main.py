@@ -9,6 +9,13 @@ if __name__ == '__main__':
     import uvicorn
     import logging
 
-    uvicorn.run(app, host="127.0.0.1", port=80, log_level=logging.INFO)
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=443,
+        log_level=logging.INFO,
+        ssl_keyfile="./Dev/privatekey.key",
+        ssl_certfile="./Dev/certificate.crt"
+    )
 else:
     from App.app import app
