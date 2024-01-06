@@ -25,6 +25,10 @@ OK_BAD_TRANSLATE_PACK = {
         default="incorrect data",
         ru="некорректные данные",
     ),
+    result.UNPROCESSABLE_ERR: loc(
+        default="cannot handle request",
+        ru="невозможно обработать запрос",
+    ),
     result.OK: loc(
         default="ok",
         ru="ок",

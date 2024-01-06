@@ -19,6 +19,7 @@ from App.models.okbad import *
 from fastapi import FastAPI, Request, Depends
 from fastapi.routing import APIRoute
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 
 db_utils = DbUtils(DB_CONNECTION_POOL_MAX_SIZE)
@@ -27,6 +28,14 @@ request_utils = RequestUtils(db_utils)
 scheduler = Scheduler(period_minutes=10)
 
 app = FastAPI(debug=DEBUG)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # region Exceptions handling
@@ -55,7 +64,7 @@ class RouteWithErrorsLogging(APIRoute):
                 if DEBUG:
                     log_error(request.url.path, ex)
                 return request_utils.build_request_info_without_session(request).make_result_response(
-                    Bad(VALIDATION_ERR, MORE.info("schema: " + str(ex.errors()))))
+                    Bad(UNPROCESSABLE_ERR, MORE.info("schema: " + str(ex.errors()))))
 
             except Exception as ex:
                 log_error(request.url.path, ex)

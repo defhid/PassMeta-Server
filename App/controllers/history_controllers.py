@@ -18,7 +18,7 @@ def register_history_controllers(app: FastAPI, inject: Deps):
         kinds = HistoryService.get_history_kinds(request)
         return request.make_response(HistoryKindListDto.model_construct(list=kinds))
 
-    @app.get("/history/pages/{page_index}", response_model=HistoryPageDto, responses=ERROR_RESPONSES)
+    @app.get("/history/pages/{pageIndex}", response_model=HistoryPageDto, responses=ERROR_RESPONSES)
     async def ctrl(page: HistoryPageParamsDto = Depends(HistoryPageParamsDto),
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):

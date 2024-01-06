@@ -2,16 +2,19 @@ __all__ = (
     'SignInDto',
     'SignUpDto',
     'UserPatchDto',
+    'PassfileListParamsDto',
     'PassfilePostDto',
     'PassfilePatchDto',
     'HistoryPageParamsDto',
 )
 
-from pydantic import BaseModel, conint
+from pydantic import conint
 from datetime import datetime, date
 
+from App.models.dto.common import BaseDto
 
-class SignInDto(BaseModel):
+
+class SignInDto(BaseDto):
     login: str
     password: str
 
@@ -19,7 +22,7 @@ class SignInDto(BaseModel):
         extra = "forbid"
 
 
-class SignUpDto(BaseModel):
+class SignUpDto(BaseDto):
     login: str
     password: str
     full_name: str
@@ -28,7 +31,7 @@ class SignUpDto(BaseModel):
         extra = "forbid"
 
 
-class UserPatchDto(BaseModel):
+class UserPatchDto(BaseDto):
     full_name: str | None
     login: str | None
     password: str | None
@@ -38,7 +41,14 @@ class UserPatchDto(BaseModel):
         extra = "forbid"
 
 
-class PassfilePostDto(BaseModel):
+class PassfileListParamsDto(BaseDto):
+    type_id: int | None
+
+    class Config:
+        extra = "forbid"
+
+
+class PassfilePostDto(BaseDto):
     name: str
     color: str | None
     type_id: conint(ge=1, le=32767)
@@ -48,7 +58,7 @@ class PassfilePostDto(BaseModel):
         extra = "forbid"
 
 
-class PassfilePatchDto(BaseModel):
+class PassfilePatchDto(BaseDto):
     name: str
     color: str | None
 
@@ -56,7 +66,7 @@ class PassfilePatchDto(BaseModel):
         extra = "forbid"
 
 
-class PageParamsDto(BaseModel):
+class PageParamsDto(BaseDto):
     page_index: conint(ge=0)
     page_size: conint(ge=0, le=100)
 

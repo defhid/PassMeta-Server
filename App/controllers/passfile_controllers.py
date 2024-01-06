@@ -1,11 +1,11 @@
 __all__ = ('register_passfile_controllers', )
 
-from fastapi import FastAPI, File
+from fastapi import FastAPI, File, Depends
 from passql import DbConnection
 
 from App.controllers.di import Deps
-from App.models.dto.requests import PassfilePostDto, PassfilePatchDto
-from App.models.dto.responses import ResultDto, PassfileDto, PassfileListDto, PassfileVersionListDto, ERROR_RESPONSES
+from App.models.dto.requests import PassfilePostDto, PassfilePatchDto, PassfileListParamsDto
+from App.models.dto.responses import PassfileDto, PassfileListDto, PassfileVersionListDto, ERROR_RESPONSES
 from App.models.entities import RequestInfo
 from App.models.dto.mapping import PassFileMapping, PassFileVersionMapping
 from App.services import UserService, PassFileService
@@ -14,14 +14,14 @@ from App.services import UserService, PassFileService
 def register_passfile_controllers(app: FastAPI, inject: Deps):
 
     @app.get("/passfiles", response_model=PassfileListDto, responses=ERROR_RESPONSES)
-    async def ctrl(type_id: int = None,
+    async def ctrl(page: PassfileListParamsDto = Depends(PassfileListParamsDto),
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
 
         user = await UserService(db, request).get_user_by_id(request.user_id)
-        passfiles = await PassFileService(db, request).get_user_passfiles(user, type_id)
+        passfiles = await PassFileService(db, request).get_user_passfiles(user, page)
 
         return request.make_response(PassfileListDto.model_construct(
             list=[PassFileMapping.to_dto(pf) for pf in passfiles]
@@ -86,7 +86,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         passfile = await PassFileService(db, request).edit_passfile_smth(passfile_id, smth)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @app.delete("/passfiles/{passfile_id}", response_model=ResultDto, responses=ERROR_RESPONSES)
+    @app.delete("/passfiles/{passfile_id}", responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):

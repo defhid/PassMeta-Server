@@ -19,11 +19,12 @@ __all__ = (
     'ERROR_RESPONSES',
 )
 
-from pydantic import BaseModel, TypeAdapter
 from datetime import datetime
 
+from App.models.dto.common import BaseDto
 
-class ResultDto(BaseModel):
+
+class ResultDto(BaseDto):
     code: int
     msg: str
 
@@ -32,27 +33,27 @@ class FullResultDto(ResultDto):
     more: list[str] | None
 
 
-class PageDto(BaseModel):
+class PageDto(BaseDto):
     list: list[dict]
     total: int
     page_size: int
     page_index: int
 
 
-class UserDto(BaseModel):
+class UserDto(BaseDto):
     id: int
     login: str
     full_name: str
     is_active: bool
 
 
-class AppInfoDto(BaseModel):
+class AppInfoDto(BaseDto):
     app_id: str
     app_version: str
     user: UserDto
 
 
-class PassfileDto(BaseModel):
+class PassfileDto(BaseDto):
     id: int
     name: str
     color: str | None
@@ -63,28 +64,28 @@ class PassfileDto(BaseModel):
     info_changed_on: datetime
     version_changed_on: datetime
 
-class PassfileListDto(BaseModel):
+class PassfileListDto(BaseDto):
     list: list[PassfileDto]
 
 
-class PassfileVersionDto(BaseModel):
+class PassfileVersionDto(BaseDto):
     passfile_id: int
     version: int
     version_date: datetime
 
-class PassfileVersionListDto(BaseModel):
+class PassfileVersionListDto(BaseDto):
     list: list[PassfileVersionDto]
 
 
-class HistoryKindDto(BaseModel):
+class HistoryKindDto(BaseDto):
     id: int
     name: str
 
-class HistoryKindListDto(BaseModel):
+class HistoryKindListDto(BaseDto):
     list: list[HistoryKindDto]
 
 
-class HistoryDto(BaseModel):
+class HistoryDto(BaseDto):
     id: int
     kind: str
     user_ip: str
@@ -103,8 +104,10 @@ class HistoryPageDto(PageDto):
 
 
 ERROR_RESPONSES = {
-    400: {
-        'model': ResultDto,
-        'description': "Error Response. All supported status codes: 400, 401, 403, 404, 500.",
-    },
+    400: { 'model': FullResultDto },
+    401: { 'model': FullResultDto },
+    403: { 'model': FullResultDto },
+    404: { 'model': FullResultDto },
+    422: { 'model': FullResultDto },
+    500: { 'model': FullResultDto },
 }

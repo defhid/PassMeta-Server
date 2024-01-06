@@ -28,7 +28,7 @@ def register_general_controllers(app: FastAPI, inject: Deps):
             user=UserMapping.to_dto(user) if user else None,
         ))
 
-    @app.get("/check", response_model=ResultDto)
+    @app.get("/check")
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO_WS):
 
         return request.make_response()

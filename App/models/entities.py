@@ -81,7 +81,7 @@ class PydanticJsonResponse(Response):
 
     if DEBUG:
         def render(self, content: BaseModel) -> bytes:
-            return content.model_dump_json(indent=4, exclude_unset=True).encode("utf-8")
+            return content.model_dump_json(indent=4, exclude_unset=True, by_alias=True).encode("utf-8")
     else:
         def render(self, content: BaseModel) -> bytes:
-            return content.model_dump_json(indent=None, exclude_unset=True).encode("utf-8")
+            return content.model_dump_json(indent=None, exclude_unset=True, by_alias=True).encode("utf-8")
