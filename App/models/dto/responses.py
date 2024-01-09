@@ -50,7 +50,7 @@ class UserDto(BaseDto):
 class AppInfoDto(BaseDto):
     app_id: str
     app_version: str
-    user: UserDto
+    user: UserDto | None
 
 
 class PassfileDto(BaseDto):

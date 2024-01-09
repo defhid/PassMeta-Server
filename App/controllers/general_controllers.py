@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from passql import DbConnection
 
 from App.controllers.di import Deps
-from App.models.dto.responses import ResultDto, AppInfoDto, ERROR_RESPONSES
+from App.models.dto.responses import AppInfoDto, ERROR_RESPONSES
 from App.models.entities import RequestInfo
 from App.models.dto.mapping import UserMapping
 from App.services import UserService

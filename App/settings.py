@@ -55,7 +55,10 @@ CHECK_MIGRATIONS_ON_STARTUP: bool = True  # find and execute new database migrat
 # endregion
 
 
-CORS_ORIGIN_WHITELIST: list[str] = ["https://localhost:5173"]
+CORS_ORIGIN_WHITELIST: list[str] = [
+    "https://localhost:5173",
+    "http://localhost:5173",
+]
 
 
 def load_custom_settings(custom_settings):

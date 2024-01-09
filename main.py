@@ -14,8 +14,8 @@ if __name__ == '__main__':
         host="127.0.0.1",
         port=443,
         log_level=logging.INFO,
-        ssl_keyfile="./Dev/privatekey.key",
-        ssl_certfile="./Dev/certificate.crt"
+        ssl_keyfile="./Dev/localhost-cert-key.pem",
+        ssl_certfile="./Dev/localhost-cert.pem"
     )
 else:
     from App.app import app
