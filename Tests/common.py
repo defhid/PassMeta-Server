@@ -1,14 +1,11 @@
-from App.settings import *
+import os
+from dotenv import load_dotenv
 import unittest
 
-
-def load_test_settings():
-    import Tests.app_settings
-
-    load_custom_settings(Tests.app_settings)
+__all__ = ('BaseTest',)
 
 
-load_test_settings()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 
 class BaseTest(unittest.IsolatedAsyncioTestCase):

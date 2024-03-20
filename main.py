@@ -1,21 +1,32 @@
-from App.settings import load_custom_settings
-import app_settings
+from dotenv import load_dotenv
+import os
+import uvicorn
 
-load_custom_settings(app_settings)
+for env_path in [".env", ".env.local"]:
+    load_dotenv(os.path.join(os.path.dirname(__file__), env_path))
 
+from App.app import app
+from App.settings import (
+    DEBUG,
+    LOG_LEVEL,
+    UVICORN_HOST,
+    UVICORN_PORT,
+    UVICORN_PROXY_HEADERS,
+    UVICORN_SSL_KEY_FILE,
+    UVICORN_SSL_CERT_FILE,
+)
 
-if __name__ == '__main__':
-    from App.app import app
-    import uvicorn
-    import logging
-
+def main():
     uvicorn.run(
         app,
-        host="127.0.0.1",
-        port=443,
-        log_level=logging.INFO,
-        ssl_keyfile="./Dev/localhost-cert-key.pem",
-        ssl_certfile="./Dev/localhost-cert.pem"
+        log_level=LOG_LEVEL,
+        host=UVICORN_HOST,
+        port=UVICORN_PORT,
+        proxy_headers=UVICORN_PROXY_HEADERS,
+        ssl_keyfile=UVICORN_SSL_KEY_FILE if DEBUG else None,
+        ssl_certfile=UVICORN_SSL_CERT_FILE if DEBUG else None,
     )
-else:
-    from App.app import app
+
+
+if __name__ == "__main__":
+    main()

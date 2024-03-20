@@ -1,7 +1,7 @@
 __all__ = ('CryptoUtils', )
 
 from App.models.okbad import *
-from App.settings import SECRET_KEY_BYTES
+from App.settings import APP_SECRET_KEY_BYTES
 from App.utils.logging import LoggerFactory
 
 from typing import Any
@@ -11,7 +11,7 @@ import jwt
 
 
 class CryptoUtils:
-    JWT_SECRET_KEY = SECRET_KEY_BYTES.decode('ascii')
+    JWT_SECRET_KEY = APP_SECRET_KEY_BYTES.decode('ascii')
 
     logger = LoggerFactory.get_named("CRYPTO UTILS")
 
@@ -38,7 +38,7 @@ class CryptoUtils:
     @classmethod
     def encrypt_passfile_smth(cls, content: bytes) -> bytes:
         try:
-            return Fernet(SECRET_KEY_BYTES).encrypt(content)
+            return Fernet(APP_SECRET_KEY_BYTES).encrypt(content)
         except Exception as e:
             cls.logger.error("Passfile encryption error!", e)
             raise Bad(SERVER_ERR, MORE.info("Server-side encryption failed"))
@@ -46,7 +46,7 @@ class CryptoUtils:
     @classmethod
     def decrypt_passfile_smth(cls, content: bytes) -> bytes:
         try:
-            return Fernet(SECRET_KEY_BYTES).decrypt(content)
+            return Fernet(APP_SECRET_KEY_BYTES).decrypt(content)
         except Exception as e:
             cls.logger.error("Passfile decryption error!", e)
             raise Bad(SERVER_ERR, MORE.info("Server-side decryption failed"))

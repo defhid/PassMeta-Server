@@ -1,8 +1,9 @@
 __all__ = ('LoggerFactory', 'init_logging', )
 
-from App.settings import DEBUG
+from App.settings import LOG_LEVEL, LOG_FOLDER
 from typing import Callable
 import logging
+import os
 
 
 class Logger:
@@ -37,6 +38,13 @@ class LoggerFactory:
 
 def init_logging(logger_name: str):
     logger = logging.getLogger(logger_name)
-    Logger._log_info = logger.error if DEBUG else logger.info
+    Logger._log_info = logger.info
     Logger._log_error = logger.error
     Logger._log_critical = logger.critical
+
+    if LOG_FOLDER:
+        if not os.path.exists(LOG_FOLDER):
+            os.mkdir(LOG_FOLDER)
+        handler = logging.FileHandler(os.path.join(LOG_FOLDER, 'general.log'))
+        handler.setLevel(LOG_LEVEL)
+        logger.addHandler(handler)

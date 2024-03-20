@@ -1,83 +1,97 @@
 """
-Service default settings.
-
-Requires using load_custom_settings() method before import app,
-to load required settings or override default.
+Application settings.
 """
+from logging import getLevelNamesMapping as __getLevelNamesMapping, WARNING as __warning
+import App.utils.settings as __resolve
 
-import os as __os
 
-
-# region Common
-
+""" Version of PassMeta server application
+"""
 APP_VERSION = "2.0.1"
-APP_ID: str  # [REQUIRED]: Unique PassMeta server identifier
 
-SECRET_KEY_BYTES: bytes  # [REQUIRED]: Generated key from Fernet.generate_key()
+""" Unique identifier of PassMeta server application
+"""
+APP_ID = __resolve.string("APP_ID", required=True)
 
-DEBUG: bool = False
+""" Secret key for storage encryption (generated from Fernet.generate_key)
+"""
+APP_SECRET_KEY_BYTES = __resolve.string("APP_SECRET_KEY", required=True).encode("utf-8")
 
-# endregion
+""" Debug mode
+"""
+DEBUG = __resolve.boolean("DEBUG", default=False)
 
+""" Logging level (FATAL, WARNING, INFO, DEBUG)
+"""
+LOG_LEVEL = __getLevelNamesMapping().get(__resolve.string("LOG_LEVEL", default="WARNING").upper(), __warning)
 
-# region Database
+""" Path to logs directory
+"""
+LOG_FOLDER = __resolve.string("LOG_FOLDER", default=None)
 
-DB_CONNECTION: dict  # [REQUIRED]: PostgreSQL database connection setup: host, port, user, password, database etc.
-DB_CONNECTION_POOL_MIN_SIZE: int = 10
-DB_CONNECTION_POOL_MAX_SIZE: int = 30
-
-# endregion
-
-
-# region File System
-
-ROOT_DIR: str = __os.path.join(*__os.path.split(__os.path.dirname(__os.path.abspath(__file__)))[:-1])
-
-PASSFILES_FOLDER: str = __os.path.join(ROOT_DIR, 'Data', 'PassFiles')
-
-# endregion
-
-
-# region Others
-
-SESSION_LIFETIME_DAYS: int = 120  # how long to keep user's web session
-
-PASSFILE_KEEP_DAY_VERSIONS: int = 3  # max number of stored file versions, in scope of current day
-PASSFILE_KEEP_VERSIONS: int = 5  # max number of stored file versions, excluding scope of current day
-
-HISTORY_KEEP_MONTHS: int = 12  # how many months to store history
-
-OLD_HISTORY_CHECKING_INTERVAL_DAYS: int = 30  # how often to check old history more info
-OLD_HISTORY_CHECKING_ON_STARTUP: bool = True  # launch checking old history more info on application startup
-
-CHECK_MIGRATIONS_ON_STARTUP: bool = True  # find and execute new database migrations
-
-# endregion
-
-
+""" Allowed origins for cross-domain requests
+"""
 CORS_ORIGIN_WHITELIST: list[str] = [
     "https://localhost:5173",
     "http://localhost:5173",
 ]
 
 
-def load_custom_settings(custom_settings):
-    required = [
-        'APP_ID',
-        'DB_CONNECTION',
-        'SECRET_KEY_BYTES',
-    ]
+UVICORN_HOST = __resolve.string("UVICORN_HOST", required=True)
+UVICORN_PORT = __resolve.integer("UVICORN_PORT", required=True)
+UVICORN_PROXY_HEADERS = __resolve.boolean("UVICORN_PROXY_HEADERS", default=False)
+UVICORN_SSL_KEY_FILE = __resolve.string("UVICORN_SSL_KEY_FILE", default=None)
+UVICORN_SSL_CERT_FILE = __resolve.string("UVICORN_SSL_CERT_FILE", default=None)
 
-    missed = [
-        'APP_VERSION',
-        'ROOT_DIR',
-    ]
 
-    for name in dir(custom_settings):
-        if name.isupper():
-            globals()[name] = getattr(custom_settings, name)
-            if name in required and name not in missed:
-                required.remove(name)
+""" PostgreSQL database connection setup
+"""
+DB_CONNECTION = {
+    'host': __resolve.string("DB_CONNECTION__HOST", required=True),
+    'port': __resolve.integer("DB_CONNECTION__PORT", required=True),
+    'user': __resolve.string("DB_CONNECTION__USER", required=True),
+    'password': __resolve.string("DB_CONNECTION__PASSWORD", required=True),
+    'database': __resolve.string("DB_CONNECTION__DATABASE", required=True),
+    'command_timeout': __resolve.integer("DB_CONNECTION__TIMEOUT", default=30)
+}
 
-    if required:
-        raise ImportError(f"Required custom settings not found! ({', '.join(required)})")
+""" Database connection pool min size
+"""
+DB_CONNECTION_POOL_MIN_SIZE: int = 10
+
+""" Database connection pool max size
+"""
+DB_CONNECTION_POOL_MAX_SIZE: int = 30
+
+""" Path to passfiles directory
+"""
+PASSFILES_FOLDER = __resolve.path("PASSFILES_FOLDER", required=True)
+
+
+""" How long to keep user's web session
+"""
+SESSION_LIFETIME_DAYS = __resolve.integer("SESSION_LIFETIME_DAYS", default=120)
+
+""" Max number of stored file versions, in scope of current day
+"""
+PASSFILE_KEEP_DAY_VERSIONS = __resolve.integer("PASSFILE_KEEP_DAY_VERSIONS", default=3)
+
+""" Max number of stored file versions, excluding scope of current day
+"""
+PASSFILE_KEEP_VERSIONS = __resolve.integer("PASSFILE_KEEP_VERSIONS", default=5)
+
+""" How many months to store history
+"""
+HISTORY_KEEP_MONTHS = __resolve.integer("HISTORY_KEEP_MONTHS", default=12)
+
+""" How often to check old history more info
+"""
+OLD_HISTORY_CHECKING_INTERVAL_DAYS = __resolve.integer("OLD_HISTORY_CHECKING_INTERVAL_DAYS", default=30)
+
+""" Launch checking old history more info on application startup
+"""
+OLD_HISTORY_CHECKING_ON_STARTUP = __resolve.boolean("OLD_HISTORY_CHECKING_ON_STARTUP", default=True)
+
+""" find and execute new database migrations
+"""
+CHECK_MIGRATIONS_ON_STARTUP = __resolve.boolean("CHECK_MIGRATIONS_ON_STARTUP", default=True)

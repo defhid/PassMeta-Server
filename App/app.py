@@ -83,7 +83,7 @@ app.router.route_class = RouteWithErrorsLogging
 
 @app.on_event("startup")
 async def on_startup():
-    init_logging('uvicorn.error' if __name__ == '__main__' else 'gunicorn.error')
+    init_logging('uvicorn.error')
 
     await db_utils.init()
 

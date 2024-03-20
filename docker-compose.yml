@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+
+  fastapi:
+    container_name: passmeta-fastapi
+    build: .
+    expose:
+      - "8000"
+    environment:
+      - APP_ID=90f5a57a-37f1-4551-8a8b-c6d93701ab62
+      - APP_SECRET_KEY=_kyfTNGeVviUaL4vrQUcwvngSV2xB4lmmWxkq8dsgMk=
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8000
+      - UVICORN_PROXY_HEADERS=true
+      - LOG_LEVEL=INFO
+      - LOG_FOLDER=Logs
+      - DB_CONNECTION__HOST=passmeta-postgres
+      - DB_CONNECTION__PORT=5432
+      - DB_CONNECTION__USER=postgres
+      - DB_CONNECTION__PASSWORD=postgres
+      - DB_CONNECTION__DATABASE=passmeta
+      - PASSFILES_FOLDER=Data/PassFiles
+    volumes:
+      - data:/deploy/Data
+      - log-fastapi:/deploy/Logs
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: passmeta-postgres
+    image: postgres:16
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_DB=passmeta
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  webserver:
+    container_name: passmeta-webserver
+    image: nginx:1.25.4
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - config-ssl:/etc/nginx/ssl
+      - config-nginx:/etc/nginx/conf.d
+      - log-nginx:/var/log/nginx
+    depends_on:
+      - fastapi
+
+  configurator:
+    container_name: passmeta-configurator
+    build: Utils/configurator
+    environment:
+      - PASSMETA_EXTERNAL_HOST=passmeta.net
+      - PASSMETA_INTERNAL_HOST=passmeta-fastapi
+      - PASSMETA_INTERNAL_PORT=8000
+      - PASSMETA_COUNTRY_CODE=RU
+    volumes:
+      - config-ssl:/etc/passmeta/ssl
+      - config-nginx:/etc/passmeta/nginx
+    profiles:
+      - configuring
+
+volumes:
+  data:
+  database:
+  config-ssl:
+  config-nginx:
+  log-fastapi:
+  log-nginx:

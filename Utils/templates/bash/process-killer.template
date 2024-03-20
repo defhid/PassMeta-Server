@@ -1,3 +1,0 @@
-#!/bin/bash
-
-sudo {dir}/env/bin/python {dir}/Gun/kill.py
