@@ -33,4 +33,4 @@ PassMeta Server is a part of PassMeta System, which provides reliable distribute
 + **Update:** `sudo bash /home/passmeta-update.sh`
 
 ### API
-Go to `/docs` to see the Swagger API documentation.
+Go to `/docs` to see Swagger API documentation.
