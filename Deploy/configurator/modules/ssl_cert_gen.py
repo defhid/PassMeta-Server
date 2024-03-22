@@ -1,12 +1,22 @@
 import subprocess
 
-def generate_ssl_certificate(output_path: str, country_code: str, host: str):
+def generate_ssl_certificate(
+    output_path: str,
+    common_name: str,
+    country_code: str,
+    organization: str,
+    state: str,
+    locality: str
+):
+    if len(country_code) != 2:
+        raise ValueError("Country code is incorrect!")
+
     subject_dict = {
         'C': country_code,
-        'ST': "State",
-        'L': "City",
-        'O': "Company",
-        'CN': host,
+        'ST': state,
+        'L': locality,
+        'O': organization,
+        'CN': common_name,
     }
     subject_line = "".join(map(lambda x: f"/{x[0]}={x[1]}", subject_dict.items()))
 

@@ -3,11 +3,10 @@
 
 
 ### About the project
-PassMeta Server is a part of PassMeta System, which provides reliable
-<br>
-distributed password storage and password management tools.
+PassMeta Server is a part of PassMeta System, which provides reliable distributed password management tools.
 
-**Desktop** application is [here](https://github.com/defhid/PassMeta-DesktopApp).
+**Desktop** application is [here](https://github.com/defhid/PassMeta-DesktopApp). <br>
+**Web** application is [here](https://github.com/defhid/PassMeta-WebApp).
 
 
 ### Technologies
@@ -17,41 +16,21 @@ distributed password storage and password management tools.
 ### Deployment on Linux
 
 + **Install [Docker](https://docs.docker.com/engine/install/ubuntu)**
-
-
 + **Install utils:**
   - `sudo apt-get update`
   - `sudo apt install unzip nano`
-
-
-+ **Download and unzip the project, change current directory:**
++ **Download and unzip:**
   - `wget https://github.com/defhid/PassMeta-Server/archive/refs/heads/master.zip`
   - `unzip master.zip`
   - `rm master.zip`
   - `mv PassMeta-Server-master /home/passmeta`
-  - `cd /home/passmeta`
++ **Configure:**
+  - `nano /home/passmeta/Deploy/.env.local`, enter `APP_ID` + `APP_SECRET_KEY`
+  - `cp /home/passmeta/Deploy/scripts/update.sh /home/passmeta-update.sh`
++ **Initialize:** `sudo bash /home/passmeta/Deploy/scripts/configure.sh`
++ **Start:** `sudo bash /home/passmeta/Deploy/scripts/start.sh`
++ **Stop:** `sudo bash /home/passmeta/Deploy/scripts/stop.sh`
++ **Update:** `sudo bash /home/passmeta-update.sh`
 
-
-+ **Configure docker-compose:**
-  - TODO ...
-  - input username for local PostgreSQL server
-  - input password for that user
-  - input server host, like `x.x.x.x` or `my-server-host.com`
-  - input server country code, like `RU`
-
-
-### Launch as service
-
-+ **Initialization:**
-  - `docker compose create configurator`
-  - `docker compose start configurator`
-  - `docker compose create`
-
-
-+ **Start-stop:**
-  - `docker compose start`
-  - `docker compose stop`
-
-
-### Update
-+ `sudo bash Utils/updater.sh`
+### API
+Go to `/docs` to see the Swagger API documentation.

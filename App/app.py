@@ -31,7 +31,7 @@ app = FastAPI(debug=DEBUG)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGIN_WHITELIST,
+    allow_origin_regex=UVICORN_CORS_PATTERN,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -97,8 +97,8 @@ async def on_startup():
         'OHISCHECK',
         active=True,
         single=False,
-        interval_minutes=OLD_HISTORY_CHECKING_INTERVAL_DAYS * 24 * 60,
-        start_now=OLD_HISTORY_CHECKING_ON_STARTUP,
+        interval_minutes=HISTORY_CHECKING_INTERVAL_DAYS * 24 * 60,
+        start_now=CHECK_HISTORY_ON_STARTUP,
         func=HistoryService.scheduled__check_old_histories
     ))
 

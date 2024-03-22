@@ -1,0 +1,89 @@
+version: '3'
+
+services:
+
+  fastapi:
+    container_name: passmeta-fastapi
+    build: ..
+    expose:
+      - "8000"
+    environment:
+      - APP_ID=${APP_ID}
+      - APP_SECRET_KEY=${APP_SECRET_KEY}
+      - APP_LOG_LEVEL=${APP_LOG_LEVEL}
+      - APP_LOG_FOLDER=Logs
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8000
+      - UVICORN_PROXY_HEADERS=true
+      - UVICORN_CORS_PATTERN=${UVICORN_CORS_PATTERN}
+      - DB_CONNECTION__HOST=passmeta-postgres
+      - DB_CONNECTION__PORT=5432
+      - DB_CONNECTION__USER=${DB_CONNECTION__USER}
+      - DB_CONNECTION__PASSWORD=${DB_CONNECTION__PASSWORD}
+      - DB_CONNECTION__DATABASE=${DB_CONNECTION__DATABASE}
+      - DB_CONNECTION__TIMEOUT=${DB_CONNECTION__TIMEOUT}
+      - DB_CONNECTION_POOL_MIN_SIZE=${DB_CONNECTION_POOL_MIN_SIZE}
+      - DB_CONNECTION_POOL_MAX_SIZE=${DB_CONNECTION_POOL_MAX_SIZE}
+      - SESSION_LIFETIME_DAYS=${SESSION_LIFETIME_DAYS}
+      - PASSFILES_FOLDER=Data/PassFiles
+      - PASSFILE_KEEP_DAY_VERSIONS=${PASSFILE_KEEP_DAY_VERSIONS}
+      - PASSFILE_KEEP_VERSIONS=${PASSFILE_KEEP_VERSIONS}
+      - HISTORY_KEEP_MONTHS=${HISTORY_KEEP_MONTHS}
+      - HISTORY_CHECKING_INTERVAL_DAYS=${HISTORY_CHECKING_INTERVAL_DAYS}
+      - CHECK_HISTORY_ON_STARTUP=${CHECK_HISTORY_ON_STARTUP}
+      - CHECK_MIGRATIONS_ON_STARTUP=${CHECK_MIGRATIONS_ON_STARTUP}
+    volumes:
+      - data:/deploy/Data
+      - log-fastapi:/deploy/Logs
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: passmeta-postgres
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${DB_CONNECTION__DATABASE}
+      - POSTGRES_USER=${DB_CONNECTION__USER}
+      - POSTGRES_PASSWORD=${DB_CONNECTION__PASSWORD}
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  webserver:
+    container_name: passmeta-webserver
+    image: nginx:1.25.4
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - config-ssl:/etc/nginx/ssl
+      - config-nginx:/etc/nginx/conf.d
+      - log-nginx:/var/log/nginx
+    depends_on:
+      - fastapi
+
+  configurator:
+    container_name: passmeta-configurator
+    build: configurator
+    environment:
+      - INTERNAL_HOST=passmeta-fastapi
+      - INTERNAL_PORT=8000
+      - CERT_COMMON_NAME=${CERT_COMMON_NAME}
+      - CERT_COUNTRY_CODE=${CERT_COUNTRY_CODE}
+      - CERT_ORGANIZATION=${CERT_ORGANIZATION}
+      - CERT_STATE=${CERT_STATE}
+      - CERT_LOCALITY=${CERT_LOCALITY}
+    volumes:
+      - config-ssl:/etc/passmeta/ssl
+      - config-nginx:/etc/passmeta/nginx
+    profiles:
+      - configuring
+
+volumes:
+  data:
+  database:
+  config-ssl:
+  config-nginx:
+  log-fastapi:
+  log-nginx:

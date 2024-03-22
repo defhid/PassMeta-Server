@@ -13,23 +13,19 @@ def get_env(name: str) -> str:
     raise ValueError(f"{name} is empty!")
 
 
-external_host = get_env("PASSMETA_EXTERNAL_HOST")
-internal_host = get_env("PASSMETA_INTERNAL_HOST")
-internal_port = int(get_env("PASSMETA_INTERNAL_PORT"))
-
-country_code = get_env("PASSMETA_COUNTRY_CODE")
-if len(country_code) != 2:
-    raise ValueError("Country code is incorrect!")
-
 generate_ssl_certificate(
     output_path=f"/etc/passmeta/ssl",
-    country_code=country_code,
-    host=external_host)
+    common_name=get_env("CERT_COMMON_NAME"),
+    country_code=get_env("CERT_COUNTRY_CODE"),
+    organization=get_env("CERT_ORGANIZATION"),
+    state=get_env("CERT_STATE"),
+    locality=get_env("CERT_LOCALITY"),
+)
 
 generate_nginx_configuration(
     output_path=f"/etc/passmeta/nginx",
-    internal_host=internal_host,
-    internal_port=internal_port,
+    internal_host=get_env("INTERNAL_HOST"),
+    internal_port=int(get_env("INTERNAL_PORT")),
 )
 
 print("Ready!")

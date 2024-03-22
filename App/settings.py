@@ -23,25 +23,36 @@ DEBUG = __resolve.boolean("DEBUG", default=False)
 
 """ Logging level (FATAL, WARNING, INFO, DEBUG)
 """
-LOG_LEVEL = __getLevelNamesMapping().get(__resolve.string("LOG_LEVEL", default="WARNING").upper(), __warning)
+LOG_LEVEL = __getLevelNamesMapping().get(__resolve.string("APP_LOG_LEVEL", default="WARNING").upper(), __warning)
 
 """ Path to logs directory
 """
-LOG_FOLDER = __resolve.string("LOG_FOLDER", default=None)
+LOG_FOLDER = __resolve.string("APP_LOG_FOLDER", default=None)
 
-""" Allowed origins for cross-domain requests
+
+""" Host to listen
 """
-CORS_ORIGIN_WHITELIST: list[str] = [
-    "https://localhost:5173",
-    "http://localhost:5173",
-]
-
-
 UVICORN_HOST = __resolve.string("UVICORN_HOST", required=True)
+
+""" Port to listen
+"""
 UVICORN_PORT = __resolve.integer("UVICORN_PORT", required=True)
+
+""" Enable/Disable X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port to populate remote address info
+"""
 UVICORN_PROXY_HEADERS = __resolve.boolean("UVICORN_PROXY_HEADERS", default=False)
-UVICORN_SSL_KEY_FILE = __resolve.string("UVICORN_SSL_KEY_FILE", default=None)
-UVICORN_SSL_CERT_FILE = __resolve.string("UVICORN_SSL_CERT_FILE", default=None)
+
+""" Url pattern for cross-origin requests
+"""
+UVICORN_CORS_PATTERN = __resolve.string("UVICORN_CORS_PATTERN", default=False)
+
+""" Path to SSL key (dev only)
+"""
+UVICORN_SSL_KEY_FILE = __resolve.string("UVICORN_SSL_KEY_FILE", default=None) if UVICORN_PORT == 443 else None
+
+""" Path to SSL certificate (dev only)
+"""
+UVICORN_SSL_CERT_FILE = __resolve.string("UVICORN_SSL_CERT_FILE", default=None) if UVICORN_PORT == 443 else None
 
 
 """ PostgreSQL database connection setup
@@ -63,14 +74,14 @@ DB_CONNECTION_POOL_MIN_SIZE: int = 10
 """
 DB_CONNECTION_POOL_MAX_SIZE: int = 30
 
-""" Path to passfiles directory
-"""
-PASSFILES_FOLDER = __resolve.path("PASSFILES_FOLDER", required=True)
-
 
 """ How long to keep user's web session
 """
 SESSION_LIFETIME_DAYS = __resolve.integer("SESSION_LIFETIME_DAYS", default=120)
+
+""" Path to passfiles directory
+"""
+PASSFILES_FOLDER = __resolve.path("PASSFILES_FOLDER", required=True)
 
 """ Max number of stored file versions, in scope of current day
 """
@@ -82,15 +93,15 @@ PASSFILE_KEEP_VERSIONS = __resolve.integer("PASSFILE_KEEP_VERSIONS", default=5)
 
 """ How many months to store history
 """
-HISTORY_KEEP_MONTHS = __resolve.integer("HISTORY_KEEP_MONTHS", default=12)
+HISTORY_KEEP_MONTHS = __resolve.integer("HISTORY_KEEP_MONTHS", default=24)
 
 """ How often to check old history more info
 """
-OLD_HISTORY_CHECKING_INTERVAL_DAYS = __resolve.integer("OLD_HISTORY_CHECKING_INTERVAL_DAYS", default=30)
+HISTORY_CHECKING_INTERVAL_DAYS = __resolve.integer("HISTORY_CHECKING_INTERVAL_DAYS", default=30)
 
 """ Launch checking old history more info on application startup
 """
-OLD_HISTORY_CHECKING_ON_STARTUP = __resolve.boolean("OLD_HISTORY_CHECKING_ON_STARTUP", default=True)
+CHECK_HISTORY_ON_STARTUP = __resolve.boolean("CHECK_HISTORY_ON_STARTUP", default=True)
 
 """ find and execute new database migrations
 """
