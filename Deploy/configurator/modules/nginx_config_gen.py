@@ -19,7 +19,7 @@ def generate_nginx_configuration(output_path: str, internal_host: str, internal_
 
                 error_log /var/log/nginx/error.log warn;
 
-                location / {{
+                location /api/ {{
                     proxy_pass http://{internal_host}:{internal_port};
                 }}
             }}
