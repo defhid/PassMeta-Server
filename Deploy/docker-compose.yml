@@ -40,8 +40,8 @@ services:
   postgres:
     container_name: passmeta-postgres
     image: postgres:16
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     environment:
       - POSTGRES_DB=${DB_CONNECTION__DATABASE}
       - POSTGRES_USER=${DB_CONNECTION__USER}
