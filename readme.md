@@ -27,7 +27,8 @@ PassMeta Server is a part of PassMeta System, which provides reliable distribute
 + **Configure:**
   - `nano /home/passmeta/Deploy/.env.local`, enter `APP_ID` + `APP_SECRET_KEY`
   - `cp /home/passmeta/Deploy/scripts/update.sh /home/passmeta-update.sh`
-+ **Initialize:** `sudo bash /home/passmeta/Deploy/scripts/configure.sh`
+  - `sudo bash /home/passmeta/Deploy/scripts/configure.sh`
++ **Build:** `sudo bash /home/passmeta/Deploy/scripts/rebuild.sh`
 + **Start:** `sudo bash /home/passmeta/Deploy/scripts/start.sh`
 + **Stop:** `sudo bash /home/passmeta/Deploy/scripts/stop.sh`
 + **Update:** `sudo bash /home/passmeta-update.sh`

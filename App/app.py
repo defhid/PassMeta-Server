@@ -1,9 +1,9 @@
-from App.controllers.auth_controllers import register_auth_controllers
+from App.controllers.auth_controllers import build_auth_controllers
 from App.controllers.di import Deps
-from App.controllers.general_controllers import register_general_controllers
-from App.controllers.history_controllers import register_history_controllers
-from App.controllers.passfile_controllers import register_passfile_controllers
-from App.controllers.user_controllers import register_user_controllers
+from App.controllers.general_controllers import build_general_controllers
+from App.controllers.history_controllers import build_history_controllers
+from App.controllers.passfile_controllers import build_passfile_controllers
+from App.controllers.user_controllers import build_user_controllers
 
 from App.database import DbUtils, Migrator
 
@@ -27,7 +27,7 @@ request_utils = RequestUtils(db_utils)
 
 scheduler = Scheduler(period_minutes=10)
 
-app = FastAPI(debug=DEBUG)
+app = FastAPI(debug=DEBUG, docs_url="/docs", root_path="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -73,9 +73,6 @@ class RouteWithErrorsLogging(APIRoute):
 
         return custom_route_handler
 
-
-app.router.route_class = RouteWithErrorsLogging
-
 # endregion
 
 
@@ -110,7 +107,6 @@ async def on_shutdown():
     scheduler.stop()
     await db_utils.dispose()
 
-
 # endregion
 
 deps = Deps()
@@ -118,8 +114,14 @@ deps.DB = Depends(db_utils.connection_maker, use_cache=False)
 deps.REQUEST_INFO = Depends(request_utils.build_request_info, use_cache=False)
 deps.REQUEST_INFO_WS = Depends(request_utils.build_request_info_without_session, use_cache=False)
 
-register_auth_controllers(app, deps)
-register_general_controllers(app, deps)
-register_history_controllers(app, deps)
-register_passfile_controllers(app, deps)
-register_user_controllers(app, deps)
+controllers = [
+    build_auth_controllers(deps),
+    build_general_controllers(deps),
+    build_history_controllers(deps),
+    build_passfile_controllers(deps),
+    build_user_controllers(deps),
+]
+
+for router in controllers:
+    router.route_class = RouteWithErrorsLogging
+    app.include_router(router)

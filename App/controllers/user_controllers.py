@@ -1,6 +1,6 @@
-__all__ = ('register_user_controllers', )
+__all__ = ('build_user_controllers',)
 
-from fastapi import FastAPI
+from fastapi import APIRouter
 from passql import DbConnection
 
 from App.controllers.di import Deps
@@ -11,9 +11,10 @@ from App.models.dto.mapping import UserMapping
 from App.services import UserService, AuthService
 
 
-def register_user_controllers(app: FastAPI, inject: Deps):
+def build_user_controllers(inject: Deps):
+    router = APIRouter()
 
-    @app.post("/users/new", response_model=UserDto, responses=ERROR_RESPONSES)
+    @router.post("/users/new", response_model=UserDto, responses=ERROR_RESPONSES)
     async def ctrl(body: SignUpDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -21,7 +22,7 @@ def register_user_controllers(app: FastAPI, inject: Deps):
         user = await UserService(db, request).create_user(body)
         return await AuthService(db, request).authorize(user)
 
-    @app.get("/users/me", response_model=UserDto, responses=ERROR_RESPONSES)
+    @router.get("/users/me", response_model=UserDto, responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
@@ -29,7 +30,7 @@ def register_user_controllers(app: FastAPI, inject: Deps):
         user = await UserService(db, request).get_user_by_id(request.user_id)
         return request.make_response(UserMapping.to_dto(user))
 
-    @app.patch("/users/me", response_model=UserDto, responses=ERROR_RESPONSES)
+    @router.patch("/users/me", response_model=UserDto, responses=ERROR_RESPONSES)
     async def ctrl(body: UserPatchDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -37,3 +38,5 @@ def register_user_controllers(app: FastAPI, inject: Deps):
         request.ensure_user_is_authorized()
         user = await UserService(db, request).edit_user(request.user_id, body)
         return request.make_response(UserMapping.to_dto(user))
+
+    return router

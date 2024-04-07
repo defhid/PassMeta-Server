@@ -1,6 +1,6 @@
-__all__ = ('register_passfile_controllers', )
+__all__ = ('build_passfile_controllers',)
 
-from fastapi import FastAPI, File, Depends
+from fastapi import File, Depends, APIRouter
 from passql import DbConnection
 
 from App.controllers.di import Deps
@@ -11,9 +11,10 @@ from App.models.dto.mapping import PassFileMapping, PassFileVersionMapping
 from App.services import UserService, PassFileService
 
 
-def register_passfile_controllers(app: FastAPI, inject: Deps):
+def build_passfile_controllers(inject: Deps):
+    router = APIRouter()
 
-    @app.get("/passfiles", response_model=PassfileListDto, responses=ERROR_RESPONSES)
+    @router.get("/passfiles", response_model=PassfileListDto, responses=ERROR_RESPONSES)
     async def ctrl(page: PassfileListParamsDto = Depends(PassfileListParamsDto),
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -27,7 +28,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
             list=[PassFileMapping.to_dto(pf) for pf in passfiles]
         ))
 
-    @app.get("/passfiles/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.get("/passfiles/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -36,7 +37,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         passfile = await PassFileService(db, request).get_passfile(passfile_id)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @app.get("/passfiles/{passfile_id}/versions", response_model=PassfileVersionListDto, responses=ERROR_RESPONSES)
+    @router.get("/passfiles/{passfile_id}/versions", response_model=PassfileVersionListDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -47,7 +48,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
             list=[PassFileVersionMapping.to_dto(pfv) for pfv in versions]
         ))
 
-    @app.get("/passfiles/{passfile_id}/versions/{version}", response_model=bytes, responses=ERROR_RESPONSES)
+    @router.get("/passfiles/{passfile_id}/versions/{version}", response_model=bytes, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    version: int,
                    request: RequestInfo = inject.REQUEST_INFO,
@@ -57,7 +58,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         data = await PassFileService(db, request).get_passfile_smth(passfile_id, version)
         return request.make_bytes_response(data)
 
-    @app.post("/passfiles/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.post("/passfiles/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(body: PassfilePostDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -66,7 +67,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         passfile = await PassFileService(db, request).add_passfile(body)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @app.patch("/passfiles/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.patch("/passfiles/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    body: PassfilePatchDto,
                    request: RequestInfo = inject.REQUEST_INFO,
@@ -76,7 +77,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         passfile = await PassFileService(db, request).edit_passfile_info(passfile_id, body)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @app.post("/passfiles/{passfile_id}/versions/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.post("/passfiles/{passfile_id}/versions/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    smth: bytes = File(),
                    request: RequestInfo = inject.REQUEST_INFO,
@@ -86,7 +87,7 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         passfile = await PassFileService(db, request).edit_passfile_smth(passfile_id, smth)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @app.delete("/passfiles/{passfile_id}", responses=ERROR_RESPONSES)
+    @router.delete("/passfiles/{passfile_id}", responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -95,3 +96,4 @@ def register_passfile_controllers(app: FastAPI, inject: Deps):
         await PassFileService(db, request).delete_passfile(passfile_id)
         return request.make_response()
 
+    return router

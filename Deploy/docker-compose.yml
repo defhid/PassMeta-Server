@@ -1,10 +1,16 @@
 services:
 
-  fastapi:
-    container_name: passmeta-fastapi
-    build: ..
+  webserver:
+    container_name: passmeta-web-server
+    build: ./..
     expose:
       - "8000"
+    networks:
+      - main
+      - protected
+    volumes:
+      - data:/deploy/Data
+      - logs:/deploy/Logs
     environment:
       - APP_ID=${APP_ID}
       - APP_SECRET_KEY=${APP_SECRET_KEY}
@@ -30,9 +36,6 @@ services:
       - HISTORY_CHECKING_INTERVAL_DAYS=${HISTORY_CHECKING_INTERVAL_DAYS}
       - CHECK_HISTORY_ON_STARTUP=${CHECK_HISTORY_ON_STARTUP}
       - CHECK_MIGRATIONS_ON_STARTUP=${CHECK_MIGRATIONS_ON_STARTUP}
-    volumes:
-      - data:/deploy/Data
-      - log-fastapi:/deploy/Logs
     restart: "always"
     depends_on:
       - postgres
@@ -42,42 +45,42 @@ services:
     image: postgres:16
     expose:
       - "5432"
+    networks:
+      - protected
+    volumes:
+      - database:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${DB_CONNECTION__DATABASE}
       - POSTGRES_USER=${DB_CONNECTION__USER}
       - POSTGRES_PASSWORD=${DB_CONNECTION__PASSWORD}
-    volumes:
-      - database:/var/lib/postgresql/data
     restart: "always"
 
-  webserver:
-    container_name: passmeta-webserver
+  server:
+    container_name: passmeta-server
     image: nginx:1.25.4
     ports:
       - "80:80"
       - "443:443"
+    networks:
+      - main
     volumes:
-      - config-ssl:/etc/nginx/ssl
-      - config-nginx:/etc/nginx/conf.d
-      - log-nginx:/var/log/nginx
-    depends_on:
-      - fastapi
+      - config-ssl:/etc/nginx/ssl:ro
+      - config-nginx:/etc/nginx/conf.d:ro
+      - logs:/var/log/nginx
     restart: "always"
 
   configurator:
     container_name: passmeta-configurator
-    build: configurator
+    build: ./configurator
+    volumes:
+      - config-ssl:/etc/passmeta/ssl
+      - config-nginx:/etc/passmeta/nginx
     environment:
-      - INTERNAL_HOST=passmeta-fastapi
-      - INTERNAL_PORT=8000
       - CERT_COMMON_NAME=${CERT_COMMON_NAME}
       - CERT_COUNTRY_CODE=${CERT_COUNTRY_CODE}
       - CERT_ORGANIZATION=${CERT_ORGANIZATION}
       - CERT_STATE=${CERT_STATE}
       - CERT_LOCALITY=${CERT_LOCALITY}
-    volumes:
-      - config-ssl:/etc/passmeta/ssl
-      - config-nginx:/etc/passmeta/nginx
     profiles:
       - configuring
 
@@ -86,5 +89,10 @@ volumes:
   database:
   config-ssl:
   config-nginx:
-  log-fastapi:
-  log-nginx:
+  logs:
+
+networks:
+  protected:
+    name: "passmeta-protected"
+  main:
+    name: "passmeta-main"

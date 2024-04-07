@@ -1,6 +1,6 @@
-__all__ = ('register_history_controllers', )
+__all__ = ('build_history_controllers',)
 
-from fastapi import FastAPI, Depends
+from fastapi import Depends, APIRouter
 from passql import DbConnection
 
 from App.controllers.di import Deps
@@ -10,15 +10,16 @@ from App.models.entities import RequestInfo
 from App.services import HistoryService
 
 
-def register_history_controllers(app: FastAPI, inject: Deps):
+def build_history_controllers(inject: Deps):
+    router = APIRouter()
 
-    @app.get("/history/kinds", response_model=HistoryKindListDto, responses=ERROR_RESPONSES)
+    @router.get("/history/kinds", response_model=HistoryKindListDto, responses=ERROR_RESPONSES)
     def ctrl(request: RequestInfo = inject.REQUEST_INFO_WS):
 
         kinds = HistoryService.get_history_kinds(request)
         return request.make_response(HistoryKindListDto.model_construct(list=kinds))
 
-    @app.get("/history/pages/{pageIndex}", response_model=HistoryPageDto, responses=ERROR_RESPONSES)
+    @router.get("/history/pages/{pageIndex}", response_model=HistoryPageDto, responses=ERROR_RESPONSES)
     async def ctrl(page: HistoryPageParamsDto = Depends(HistoryPageParamsDto),
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -27,3 +28,4 @@ def register_history_controllers(app: FastAPI, inject: Deps):
         page_result = await HistoryService(db, request).get_page(page)
         return request.make_response(page_result)
 
+    return router

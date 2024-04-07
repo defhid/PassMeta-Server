@@ -1,6 +1,6 @@
-__all__ = ('register_general_controllers', )
+__all__ = ('build_general_controllers',)
 
-from fastapi import FastAPI
+from fastapi import APIRouter
 from passql import DbConnection
 
 from App.controllers.di import Deps
@@ -11,9 +11,10 @@ from App.services import UserService
 from App.settings import APP_VERSION, APP_ID
 
 
-def register_general_controllers(app: FastAPI, inject: Deps):
+def build_general_controllers(inject: Deps):
+    router = APIRouter()
 
-    @app.get("/info", response_model=AppInfoDto, responses=ERROR_RESPONSES)
+    @router.get("/info", response_model=AppInfoDto, responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
@@ -28,7 +29,9 @@ def register_general_controllers(app: FastAPI, inject: Deps):
             user=UserMapping.to_dto(user) if user else None,
         ))
 
-    @app.get("/check")
+    @router.get("/check")
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO_WS):
 
         return request.make_response()
+
+    return router

@@ -45,6 +45,6 @@ def init_logging(logger_name: str):
     if LOG_FOLDER:
         if not os.path.exists(LOG_FOLDER):
             os.mkdir(LOG_FOLDER)
-        handler = logging.FileHandler(os.path.join(LOG_FOLDER, 'general.log'))
+        handler = logging.FileHandler(os.path.join(LOG_FOLDER, 'fastapi.log'))
         handler.setLevel(LOG_LEVEL)
         logger.addHandler(handler)
