@@ -11,9 +11,9 @@ from App.services import AuthService
 
 
 def build_auth_controllers(inject: Deps):
-    router = APIRouter()
+    router = APIRouter(prefix="/auth")
 
-    @router.post("/auth/sign-in", response_model=UserDto, responses=ERROR_RESPONSES)
+    @router.post("/sign-in", response_model=UserDto, responses=ERROR_RESPONSES)
     async def ctrl(body: SignInDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -22,19 +22,19 @@ def build_auth_controllers(inject: Deps):
         user = await service.authenticate(body)
         return await service.authorize(user)
 
-    @router.post("/auth/reset/me", responses=ERROR_RESPONSES)
+    @router.post("/reset/me", responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO):
 
         return AuthService.reset(request)
 
-    @router.post("/auth/reset/all", responses=ERROR_RESPONSES)
+    @router.post("/reset/all", responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
         request.ensure_user_is_authorized()
         return await AuthService(db, request).reset_all(request, False)
 
-    @router.post("/auth/reset/all-except-me", responses=ERROR_RESPONSES)
+    @router.post("/reset/all-except-me", responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 

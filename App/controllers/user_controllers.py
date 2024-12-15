@@ -12,9 +12,9 @@ from App.services import UserService, AuthService
 
 
 def build_user_controllers(inject: Deps):
-    router = APIRouter()
+    router = APIRouter(prefix="/users")
 
-    @router.post("/users/new", response_model=UserDto, responses=ERROR_RESPONSES)
+    @router.post("/new", response_model=UserDto, responses=ERROR_RESPONSES)
     async def ctrl(body: SignUpDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -22,7 +22,7 @@ def build_user_controllers(inject: Deps):
         user = await UserService(db, request).create_user(body)
         return await AuthService(db, request).authorize(user)
 
-    @router.get("/users/me", response_model=UserDto, responses=ERROR_RESPONSES)
+    @router.get("/me", response_model=UserDto, responses=ERROR_RESPONSES)
     async def ctrl(request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
 
@@ -30,7 +30,7 @@ def build_user_controllers(inject: Deps):
         user = await UserService(db, request).get_user_by_id(request.user_id)
         return request.make_response(UserMapping.to_dto(user))
 
-    @router.patch("/users/me", response_model=UserDto, responses=ERROR_RESPONSES)
+    @router.patch("/me", response_model=UserDto, responses=ERROR_RESPONSES)
     async def ctrl(body: UserPatchDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):

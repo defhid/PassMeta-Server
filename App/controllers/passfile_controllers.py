@@ -12,9 +12,9 @@ from App.services import UserService, PassFileService
 
 
 def build_passfile_controllers(inject: Deps):
-    router = APIRouter()
+    router = APIRouter(prefix="/passfiles")
 
-    @router.get("/passfiles", response_model=PassfileListDto, responses=ERROR_RESPONSES)
+    @router.get("", response_model=PassfileListDto, responses=ERROR_RESPONSES)
     async def ctrl(page: PassfileListParamsDto = Depends(PassfileListParamsDto),
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -28,7 +28,7 @@ def build_passfile_controllers(inject: Deps):
             list=[PassFileMapping.to_dto(pf) for pf in passfiles]
         ))
 
-    @router.get("/passfiles/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.get("/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -37,7 +37,7 @@ def build_passfile_controllers(inject: Deps):
         passfile = await PassFileService(db, request).get_passfile(passfile_id)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @router.get("/passfiles/{passfile_id}/versions", response_model=PassfileVersionListDto, responses=ERROR_RESPONSES)
+    @router.get("/{passfile_id}/versions", response_model=PassfileVersionListDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -48,7 +48,7 @@ def build_passfile_controllers(inject: Deps):
             list=[PassFileVersionMapping.to_dto(pfv) for pfv in versions]
         ))
 
-    @router.get("/passfiles/{passfile_id}/versions/{version}", response_model=bytes, responses=ERROR_RESPONSES)
+    @router.get("/{passfile_id}/versions/{version}", response_model=bytes, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    version: int,
                    request: RequestInfo = inject.REQUEST_INFO,
@@ -58,7 +58,7 @@ def build_passfile_controllers(inject: Deps):
         data = await PassFileService(db, request).get_passfile_smth(passfile_id, version)
         return request.make_bytes_response(data)
 
-    @router.post("/passfiles/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.post("/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(body: PassfilePostDto,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
@@ -67,7 +67,7 @@ def build_passfile_controllers(inject: Deps):
         passfile = await PassFileService(db, request).add_passfile(body)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @router.patch("/passfiles/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.patch("/{passfile_id}", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    body: PassfilePatchDto,
                    request: RequestInfo = inject.REQUEST_INFO,
@@ -77,7 +77,7 @@ def build_passfile_controllers(inject: Deps):
         passfile = await PassFileService(db, request).edit_passfile_info(passfile_id, body)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @router.post("/passfiles/{passfile_id}/versions/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
+    @router.post("/{passfile_id}/versions/new", response_model=PassfileDto, responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    smth: bytes = File(),
                    request: RequestInfo = inject.REQUEST_INFO,
@@ -87,7 +87,7 @@ def build_passfile_controllers(inject: Deps):
         passfile = await PassFileService(db, request).edit_passfile_smth(passfile_id, smth)
         return request.make_response(PassFileMapping.to_dto(passfile))
 
-    @router.delete("/passfiles/{passfile_id}", responses=ERROR_RESPONSES)
+    @router.delete("/{passfile_id}", responses=ERROR_RESPONSES)
     async def ctrl(passfile_id: int,
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):

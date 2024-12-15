@@ -11,15 +11,15 @@ from App.services import HistoryService
 
 
 def build_history_controllers(inject: Deps):
-    router = APIRouter()
+    router = APIRouter(prefix="/history")
 
-    @router.get("/history/kinds", response_model=HistoryKindListDto, responses=ERROR_RESPONSES)
+    @router.get("/kinds", response_model=HistoryKindListDto, responses=ERROR_RESPONSES)
     def ctrl(request: RequestInfo = inject.REQUEST_INFO_WS):
 
         kinds = HistoryService.get_history_kinds(request)
         return request.make_response(HistoryKindListDto.model_construct(list=kinds))
 
-    @router.get("/history/pages/{pageIndex}", response_model=HistoryPageDto, responses=ERROR_RESPONSES)
+    @router.get("/pages/{pageIndex}", response_model=HistoryPageDto, responses=ERROR_RESPONSES)
     async def ctrl(page: HistoryPageParamsDto = Depends(HistoryPageParamsDto),
                    request: RequestInfo = inject.REQUEST_INFO,
                    db: DbConnection = inject.DB):
