@@ -66,7 +66,7 @@ class AuthService(DbServiceBase):
             jwt = self.make_jwt(auth_key)
 
             response = self.request.make_response(UserMapping.to_dto(user))
-            response.set_cookie('session', jwt, httponly=True, secure=True, samesite="lax")
+            response.set_cookie('session', jwt, httponly=True, secure=True, samesite="none")
         except Exception:
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, user_id=user.id)
             raise
