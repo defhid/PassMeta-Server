@@ -1,5 +1,5 @@
 # PassMeta Server — *your passwords SAFE*
-#### © 2024 Vladislav Mironov
+#### © 2025 Vladislav Mironov
 
 
 ### About the project
