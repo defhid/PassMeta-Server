@@ -44,7 +44,7 @@ UVICORN_PROXY_HEADERS = __resolve.boolean("UVICORN_PROXY_HEADERS", default=False
 
 """ Url pattern for cross-origin requests
 """
-UVICORN_CORS_PATTERN = __resolve.string("UVICORN_CORS_PATTERN", default=False)
+UVICORN_CORS_PATTERN = __resolve.string("UVICORN_CORS_PATTERN", default="")
 
 """ Path to SSL key (dev only)
 """

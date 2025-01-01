@@ -25,7 +25,7 @@ PassMeta Server is a part of PassMeta System, which provides reliable distribute
   - `rm master.zip`
   - `mv PassMeta-Server-master /home/passmeta`
 + **Configure:**
-  - `nano /home/passmeta/Deploy/.env.local`, enter `APP_ID` + `APP_SECRET_KEY`
+  - `nano /home/passmeta/Deploy/.env.local`, enter `APP_ID` (random string), `APP_SECRET_KEY` (generated RSA 256), `UVICORN_CORS_PATTERN` (hostname of UI)
   - `cp /home/passmeta/Deploy/scripts/update.sh /home/passmeta-update.sh`
   - `sudo bash /home/passmeta/Deploy/scripts/configure.sh`
 + **Build:** `sudo bash /home/passmeta/Deploy/scripts/rebuild.sh`
