@@ -85,11 +85,11 @@ PASSFILES_FOLDER = __resolve.path("PASSFILES_FOLDER", required=True)
 
 """ Max number of stored file versions, in scope of current day
 """
-PASSFILE_KEEP_DAY_VERSIONS = __resolve.integer("PASSFILE_KEEP_DAY_VERSIONS", default=3)
+PASSFILE_KEEP_DAY_VERSIONS = __resolve.integer("PASSFILE_KEEP_DAY_VERSIONS", default=10)
 
 """ Max number of stored file versions, excluding scope of current day
 """
-PASSFILE_KEEP_VERSIONS = __resolve.integer("PASSFILE_KEEP_VERSIONS", default=5)
+PASSFILE_KEEP_VERSIONS = __resolve.integer("PASSFILE_KEEP_VERSIONS", default=120)
 
 """ How many months to store history
 """
