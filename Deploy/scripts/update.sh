@@ -10,7 +10,7 @@ test -e ./passmeta-tmp && rm -r ./passmeta-tmp
 test -e ./passmeta-new && rm -r ./passmeta-new
 
 # get and unzip
-wget -P ./passmeta-tmp https://github.com/vlad120/PassMeta-Server/archive/refs/heads/master.zip || exit 1
+wget -P ./passmeta-tmp https://github.com/defhid/PassMeta-Server/archive/refs/heads/master.zip || exit 1
 unzip ./passmeta-tmp/master.zip -d ./passmeta-tmp || exit 1
 
 # prepare files
