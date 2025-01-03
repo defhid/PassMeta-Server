@@ -25,8 +25,6 @@ __all__ = (
 class AuthService(DbServiceBase):
     __slots__ = ()
 
-    AUTH_KEYS_CACHE: dict[int, AuthKey] = dict()
-
     @classmethod
     async def get_session(cls,
                           request: Request,
@@ -42,6 +40,7 @@ class AuthService(DbServiceBase):
         try:
             user_id = int(data.get('user_id'))
             secret_key = data.get('secret_key')
+            valid_until = datetime.datetime.fromisoformat(data.get('valid_until'))
             expires_on = datetime.datetime.fromisoformat(data.get('expires_on'))
         except (ValueError, TypeError):
             return None
@@ -49,24 +48,34 @@ class AuthService(DbServiceBase):
         if user_id < 1 or (expires_on - datetime.datetime.utcnow()).seconds < 1:
             return None
 
-        auth_key = cls.AUTH_KEYS_CACHE.get(user_id)
-        if auth_key is None:
+        if (valid_until - datetime.datetime.utcnow()).seconds < 1:
             db = await db_resolver()
             auth_key = await cls.get_or_create_auth_key(user_id, db)
 
-        if secret_key != auth_key.secret_key:
-            return None
+            if secret_key != auth_key.secret_key:
+                return None
 
-        return JwtSession(user_id, secret_key, expires_on)
+            return JwtSession(
+                user_id,
+                secret_key,
+                datetime.datetime.utcnow() + datetime.timedelta(days=SESSION_LIFETIME_DAYS),
+                to_be_refreshed=True,
+            )
+
+        return JwtSession(user_id, secret_key, expires_on, to_be_refreshed=False)
 
     async def authorize(self, user: User) -> Response:
         try:
             auth_key = await self.get_or_create_auth_key(user.id, self.db)
 
-            jwt = self.make_jwt(auth_key)
+            self.request.session = JwtSession(
+                auth_key.user_id,
+                auth_key.secret_key,
+                datetime.datetime.utcnow() + datetime.timedelta(days=SESSION_LIFETIME_DAYS),
+                to_be_refreshed=True,
+            )
 
             response = self.request.make_response(UserMapping.to_dto(user))
-            response.set_cookie('session', jwt, httponly=True, secure=True, samesite="none")
         except Exception:
             await self.history_writer.write(HistoryKind.USER_SIGN_IN_FAILURE, user.id, None, user_id=user.id)
             raise
@@ -77,9 +86,15 @@ class AuthService(DbServiceBase):
 
     @staticmethod
     def reset(request_info: RequestInfo) -> Response:
-        response = request_info.make_response()
-        response.set_cookie('session', "", httponly=True, secure=True, samesite="none")
-        return response
+        if request_info.session:
+            request_info.session = JwtSession(
+                request_info.session.user_id,
+                request_info.session.secret_key,
+                datetime.datetime.utcnow(),
+                to_be_refreshed=True,
+            )
+
+        return request_info.make_response()
 
     async def reset_all(self, request_info: RequestInfo, keep_current: bool) -> Response:
         auth_key = await self.get_or_create_auth_key(request_info.user_id, self.db)
@@ -88,16 +103,16 @@ class AuthService(DbServiceBase):
         async with self.db.transaction():
             await self.db.query_scalar(str, self._UPDATE_AUTH_KEY, auth_key)
 
-            self.AUTH_KEYS_CACHE[auth_key.user_id] = auth_key
-
             await self.history_writer.write(HistoryKind.USER_SESSIONS_RESET, auth_key.user_id, None)
 
-        jwt = self.make_jwt(auth_key) if keep_current else ""
+        request_info.session = JwtSession(
+            auth_key.user_id,
+            auth_key.secret_key,
+            datetime.datetime.utcnow() + datetime.timedelta(days=SESSION_LIFETIME_DAYS if keep_current else 0),
+            to_be_refreshed=True,
+        )
 
-        response = request_info.make_response()
-        response.set_cookie('session', jwt, httponly=True, secure=True, samesite="none")
-
-        return response
+        return request_info.make_response()
 
     async def authenticate(self, data: SignInDto) -> User:
         """ Raises: NOT_EXIST_ERR, FROZEN_ERR.
@@ -129,18 +144,7 @@ class AuthService(DbServiceBase):
             await db.execute(cls._INSERT_AUTH_KEY, auth_key)
 
         auth_key.secret_key = auth_key.secret_key.replace('-', '')
-
-        cls.AUTH_KEYS_CACHE[user_id] = auth_key
-
         return auth_key
-
-    @classmethod
-    def make_jwt(cls, auth_key: AuthKey) -> str:
-        return CryptoUtils.make_jwt({
-            'user_id': auth_key.user_id,
-            'secret_key': auth_key.secret_key,
-            'expires_on': (datetime.datetime.utcnow() + datetime.timedelta(days=SESSION_LIFETIME_DAYS)).isoformat()
-        })
 
     # region SQL
 

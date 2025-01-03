@@ -75,7 +75,11 @@ DB_CONNECTION_POOL_MIN_SIZE: int = 10
 DB_CONNECTION_POOL_MAX_SIZE: int = 30
 
 
-""" How long to keep user's web session
+""" How long to cache user's session (invalidation interval)
+"""
+SESSION_REFRESH_MINUTES = __resolve.integer("SESSION_REFRESH_MINUTES", default=2)
+
+""" How long to keep user's session (from last activity)
 """
 SESSION_LIFETIME_DAYS = __resolve.integer("SESSION_LIFETIME_DAYS", default=120)
 

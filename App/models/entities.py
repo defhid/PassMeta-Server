@@ -5,21 +5,23 @@ __all__ = (
 
 from pydantic import BaseModel
 from fastapi import Request, Response
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from App.models.dto.mapping import ResultMapping
 from App.models.okbad import *
-from App.settings import DEBUG
+from App.settings import DEBUG, SESSION_REFRESH_MINUTES
 from App.translate import Locale
+from App.utils.crypto import CryptoUtils
 
 
 class JwtSession:
-    __slots__ = ('user_id', 'secret_key', 'expires_on')
+    __slots__ = ('user_id', 'secret_key', 'expires_on', 'to_be_refreshed')
 
-    def __init__(self, user_id: int, secret_key: str, expires_on: datetime):
+    def __init__(self, user_id: int, secret_key: str, expires_on: datetime, to_be_refreshed: bool):
         self.user_id = user_id
         self.secret_key = secret_key
         self.expires_on = expires_on
+        self.to_be_refreshed = to_be_refreshed
 
 
 class RequestInfo:
@@ -51,20 +53,38 @@ class RequestInfo:
     def user_id(self) -> int | None:
         return self._session.user_id if self._session is not None else None
 
-    @staticmethod
-    def make_response(data: BaseModel = None) -> Response:
-        return PydanticJsonResponse(data, OK.response_status_code) if data is not None \
-            else Response(status_code=OK.response_status_code)
+    def fill_response(self, response: Response) -> Response:
+        if self._session is not None and self._session.to_be_refreshed:
+            jwt = CryptoUtils.make_jwt({
+                'user_id': self._session.user_id,
+                'secret_key': self._session.secret_key,
+                'valid_until': (datetime.utcnow() + timedelta(minutes=SESSION_REFRESH_MINUTES)).isoformat(),
+                'expires_on': self._session.expires_on.isoformat(),
+            })
 
-    @staticmethod
-    def make_bytes_response(data: bytes) -> Response:
-        return Response(data)
+            response.set_cookie(
+                'session',
+                jwt,
+                httponly=True,
+                secure=True,
+                samesite="none",
+                expires=self._session.expires_on.isoformat(),
+            )
+
+        return response
+
+    def make_response(self, data: BaseModel = None) -> Response:
+        return self.fill_response(PydanticJsonResponse(data, OK.response_status_code) if data is not None \
+            else Response(status_code=OK.response_status_code))
+
+    def make_bytes_response(self, data: bytes) -> Response:
+        return self.fill_response(Response(data))
 
     def make_result_response(self, data: Result) -> Response:
-        return PydanticJsonResponse(
+        return self.fill_response(PydanticJsonResponse(
             ResultMapping.to_dto(data, self.locale),
             data.code.response_status_code
-        )
+        ))
 
     def ensure_user_is_authorized(self):
         """ Raises: AUTH_ERR """
