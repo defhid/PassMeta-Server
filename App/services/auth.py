@@ -45,10 +45,12 @@ class AuthService(DbServiceBase):
         except (ValueError, TypeError):
             return None
 
-        if user_id < 1 or (expires_on - datetime.datetime.utcnow()).seconds < 1:
+        now = datetime.datetime.now(datetime.UTC)
+
+        if user_id < 1 or expires_on < now:
             return None
 
-        if (valid_until - datetime.datetime.utcnow()).seconds < 1:
+        if valid_until < now:
             db = await db_resolver()
             auth_key = await cls.get_or_create_auth_key(user_id, db)
 
@@ -58,7 +60,7 @@ class AuthService(DbServiceBase):
             return JwtSession(
                 user_id,
                 secret_key,
-                datetime.datetime.utcnow() + datetime.timedelta(days=SESSION_LIFETIME_DAYS),
+                now + datetime.timedelta(days=SESSION_LIFETIME_DAYS),
                 to_be_refreshed=True,
             )
 
@@ -71,7 +73,7 @@ class AuthService(DbServiceBase):
             self.request.session = JwtSession(
                 auth_key.user_id,
                 auth_key.secret_key,
-                datetime.datetime.utcnow() + datetime.timedelta(days=SESSION_LIFETIME_DAYS),
+                datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=SESSION_LIFETIME_DAYS),
                 to_be_refreshed=True,
             )
 
@@ -90,7 +92,7 @@ class AuthService(DbServiceBase):
             request_info.session = JwtSession(
                 request_info.session.user_id,
                 request_info.session.secret_key,
-                datetime.datetime.utcnow(),
+                datetime.datetime.now(datetime.UTC),
                 to_be_refreshed=True,
             )
 
@@ -108,7 +110,7 @@ class AuthService(DbServiceBase):
         request_info.session = JwtSession(
             auth_key.user_id,
             auth_key.secret_key,
-            datetime.datetime.utcnow() + datetime.timedelta(days=SESSION_LIFETIME_DAYS if keep_current else 0),
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=SESSION_LIFETIME_DAYS if keep_current else 0),
             to_be_refreshed=True,
         )
 

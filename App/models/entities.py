@@ -5,7 +5,7 @@ __all__ = (
 
 from pydantic import BaseModel
 from fastapi import Request, Response
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from App.models.dto.mapping import ResultMapping
 from App.models.okbad import *
@@ -53,12 +53,12 @@ class RequestInfo:
     def user_id(self) -> int | None:
         return self._session.user_id if self._session is not None else None
 
-    def fill_response(self, response: Response) -> Response:
+    def _fill_response(self, response: Response) -> Response:
         if self._session is not None and self._session.to_be_refreshed:
             jwt = CryptoUtils.make_jwt({
                 'user_id': self._session.user_id,
                 'secret_key': self._session.secret_key,
-                'valid_until': (datetime.utcnow() + timedelta(minutes=SESSION_REFRESH_MINUTES)).isoformat(),
+                'valid_until': (datetime.now(UTC) + timedelta(minutes=SESSION_REFRESH_MINUTES)).isoformat(),
                 'expires_on': self._session.expires_on.isoformat(),
             })
 
@@ -68,20 +68,20 @@ class RequestInfo:
                 httponly=True,
                 secure=True,
                 samesite="none",
-                expires=self._session.expires_on.isoformat(),
+                expires=self._session.expires_on,
             )
 
         return response
 
     def make_response(self, data: BaseModel = None) -> Response:
-        return self.fill_response(PydanticJsonResponse(data, OK.response_status_code) if data is not None \
+        return self._fill_response(PydanticJsonResponse(data, OK.response_status_code) if data is not None \
             else Response(status_code=OK.response_status_code))
 
     def make_bytes_response(self, data: bytes) -> Response:
-        return self.fill_response(Response(data))
+        return self._fill_response(Response(data))
 
     def make_result_response(self, data: Result) -> Response:
-        return self.fill_response(PydanticJsonResponse(
+        return self._fill_response(PydanticJsonResponse(
             ResultMapping.to_dto(data, self.locale),
             data.code.response_status_code
         ))
