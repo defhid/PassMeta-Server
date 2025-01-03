@@ -24,7 +24,7 @@ class CryptoUtils:
         try:
             return jwt.decode(value, cls.JWT_SECRET_KEY, algorithms=['HS256'])
         except Exception as e:
-            cls.logger.error("JWT decoding error", e)
+            cls.logger.error("JWT decoding error", ex=e)
             return None
 
     @classmethod
@@ -40,7 +40,7 @@ class CryptoUtils:
         try:
             return Fernet(APP_SECRET_KEY_BYTES).encrypt(content)
         except Exception as e:
-            cls.logger.error("Passfile encryption error!", e)
+            cls.logger.error("Passfile encryption error!", ex=e)
             raise Bad(SERVER_ERR, MORE.info("Server-side encryption failed"))
 
     @classmethod
@@ -48,6 +48,6 @@ class CryptoUtils:
         try:
             return Fernet(APP_SECRET_KEY_BYTES).decrypt(content)
         except Exception as e:
-            cls.logger.error("Passfile decryption error!", e)
+            cls.logger.error("Passfile decryption error!", ex=e)
             raise Bad(SERVER_ERR, MORE.info("Server-side decryption failed"))
 

@@ -2,6 +2,7 @@ __all__ = ('LoggerFactory', 'init_logging', )
 
 from App.settings import LOG_LEVEL, LOG_FOLDER
 from typing import Callable
+import datetime
 import logging
 import os
 
@@ -14,16 +15,26 @@ class Logger:
     _log_critical: Callable
 
     def __init__(self, logger_prefix: str):
-        self._logger_prefix = logger_prefix + " "
+        self._logger_prefix = " " + logger_prefix + "] "
 
     def info(self, message: str, *format_args):
-        self._log_info(self._logger_prefix + message.format(*format_args))
+        self._log_info(
+            "[" + str(datetime.datetime.now(datetime.UTC)) + self._logger_prefix + message.format(*format_args),
+        )
 
     def error(self, message: str, *format_args, ex: BaseException = None, include_stack: bool = True):
-        self._log_error(self._logger_prefix + message.format(*format_args), exc_info=ex, stack_info=include_stack)
+        self._log_error(
+            "[" + str(datetime.datetime.now(datetime.UTC)) + self._logger_prefix + message.format(*format_args),
+            exc_info=ex,
+            stack_info=include_stack,
+        )
 
     def critical(self, message: str, *format_args, ex: BaseException = None, include_stack: bool = True):
-        self._log_critical(self._logger_prefix + message.format(*format_args), exc_info=ex, stack_info=include_stack)
+        self._log_critical(
+            "[" + str(datetime.datetime.now(datetime.UTC)) + self._logger_prefix + message.format(*format_args),
+            exc_info=ex,
+            stack_info=include_stack,
+        )
 
 
 class LoggerFactory:
@@ -32,7 +43,7 @@ class LoggerFactory:
     @classmethod
     def get_named(cls, logger_name: str) -> 'Logger':
         if logger_name not in cls._registered:
-            cls._registered[logger_name] = Logger(f"[{logger_name}]")
+            cls._registered[logger_name] = Logger(logger_name)
         return cls._registered[logger_name]
 
 
