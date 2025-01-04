@@ -25,7 +25,7 @@ class RequestUtils:
         """ Gets request session, creates RequestInfo and returns it.
         """
         try:
-            session = await AuthService.get_session(request, self.db_utils.resolve_connection)
+            session = await AuthService.get_session(request, self.db_utils)
         except Exception as e:
             self.logger.error("Failed to get session from request", ex=e)
             session = None

@@ -4,7 +4,7 @@ from App.services import UserService
 from App.settings import SESSION_LIFETIME_DAYS
 from App.utils.crypto import CryptoUtils
 
-from App.database import User, AuthKey, MakeSql
+from App.database import User, AuthKey, MakeSql, DbUtils
 from App.models.enums import HistoryKind
 from App.models.dto.requests import SignInDto
 from App.models.entities import RequestInfo, JwtSession
@@ -13,7 +13,6 @@ from App.models.dto.mapping import UserMapping
 from starlette.requests import Request
 from starlette.responses import Response
 from passql import DbConnection
-from typing import Callable, Coroutine, Any
 from uuid import uuid4
 import datetime
 
@@ -26,9 +25,7 @@ class AuthService(DbServiceBase):
     __slots__ = ()
 
     @classmethod
-    async def get_session(cls,
-                          request: Request,
-                          db_resolver: Callable[[], Coroutine[Any, Any, DbConnection]]) -> JwtSession | None:
+    async def get_session(cls, request: Request, db_utils: DbUtils) -> JwtSession | None:
         token = request.cookies.get('session')
         if not token:
             return None
@@ -51,8 +48,8 @@ class AuthService(DbServiceBase):
             return None
 
         if valid_until < now:
-            db = await db_resolver()
-            auth_key = await cls.get_or_create_auth_key(user_id, db)
+            async with db_utils.context_connection() as db:
+                auth_key = await cls.get_or_create_auth_key(user_id, db)
 
             if secret_key != auth_key.secret_key:
                 return None
