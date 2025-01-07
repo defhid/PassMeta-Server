@@ -46,8 +46,7 @@ class RequestInfo:
 
     @session.setter
     def session(self, value):
-        if self._session is None:
-            self._session = value
+        self._session = value
 
     @property
     def user_id(self) -> int | None:
